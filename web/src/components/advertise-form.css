@@ -1,0 +1,71 @@
+/* The "Create an ad" form (/advertise/new). Own class names (adf-*), so the other advertiser pages are not touched.
+   Tokens only (no hex): works in light AND dark mode. Logical properties only: works right-to-left too.
+   The two-column layout follows the WIDTH OF THE COLUMN (container query), not the screen, because the site shell
+   already has side columns. */
+.adf-cq { container-type: inline-size; }
+.adf { display: grid; gap: 22px; grid-template-columns: minmax(0, 1fr); }
+.adf-main { display: grid; gap: 22px; min-width: 0; }
+.adf-side { min-width: 0; }
+@container (min-width: 780px) {
+  .adf { grid-template-columns: minmax(0, 1fr) 20rem; align-items: start; }
+  .adf-side { position: sticky; top: 16px; }
+}
+
+/* ---- Top banner ---- */
+.adf-hero { padding: 28px 30px; display: grid; gap: 8px; background: linear-gradient(135deg, var(--brandsoft) 0%, var(--surface) 58%, var(--adbg) 100%); }
+.adf-h1 { margin: 0; font-size: 32px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em; }
+.adf-intro { margin: 0; font-size: 17px; color: var(--muted); }
+
+/* ---- Section cards and fields ---- */
+.adf-card { padding: 26px 28px; display: grid; gap: 20px; }
+.adf-fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.adf-field { display: grid; gap: 6px; min-width: 0; }
+.adf-labelrow { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.adf-label { font-size: 16px; font-weight: 700; padding: 0; }
+.adf-count { font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.adf-hint { margin: 0; font-size: 14px; color: var(--muted); }
+.adf-note { margin: 0; padding: 12px 16px; font-size: 15px; border: 1px dashed var(--adline); border-radius: var(--radius-lg); background: var(--adbg); }
+.adf-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 18px; }
+
+/* ---- Choice tiles (format and place) ---- */
+.adf-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); gap: 12px; }
+.adf-tile { position: relative; display: grid; justify-items: center; align-content: start; gap: 8px; padding: 16px 12px; text-align: center; font-size: 16px; font-weight: 600; cursor: pointer;
+  background: var(--surface2); border: 2px solid var(--line); border-radius: var(--radius-lg); transition: border-color 0.12s, background 0.12s; }
+.adf-tile svg { width: 36px; height: 36px; color: var(--muted); }
+.adf-tile:hover { border-color: var(--line-strong); }
+.adf-on { border-color: var(--brand); background: var(--brandsoft); }
+.adf-on svg { color: var(--brand); }
+.adf-on::after { content: "✓"; position: absolute; inset-block-start: 8px; inset-inline-end: 8px; display: grid; place-items: center; width: 22px; height: 22px;
+  border-radius: var(--radius-full); background: var(--brand); color: var(--onbrand); font-size: 13px; font-weight: 800; }
+.adf-off { opacity: 0.55; cursor: not-allowed; }
+.adf-soon { font-weight: 400; color: var(--muted); font-size: 13px; }
+.adf-radio { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.adf-tile:has(.adf-radio:focus-visible) { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+/* ---- File pickers ---- */
+.adf-file { padding: 14px 16px; font-size: 16px; border-style: dashed; cursor: pointer; }
+.adf-file::file-selector-button { margin-inline-end: 14px; border: 0; border-radius: var(--radius-full); padding: 9px 18px; background: var(--brand); color: var(--onbrand); font: inherit; font-weight: 700; cursor: pointer; }
+.adf-file::file-selector-button:hover { background: var(--brandhover); }
+
+/* ---- Summary (preview, price, agree, send) ---- */
+.adf-summary { padding: 22px; display: grid; gap: 16px; }
+.adf-previewbox { display: grid; gap: 10px; }
+.adf-previewbox h2 { margin: 0; }
+.adf-stage { padding: 14px; background: var(--surface2); border: 1px dashed var(--line-strong); border-radius: var(--radius-lg); max-width: 100%; }
+.adf-stage .card-ad { overflow-wrap: anywhere; }
+.adf-price { margin: 0; padding: 12px 14px; font-size: 15px; font-weight: 700; border-radius: var(--radius-lg); background: var(--brandsoft); }
+.adf-agree { align-items: flex-start; font-size: 15px; }
+.adf-agree input { margin-top: 2px; flex: none; }
+.adf-actions { display: flex; flex-direction: column-reverse; gap: 10px; }
+.adf-actions .btn { width: 100%; justify-content: center; }
+
+/* ---- "Sent" screen ---- */
+.adf-sent { padding: 36px 30px; display: grid; justify-items: center; gap: 14px; text-align: center; background: linear-gradient(135deg, var(--successsoft) 0%, var(--surface) 70%); }
+.adf-sent-icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: var(--radius-full); background: var(--success); color: var(--surface); font-size: 32px; font-weight: 800; }
+.adf-sent .adf-intro { color: var(--ink); max-width: 36rem; }
+.adf-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 6px; }
+
+@media (max-width: 520px) {
+  .adf-hero, .adf-card { padding-inline: 18px; }
+  .adf-h1 { font-size: 26px; }
+}

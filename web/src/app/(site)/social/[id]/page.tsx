@@ -15,7 +15,12 @@ import { getMyPinnedSocialPostId } from "@/lib/social-pin-view";
 import { loadHiddenAuthors } from "@/lib/social-block-view";
 import { parseSocialPostId } from "@/lib/social-id";
 import { getSocialReplies } from "@/lib/social-replies-query";
+import { getReplyAccess } from "@/lib/social-reply-control-view";
 import SocialReplyList from "@/components/social/SocialReplyList";
+import { socialReplyRank } from "@/config/site";
+import { nowMs } from "@/lib/now";
+import { orderReplies, parseReplySort } from "@/lib/social-fair-rank-rules";
+import { getMyReplyLikes } from "@/lib/social-reply-like-view";
 
 // One Social post (SOCIAL_TODO 14). Social posts are ONLY for logged-in people (PROJECT.md 8j point 11), so:
 //  - the page title is always the same plain words, never the post text; no link preview is made from the post;
@@ -35,18 +40,19 @@ export function generateStaticParams() {
   return [{ id: "1" }];
 }
 
-export default function SocialPostPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SocialPostPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ sort?: string | string[] }> }) {
   return (
     <Suspense fallback={<p className="pc-empty">…</p>}>
-      <SocialPostContent params={params} />
+      <SocialPostContent params={params} searchParams={searchParams} />
     </Suspense>
   );
 }
 
-async function SocialPostContent({ params }: { params: Promise<{ id: string }> }) {
+async function SocialPostContent({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ sort?: string | string[] }> }) {
   await connection();
 
   const { id: rawId } = await params;
+  const sort = parseReplySort((await searchParams).sort); // SOCIAL_TODO B10: "oldest" (default) or "top"
   const viewer = await getSessionUser();
 
   if (!viewer) {
@@ -84,6 +90,12 @@ async function SocialPostContent({ params }: { params: Promise<{ id: string }> }
   const quotes = dropHiddenItems(await getSocialQuotes(post.id), hidden.all);
   // Replies (SOCIAL_TODO 18): the post is already known to be shown, so the list is safe to read.
   const replies = dropHiddenAuthors(await getSocialReplies(post.id), hidden.all);
+  // Reply control (SOCIAL_TODO B9): who may reply to this post, and may THIS person (read per request, never cached).
+  const replyAccess = await getReplyAccess(viewer.id, post.id);
+  // Fair order of replies (SOCIAL_TODO B10): hidden-by-author replies stay in their own part, oldest first.
+  const ordered = orderReplies(replies.filter((reply) => !reply.hiddenByAuthor), sort, nowMs(), socialReplyRank);
+  const orderedReplies = [...ordered.items, ...replies.filter((reply) => reply.hiddenByAuthor)];
+  const likedReplyIds = await getMyReplyLikes(viewer.id, replies.map((reply) => reply.id));
 
   return (
     <>
@@ -103,7 +115,17 @@ async function SocialPostContent({ params }: { params: Promise<{ id: string }> }
         isFollowing={following}
       />
 
-      <SocialReplyList postId={post.id} replies={replies} viewer={viewer.username} />
+      <SocialReplyList
+        postId={post.id}
+        replies={orderedReplies}
+        viewer={viewer.username}
+        postAuthor={post.author}
+        policy={replyAccess.policy}
+        canReply={replyAccess.canReply}
+        sort={sort}
+        likedReplyIds={likedReplyIds}
+        risingIds={[...ordered.rising]}
+      />
 
       {quotes.length > 0 && (
         <section aria-labelledby="sp-quotes-title">

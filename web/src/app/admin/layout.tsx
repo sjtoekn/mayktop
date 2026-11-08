@@ -27,6 +27,7 @@ async function AdminFrame({ children }: { children: React.ReactNode }) {
     { href: "/admin/ads", label: t("admin.nav.ads") },
     { href: "/admin/news", label: "News sources" },
   ];
+  if (me.isSuperAdmin) items.push({ href: "/admin/team", label: t("admin.nav.team") }); // only the super admin sees this
 
   return (
     <div className="ad-root">

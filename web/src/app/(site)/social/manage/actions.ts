@@ -9,7 +9,7 @@ import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { applySocialEdit } from "@/lib/social-edit";
 import { applySocialDelete } from "@/lib/social-delete";
 import { deleteSocialImages } from "@/lib/social-image-storage";
@@ -29,7 +29,7 @@ export async function editSocialPost(input: { id: number; body: string }): Promi
   const user = await getSessionUser();
   if (!user) return { error: true, login: true };
 
-  const rate = takeAction(`social-edit:${user.id}`, editRules);
+  const rate = await takeActionDb(`social-edit:${user.id}`, editRules);
   if (!rate.ok) {
     return { error: true, tooMany: true, waitMinutes: Math.max(1, Math.ceil(rate.retryAfterMs / 60_000)) };
   }
@@ -64,7 +64,7 @@ export async function deleteSocialPost(input: { id: number }): Promise<DeleteSoc
   const user = await getSessionUser();
   if (!user) return { error: true, login: true };
 
-  const rate = takeAction(`social-delete:${user.id}`, deleteRules);
+  const rate = await takeActionDb(`social-delete:${user.id}`, deleteRules);
   if (!rate.ok) {
     return { error: true, tooMany: true, waitMinutes: Math.max(1, Math.ceil(rate.retryAfterMs / 60_000)) };
   }

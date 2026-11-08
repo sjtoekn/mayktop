@@ -14,7 +14,7 @@ export { FEED_AD_AFTER, SOCIAL_AD_AFTER, isFeedAdPosition, isSocialAdPosition } 
 export default function AdSlot({
   variant = "sidebar",
 }: {
-  variant?: "sidebar" | "feed" | "social";
+  variant?: "sidebar" | "feed" | "social" | "header";
 }) {
   const minutes = adsConfig.rotation.noRepeatMinutes;
   return (
@@ -32,6 +32,7 @@ export default function AdSlot({
         houseTitle: t("ad.house.title"),
         houseBody: t("ad.house.body"),
         advertiser: t("ad.social.advertiser"),
+        sponsored: t("ad.header.sponsored"),
       }}
     />
   );

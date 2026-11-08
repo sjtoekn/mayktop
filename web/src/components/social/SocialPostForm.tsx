@@ -7,6 +7,7 @@ import { useLoggedOut } from "@/lib/use-logged-out";
 import SocialLinkPreview from "@/components/social/SocialLinkPreview";
 import { cleanTypedLink, findPostLink } from "@/lib/social-links";
 import { createSocialPost } from "@/app/(site)/social/submit/actions";
+import { REPLY_POLICIES, DEFAULT_REPLY_POLICY, type ReplyPolicy } from "@/lib/social-reply-control-rules";
 
 export type SocialPostFormText = {
   title: string;
@@ -18,6 +19,7 @@ export type SocialPostFormText = {
   error: string;
   invalid: string;
   tooMany: string; // contains {minutes}
+  duplicate: string; // the same text was already posted recently (SOCIAL_TODO C2)
   login: string;
   loginLink: string;
   imageAdd: string;
@@ -40,9 +42,15 @@ export type SocialPostFormText = {
   videoTitle: string;
   videoOpen: string;
   linkOpen: string; // contains {host}
+  // Reply control (SOCIAL_TODO B9)
+  replyLabel: string;
+  replyHelp: string;
+  replyEveryone: string;
+  replyFollowing: string;
+  replyMentioned: string;
 };
 
-type Failure = false | "error" | "login" | "invalid" | "tooMany" | "imageType" | "imageSize" | "imagePixels";
+type Failure = false | "error" | "login" | "invalid" | "tooMany" | "duplicate" | "imageType" | "imageSize" | "imagePixels";
 
 export default function SocialPostForm({
   text,
@@ -60,6 +68,7 @@ export default function SocialPostForm({
 }) {
   const [body, setBody] = useState(initialBody);
   const [image, setImage] = useState<{ file: File; preview: string } | null>(null);
+  const [replyPolicy, setReplyPolicy] = useState<ReplyPolicy>(DEFAULT_REPLY_POLICY);
   const [failed, setFailed] = useState<Failure>(false);
   const [waitMinutes, setWaitMinutes] = useState(1);
   const [pending, startTransition] = useTransition();
@@ -127,6 +136,7 @@ export default function SocialPostForm({
     startTransition(async () => {
       const form = new FormData();
       form.set("body", body);
+      form.set("replyPolicy", replyPolicy);
       if (image) form.set("image", image.file);
       const result = await createSocialPost(form);
       if (result?.error) {
@@ -136,6 +146,8 @@ export default function SocialPostForm({
             ? "login"
             : result.tooMany
               ? "tooMany"
+              : result.duplicate
+              ? "duplicate"
               : result.imageError === "size"
                 ? "imageSize"
                 : result.imageError === "pixels"
@@ -281,12 +293,32 @@ export default function SocialPostForm({
           )}
         </div>
 
+        <div className="sf-reply">
+          <label className="sf-label" htmlFor="social-reply-policy">{text.replyLabel}</label>
+          <select
+            id="social-reply-policy"
+            className="pc-field"
+            value={replyPolicy}
+            disabled={loggedOut || pending}
+            onChange={(e) => setReplyPolicy(e.target.value as ReplyPolicy)}
+          >
+            {REPLY_POLICIES.map((policy) => (
+              <option key={policy} value={policy}>
+                {policy === "EVERYONE" ? text.replyEveryone : policy === "FOLLOWING" ? text.replyFollowing : text.replyMentioned}
+              </option>
+            ))}
+          </select>
+          <p className="sf-imageHelp">{text.replyHelp}</p>
+        </div>
+
         {failed && (
           <div className="notice notice-danger" role="alert">
             {failed === "login"
               ? <LoginNotice text={{ message: text.login, link: text.loginLink }} />
               : failed === "tooMany"
                 ? text.tooMany.replace("{minutes}", String(waitMinutes))
+                : failed === "duplicate"
+                ? text.duplicate
                 : failed === "imageType"
                   ? text.imageType
                   : failed === "imageSize"

@@ -313,3 +313,6 @@ Part of TODO 44; the work plan is `ADS_PLAN.md` (decisions 10 and 11).
 - Back up before big changes.
 - For each item: decide → design → document → build → test. An audit alone
   is never "done".
+
+## 8e-2. Fair ranking of replies and reposts (SOCIAL_TODO B10, decided 2026-11-08, PROVISIONAL numbers)
+Written in full in ACCOUNT_RULES.md 3.22. Short version: replies under a Social post can be ordered "Oldest" (default) or "Top"; "Top" is the Popular-page engine (8e) applied to reply likes, so quality counts with limits, one account cannot fill the list, and new voices get a fixed share (every 4th place). Plain reposts of the same post inside one feed page are merged into one line. The feed itself stays newest first (8j).

@@ -10,9 +10,10 @@ import Link from "next/link";
 import { createAd } from "@/app/(site)/advertise/new/actions";
 import AdMedia from "@/components/AdMedia";
 import "@/components/ad-social.css";
+import "@/components/advertise-form.css";
 
 type Format = "TEXT" | "IMAGE" | "VIDEO";
-type Slot = "SIDEBAR" | "FEED" | "SOCIAL_FEED";
+type Slot = "SIDEBAR" | "FEED" | "SOCIAL_FEED" | "HEADER";
 
 export type AdvertiseText = {
   title: string;
@@ -22,6 +23,7 @@ export type AdvertiseText = {
   formatSoon: string; // "coming next"
   slot: string;
   slotNames: Record<Slot, string>;
+  slotHeaderNote: string; // shown under the slot tiles when the header banner is chosen
   slotSocialNote: string; // shown instead of the page choice when the Social feed slot is chosen
   where: string;
   whereAny: string;
@@ -59,7 +61,7 @@ export type AdvertiseText = {
 };
 
 const FORMATS: Format[] = ["TEXT", "IMAGE", "VIDEO"];
-const SLOTS: Slot[] = ["SIDEBAR", "FEED", "SOCIAL_FEED"];
+const SLOTS: Slot[] = ["HEADER", "SIDEBAR", "FEED", "SOCIAL_FEED"];
 
 function hostOf(url: string): string {
   try {
@@ -68,6 +70,65 @@ function hostOf(url: string): string {
   } catch {
     return "";
   }
+}
+
+// Small picture icons for the choice tiles (decoration only; the words come from props).
+function FormatIcon({ kind }: { kind: Format }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {kind === "TEXT" && (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="3" />
+          <path d="M7 9h10M7 13h10M7 17h6" />
+        </>
+      )}
+      {kind === "IMAGE" && (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="3" />
+          <circle cx="9" cy="10" r="1.8" />
+          <path d="M21 16l-5-5-8 9" />
+        </>
+      )}
+      {kind === "VIDEO" && (
+        <>
+          <rect x="3" y="4" width="18" height="16" rx="3" />
+          <path d="M10 9l5 3-5 3z" />
+        </>
+      )}
+    </svg>
+  );
+}
+
+function SlotIcon({ kind }: { kind: Slot }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2.5" />
+      {kind === "HEADER" && (
+        <>
+          <path d="M3 10h18" />
+          <rect x="5" y="5.8" width="14" height="2.6" rx="1" fill="currentColor" stroke="none" />
+        </>
+      )}
+      {kind === "SIDEBAR" && (
+        <>
+          <path d="M15 4v16M6 9h6M6 13h6" />
+          <rect x="16.6" y="7" width="3" height="6" rx="1" fill="currentColor" stroke="none" />
+        </>
+      )}
+      {kind === "FEED" && (
+        <>
+          <path d="M6 8h12M6 17h12" />
+          <rect x="6" y="10.5" width="12" height="3.6" rx="1" fill="currentColor" stroke="none" />
+        </>
+      )}
+      {kind === "SOCIAL_FEED" && (
+        <>
+          <path d="M6 8h12M6 17h12" />
+          <rect x="6" y="10.2" width="12" height="4.2" rx="1.4" strokeDasharray="2.4 2" />
+        </>
+      )}
+    </svg>
+  );
 }
 
 export default function AdvertiseForm({
@@ -196,10 +257,11 @@ export default function AdvertiseForm({
 
   if (sent) {
     return (
-      <section className="card adv-card" role="status">
-        <h1 className="adv-h1">{text.sentTitle}</h1>
-        <p className="adv-text">{text.sentBody.replace("{id}", String(sent.id)).replace("{email}", sent.email)}</p>
-        <div className="adv-actions">
+      <section className="card adf-sent" role="status">
+        <span className="adf-sent-icon" aria-hidden="true">✓</span>
+        <h1 className="adf-h1">{text.sentTitle}</h1>
+        <p className="adf-intro">{text.sentBody.replace("{id}", String(sent.id)).replace("{email}", sent.email)}</p>
+        <div className="adf-row">
           <Link href="/" className="btn btn-secondary btn-lg">
             {text.sentHome}
           </Link>
@@ -216,223 +278,251 @@ export default function AdvertiseForm({
     error && error.key !== "login" ? (text.errors[error.key] ?? text.errors.other).replace("{phrase}", error.phrase ?? "") : "";
 
   return (
-    <form onSubmit={onSubmit} className="adv-wrap">
-      <section className="card adv-card">
-        <h1 className="adv-h1">{text.title}</h1>
-        <p className="adv-text">{text.intro}</p>
+    <form onSubmit={onSubmit} className="adf-cq">
+      <div className="adf">
+        <div className="adf-main">
+          <section className="card adf-hero">
+            <h1 className="adf-h1">{text.title}</h1>
+            <p className="adf-intro">{text.intro}</p>
+          </section>
 
-        <fieldset className="adv-fieldset">
-          <legend className="adv-label">{text.format}</legend>
-          <div className="adv-choices">
-            {FORMATS.map((f) => {
-              const open = openFormats.includes(f);
-              return (
-                <label key={f} className={`adv-choice${open ? "" : " adv-choice-off"}`}>
-                  <input
-                    type="radio"
-                    name="format"
-                    value={f}
-                    checked={format === f}
-                    disabled={!open}
-                    onChange={() => chooseFormat(f)}
-                  />
-                  <span>
-                    {text.formatNames[f]}
-                    {!open && <span className="adv-soon"> · {text.formatSoon}</span>}
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-        </fieldset>
+          <section className="card adf-card">
+            <fieldset className="adf-fieldset">
+              <legend className="adf-label">{text.format}</legend>
+              <div className="adf-tiles">
+                {FORMATS.map((f) => {
+                  const open = openFormats.includes(f) && (slot !== "HEADER" || f === "IMAGE"); // the header banner is picture-only
+                  return (
+                    <label key={f} className={`adf-tile${format === f ? " adf-on" : ""}${open ? "" : " adf-off"}`}>
+                      <input
+                        className="adf-radio"
+                        type="radio"
+                        name="format"
+                        value={f}
+                        checked={format === f}
+                        disabled={!open}
+                        onChange={() => chooseFormat(f)}
+                      />
+                      <FormatIcon kind={f} />
+                      <span>
+                        {text.formatNames[f]}
+                        {!openFormats.includes(f) && <small className="adf-soon"> · {text.formatSoon}</small>}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </fieldset>
 
-        <fieldset className="adv-fieldset">
-          <legend className="adv-label">{text.slot}</legend>
-          <div className="adv-choices">
-            {SLOTS.map((s) => (
-              <label key={s} className="adv-choice">
-                <input type="radio" name="slot" value={s} checked={slot === s} onChange={() => setSlot(s)} />
-                <span>{text.slotNames[s]}</span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
+            <fieldset className="adf-fieldset">
+              <legend className="adf-label">{text.slot}</legend>
+              <div className="adf-tiles">
+                {SLOTS.map((s) => (
+                  <label key={s} className={`adf-tile${slot === s ? " adf-on" : ""}`}>
+                    <input className="adf-radio" type="radio" name="slot" value={s} checked={slot === s} onChange={() => { setSlot(s); if (s === "HEADER") chooseFormat("IMAGE"); }} />
+                    <SlotIcon kind={s} />
+                    <span>{text.slotNames[s]}</span>
+                  </label>
+                ))}
+              </div>
+            </fieldset>
 
-        {slot === "SOCIAL_FEED" ? (
-          <p className="adv-hint">{text.slotSocialNote}</p>
-        ) : (
-          <>
-            <label className="sf-label" htmlFor="adv-where">
-              {text.where}
-            </label>
-            <select id="adv-where" className="pc-field" value={community} onChange={(e) => setCommunity(e.target.value)}>
-              <option value="">{text.whereAny}</option>
-              {communities.map((c) => (
-                <option key={c.slug} value={c.slug}>
-                  c/{c.slug} · {c.name}
-                </option>
-              ))}
-            </select>
-          </>
-        )}
-      </section>
-
-      <section className="card adv-card">
-        <label className="sf-label" htmlFor="adv-title">
-          {text.fieldTitle}
-        </label>
-        <input
-          id="adv-title"
-          className="pc-field"
-          value={title}
-          maxLength={limits.titleMax}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <span className="adv-count">
-          {title.length}/{limits.titleMax}
-        </span>
-
-        <label className="sf-label" htmlFor="adv-body">
-          {text.fieldBody}
-        </label>
-        <textarea
-          id="adv-body"
-          className="pc-field"
-          rows={3}
-          value={body}
-          maxLength={limits.bodyMax}
-          onChange={(e) => setBody(e.target.value)}
-        />
-        <span className="adv-count">
-          {body.length}/{limits.bodyMax}
-        </span>
-
-        <label className="sf-label" htmlFor="adv-url">
-          {text.fieldUrl}
-        </label>
-        <input
-          id="adv-url"
-          className="pc-field"
-          type="url"
-          inputMode="url"
-          autoComplete="off"
-          placeholder="https://"
-          value={url}
-          onChange={(e) => setUrl(e.target.value)}
-        />
-        <p className="adv-hint">{text.fieldUrlHint}</p>
-
-        <label className="sf-label" htmlFor="adv-email">
-          {text.fieldEmail}
-        </label>
-        <input
-          id="adv-email"
-          className="pc-field"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <p className="adv-hint">{text.fieldEmailHint}</p>
-
-        <label className="sf-label" htmlFor="adv-start">
-          {text.fieldStart}
-        </label>
-        <input
-          id="adv-start"
-          className="pc-field"
-          type="date"
-          min={limits.dateMin}
-          max={limits.dateMax}
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
-        />
-        <p className="adv-hint">{text.fieldStartHint}</p>
-
-        {format !== "TEXT" && (
-          <>
-            <label className="sf-label" htmlFor="adv-image">
-              {format === "VIDEO" ? text.fieldPoster : text.fieldImage}
-            </label>
-            <input
-              id="adv-image"
-              className="pc-field"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={(e) => pickFile("image", e.target.files?.[0] ?? null)}
-            />
-            <p className="adv-hint">{format === "VIDEO" ? text.fieldPosterHint : text.fieldImageHint}</p>
-          </>
-        )}
-        {format === "VIDEO" && (
-          <>
-            <label className="sf-label" htmlFor="adv-video">
-              {text.fieldVideo}
-            </label>
-            <input
-              id="adv-video"
-              className="pc-field"
-              type="file"
-              accept="video/mp4,video/webm"
-              onChange={(e) => pickFile("video", e.target.files?.[0] ?? null)}
-            />
-            <p className="adv-hint">{text.fieldVideoHint}</p>
-          </>
-        )}
-      </section>
-
-      <section className="card adv-card" aria-live="polite">
-        <h2 className="sf-h2">{text.previewTitle}</h2>
-        <div className={`adv-preview adv-preview-${slot}`}>
-          <aside aria-label={text.previewLabel} className={`card card-ad ${slot === "SIDEBAR" ? "min-h-64" : "min-h-24"}${slot === "SOCIAL_FEED" ? " ad-social" : ""}`}>
-            <div className="mb-2">
-              <span className="badge badge-ad">{text.previewBadge}</span>
-            </div>
-            <AdMedia format={format} imageUrl={imagePreview} videoUrl={videoPreview} title={title} empty={text.previewNoFile} />
-            <strong className={`type-heading mt-2 block${title ? "" : " text-muted"}`}>{title || text.fieldTitle}</strong>
-            <p className={`type-small mt-1${body ? "" : " text-muted"}`}>{body || text.fieldBody}</p>
-            {host && <span className="mt-2 block text-xs text-muted">{host}</span>}
-          </aside>
-        </div>
-      </section>
-
-      <section className="card adv-card">
-        <p className="adv-price">{text.priceLine}</p>
-
-        <label className="sf-agree">
-          <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-          <span>
-            {text.agree}{" "}
-            <Link href="/advertise#rules" className="underline">
-              {text.rulesLink}
-            </Link>
-          </span>
-        </label>
-
-        {error && (
-          <div className="notice notice-danger" role="alert">
-            {error.key === "login" ? (
-              <>
-                {text.login}{" "}
-                <Link href="/login" className="underline">
-                  {text.loginLink}
-                </Link>
-              </>
+            {slot === "HEADER" && <p className="adf-note">{text.slotHeaderNote}</p>}
+            {slot === "SOCIAL_FEED" ? (
+              <p className="adf-note">{text.slotSocialNote}</p>
             ) : (
-              errorText
+              <div className="adf-field">
+                <label className="adf-label" htmlFor="adv-where">
+                  {text.where}
+                </label>
+                <select id="adv-where" className="pc-field" value={community} onChange={(e) => setCommunity(e.target.value)}>
+                  <option value="">{text.whereAny}</option>
+                  {communities.map((c) => (
+                    <option key={c.slug} value={c.slug}>
+                      c/{c.slug} · {c.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
             )}
-          </div>
-        )}
+          </section>
 
-        <div className="adv-actions">
-          <Link href="/advertise" className="btn btn-secondary btn-lg">
-            {text.cancel}
-          </Link>
-          <button type="submit" className="btn btn-primary btn-lg" disabled={!ready}>
-            {pending ? text.saving : text.submit}
-          </button>
+          <section className="card adf-card">
+            <div className="adf-field">
+              <div className="adf-labelrow">
+                <label className="adf-label" htmlFor="adv-title">
+                  {text.fieldTitle}
+                </label>
+                <span className="adf-count">
+                  {title.length}/{limits.titleMax}
+                </span>
+              </div>
+              <input
+                id="adv-title"
+                className="pc-field"
+                value={title}
+                maxLength={limits.titleMax}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            </div>
+
+            <div className="adf-field">
+              <div className="adf-labelrow">
+                <label className="adf-label" htmlFor="adv-body">
+                  {text.fieldBody}
+                </label>
+                <span className="adf-count">
+                  {body.length}/{limits.bodyMax}
+                </span>
+              </div>
+              <textarea
+                id="adv-body"
+                className="pc-field"
+                rows={3}
+                value={body}
+                maxLength={limits.bodyMax}
+                onChange={(e) => setBody(e.target.value)}
+              />
+            </div>
+
+            {format !== "TEXT" && (
+              <div className="adf-field">
+                <label className="adf-label" htmlFor="adv-image">
+                  {format === "VIDEO" ? text.fieldPoster : text.fieldImage}
+                </label>
+                <input
+                  id="adv-image"
+                  className="pc-field adf-file"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(e) => pickFile("image", e.target.files?.[0] ?? null)}
+                />
+                <p className="adf-hint">{format === "VIDEO" ? text.fieldPosterHint : text.fieldImageHint}</p>
+              </div>
+            )}
+            {format === "VIDEO" && (
+              <div className="adf-field">
+                <label className="adf-label" htmlFor="adv-video">
+                  {text.fieldVideo}
+                </label>
+                <input
+                  id="adv-video"
+                  className="pc-field adf-file"
+                  type="file"
+                  accept="video/mp4,video/webm"
+                  onChange={(e) => pickFile("video", e.target.files?.[0] ?? null)}
+                />
+                <p className="adf-hint">{text.fieldVideoHint}</p>
+              </div>
+            )}
+
+            <div className="adf-field">
+              <label className="adf-label" htmlFor="adv-url">
+                {text.fieldUrl}
+              </label>
+              <input
+                id="adv-url"
+                className="pc-field"
+                type="url"
+                inputMode="url"
+                autoComplete="off"
+                placeholder="https://"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+              />
+              <p className="adf-hint">{text.fieldUrlHint}</p>
+            </div>
+
+            <div className="adf-two">
+              <div className="adf-field">
+                <label className="adf-label" htmlFor="adv-email">
+                  {text.fieldEmail}
+                </label>
+                <input
+                  id="adv-email"
+                  className="pc-field"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+                <p className="adf-hint">{text.fieldEmailHint}</p>
+              </div>
+
+              <div className="adf-field">
+                <label className="adf-label" htmlFor="adv-start">
+                  {text.fieldStart}
+                </label>
+                <input
+                  id="adv-start"
+                  className="pc-field"
+                  type="date"
+                  min={limits.dateMin}
+                  max={limits.dateMax}
+                  value={start}
+                  onChange={(e) => setStart(e.target.value)}
+                />
+                <p className="adf-hint">{text.fieldStartHint}</p>
+              </div>
+            </div>
+          </section>
         </div>
-      </section>
+
+        <aside className="adf-side">
+          <div className="card adf-summary">
+            <section aria-live="polite" className="adf-previewbox">
+              <h2 className="sf-h2">{text.previewTitle}</h2>
+              <div className={`adv-preview adv-preview-${slot} adf-stage`}>
+                <aside aria-label={text.previewLabel} className={`card card-ad ${slot === "SIDEBAR" ? "min-h-64" : "min-h-24"}${slot === "SOCIAL_FEED" ? " ad-social" : ""}`}>
+                  <div className="mb-2">
+                    <span className="badge badge-ad">{text.previewBadge}</span>
+                  </div>
+                  <AdMedia format={format} imageUrl={imagePreview} videoUrl={videoPreview} title={title} empty={text.previewNoFile} />
+                  <strong className={`type-heading mt-2 block${title ? "" : " text-muted"}`}>{title || text.fieldTitle}</strong>
+                  <p className={`type-small mt-1${body ? "" : " text-muted"}`}>{body || text.fieldBody}</p>
+                  {host && <span className="mt-2 block text-xs text-muted">{host}</span>}
+                </aside>
+              </div>
+            </section>
+
+            <p className="adf-price">{text.priceLine}</p>
+
+            <label className="sf-agree adf-agree">
+              <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+              <span>
+                {text.agree}{" "}
+                <Link href="/advertise#rules" className="underline">
+                  {text.rulesLink}
+                </Link>
+              </span>
+            </label>
+
+            {error && (
+              <div className="notice notice-danger" role="alert">
+                {error.key === "login" ? (
+                  <>
+                    {text.login}{" "}
+                    <Link href="/login" className="underline">
+                      {text.loginLink}
+                    </Link>
+                  </>
+                ) : (
+                  errorText
+                )}
+              </div>
+            )}
+
+            <div className="adf-actions">
+              <Link href="/advertise" className="btn btn-secondary btn-lg">
+                {text.cancel}
+              </Link>
+              <button type="submit" className="btn btn-primary btn-lg" disabled={!ready}>
+                {pending ? text.saving : text.submit}
+              </button>
+            </div>
+          </div>
+        </aside>
+      </div>
     </form>
   );
 }

@@ -1,9 +1,0 @@
-  // Following feed (SOCIAL_TODO 17, patch-social-17-finish)
-  "social.tabs.label": "动态信息流",
-  "social.tabs.all": "全部",
-  "social.tabs.following": "关注中",
-  "social.following.title": "关注中",
-  "social.following.sub": "你关注的人和你自己的帖子与转发，最新的在前。不按热度排序。",
-  "social.following.none": "你还没有关注任何人。从他们的帖子里关注他们，他们的帖子就会显示在这里。",
-  "social.following.quiet": "你关注的人还没有发布任何内容。",
-  "social.following.browse": "浏览所有动态帖子",

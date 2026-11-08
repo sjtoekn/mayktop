@@ -1,8 +1,0 @@
-  // Apelación de una publicación o respuesta de Social eliminada (patch-social-appeal)
-  "appeal.social.what.post": "Tu publicación de Social fue eliminada: {excerpt}",
-  "appeal.social.what.reply": "Tu respuesta de Social fue eliminada: {excerpt}",
-  "admin.appeals.social.post": "Una publicación de Social",
-  "admin.appeals.social.reply": "Una respuesta de Social",
-  "email.socialappeal.line": "Si crees que fue un error, puedes apelar en un plazo de {days} días. Lo leerá un administrador que no participó en la decisión:\n{url}",
-  "email.appeal.social.accepted.body": "Hola {name}:\n\nTu apelación fue leída por alguien que no participó en la primera decisión y fue aceptada. Esto vuelve a ser visible:\n\nSocial: {excerpt}\nNota del revisor: {note}\n\n{url}",
-  "email.appeal.social.rejected.body": "Hola {name}:\n\nTu apelación fue leída por alguien que no participó en la primera decisión. La eliminación se mantiene:\n\nSocial: {excerpt}\nRegla: {rule}\nNota del revisor: {note}\n\nPuedes leer la respuesta aquí:\n{url}",

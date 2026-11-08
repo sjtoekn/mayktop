@@ -1,0 +1,6 @@
+
+/* Fair ranking of replies and reposts (SOCIAL_TODO B10) */
+.sp-replySort { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.sp-replySort .pc-pill { text-decoration: none; }
+.sp-replySort .pc-pill.is-active { font-weight: 700; }
+.sp-replySortHow { font-size: 13px; opacity: 0.8; margin-inline-start: auto; }

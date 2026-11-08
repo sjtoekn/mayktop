@@ -1,8 +1,8 @@
 // Staff tool (TODO 36d). There is no admin panel yet (Phase 4), so suspend / ban / lift are done here.
 // Run from the web/ folder:
 //   npm run staff -- rules
-//   npm run staff -- make-first-admin <username>                (only works while no admin exists)
-//   npm run staff -- make-admin <admin> <person>                (a ban needs two admins, so make a second one)
+//   npm run staff -- make-super-admin <username>                (ONCE: only works while no super admin exists)
+//   npm run staff -- make-admin <super-admin> <person>          (only the super admin; easier in the panel: /admin/team)
 //   npm run staff -- suspend <admin> <person> <days 1-30> <RULE> "<written reason>"
 //   npm run staff -- propose-ban <admin> <person> <RULE> "<written reason>"   (step 1: nothing happens yet)
 //   npm run staff -- proposals                                                 (open ban proposals)
@@ -11,7 +11,7 @@
 //   npm run staff -- lift    <admin> <person> "<written reason>"
 // The rules and limits live in src/lib/staff.ts and src/config/site.ts (staffConfig).
 import { prisma } from "../src/lib/prisma";
-import { decideBan, liftSuspension, makeAdmin, removeAdmin, listBanProposals, makeFirstAdmin, proposeBan, suspendUser, type StaffError } from "../src/lib/staff";
+import { decideBan, liftSuspension, makeAdmin, removeAdmin, listBanProposals, makeFirstSuperAdmin, proposeBan, suspendUser, type StaffError } from "../src/lib/staff";
 import { staffConfig } from "../src/config/site";
 
 const messages: Record<StaffError, string> = {
@@ -28,6 +28,7 @@ const messages: Record<StaffError, string> = {
   noproposal: "No open proposal with that number (it may be decided already, or lapsed after 7 days).",
   approver: "Refused: a ban needs a DIFFERENT admin to approve. You made this proposal.",
   lastadmin: "Refused: the last admin cannot be removed.",
+  superonly: "Refused: only the super admin can make or remove admins.",
 };
 
 function show(result: { ok: true; auditId: number } | { error: StaffError }) {
@@ -43,9 +44,9 @@ async function main() {
   const [command, ...a] = process.argv.slice(2);
   if (command === "rules") {
     for (const r of staffConfig.siteRules) console.log(`${r.key}${r.serious ? "  (serious: a ban is allowed at once)" : ""}`);
-  } else if (command === "make-first-admin" && a.length === 1) {
-    const r = await makeFirstAdmin(a[0]);
-    console.log(r === "ok" ? `${a[0]} is now the first admin.` : r === "exists" ? "An admin already exists." : "No account with that username.");
+  } else if (command === "make-super-admin" && a.length === 1) {
+    const r = await makeFirstSuperAdmin(a[0]);
+    console.log(r === "ok" ? `${a[0]} is now the super admin. Use /admin/team in the panel to add other admins.` : r === "exists" ? "A super admin already exists." : "No account with that username.");
     if (r !== "ok") process.exitCode = 1;
   } else if (command === "make-admin" && a.length === 2) {
     show(await makeAdmin({ actor: a[0], target: a[1] }));
@@ -66,7 +67,7 @@ async function main() {
   } else if (command === "lift" && a.length === 3) {
     show(await liftSuspension({ actor: a[0], target: a[1], reason: a[2] }));
   } else {
-    console.log("Usage:\n  npm run staff -- rules\n  npm run staff -- make-first-admin <username>\n  npm run staff -- make-admin <admin> <person>\n  npm run staff -- remove-admin <admin> <person> \"<reason>\"\n  npm run staff -- suspend <admin> <person> <days> <RULE> \"<reason>\"\n  npm run staff -- propose-ban <admin> <person> <RULE> \"<reason>\"\n  npm run staff -- proposals\n  npm run staff -- approve-ban|reject-ban <admin> <number> \"<note>\"\n  npm run staff -- lift <admin> <person> \"<reason>\"");
+    console.log("Usage:\n  npm run staff -- rules\n  npm run staff -- make-super-admin <username>\n  npm run staff -- make-admin <super-admin> <person>\n  npm run staff -- remove-admin <admin> <person> \"<reason>\"\n  npm run staff -- suspend <admin> <person> <days> <RULE> \"<reason>\"\n  npm run staff -- propose-ban <admin> <person> <RULE> \"<reason>\"\n  npm run staff -- proposals\n  npm run staff -- approve-ban|reject-ban <admin> <number> \"<note>\"\n  npm run staff -- lift <admin> <person> \"<reason>\"");
     process.exitCode = 1;
   }
 }

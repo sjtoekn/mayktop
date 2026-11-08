@@ -10,7 +10,8 @@ import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
+import { limitsFor } from "@/lib/account-limits";
 import { applySocialRepost, REPOST_ACTIONS } from "@/lib/social-repost";
 
 const repostRules = socialLimits.reposts.map((rule) => ({ max: rule.max, windowMs: rule.windowSeconds * 1000 }));
@@ -31,7 +32,7 @@ export async function setSocialRepost(input: {
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
 
-  if (!takeAction(`repost:${viewer.id}`, repostRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`repost:${viewer.id}`, limitsFor(repostRules, viewer))).ok) return { error: true, tooMany: true };
 
   // Two quick clicks can both pass the "no row yet" check; the database refuses the second row (P2002). One more
   // try then sees the first row and simply reports the state, so the person never sees an error for it.

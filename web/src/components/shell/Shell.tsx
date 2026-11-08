@@ -31,11 +31,15 @@ export default async function Shell({ children }: { children: ReactNode }) {
   const more: NavItem[] = [
     { icon: "shield", label: t("nav.modlog"), href: "/modlog" },
     { icon: "scale", label: t("nav.fairness"), href: "/fairness" },
+    { icon: "megaphone", label: t("nav.advertise"), href: "/advertise" },
   ];
 
   return (
     <div className="ch-root">
       <a href="#main" className="skip-link">{t("a11y.skip")}</a>
+      {/* The header banner ad: the very top of the page, as wide as the header and the three columns (same max-width). */}
+      <AdSlot variant="header" />
+
       <header className="ch-header">
         <Link href="/" className="card ch-logoBox">
           <span className="ch-logoIcon" aria-hidden="true">

@@ -35,6 +35,9 @@
     "test:social-visibility": "tsx --env-file=.env scripts/test-social-visibility.ts",
     "test:social-text": "tsx scripts/test-social-text.ts",
     "test:social-limits": "tsx scripts/test-social-limits.ts",
+    "test:rate-limit-db": "tsx scripts/test-rate-limit-db.ts",
+    "test:new-account": "tsx scripts/test-new-account.ts",
+    "test:social-duplicate": "tsx scripts/test-social-duplicate.ts",
     "test:social-edit": "tsx scripts/test-social-edit.ts",
     "test:social-delete": "tsx scripts/test-social-delete.ts",
     "test:social-page": "tsx scripts/test-social-page.ts",
@@ -54,6 +57,8 @@
     "test:social-links": "tsx scripts/test-social-links.ts",
     "test:social-block": "tsx scripts/test-social-block.ts",
     "test:social-appeal": "tsx scripts/test-social-appeal.ts",
+    "test:social-reply-control": "tsx scripts/test-social-reply-control.ts",
+    "test:social-fair-rank": "tsx scripts/test-social-fair-rank.ts",
     "test:social-bookmark": "tsx scripts/test-social-bookmark.ts",
     "test:social-pin": "tsx scripts/test-social-pin.ts",
     "test:social-discover": "tsx scripts/test-social-discover.ts",
@@ -67,7 +72,8 @@
     "dotenv": "^18.0.9",
     "next": "16.4.5",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "sharp": "^0.35.5"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",

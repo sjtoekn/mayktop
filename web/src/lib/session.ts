@@ -9,7 +9,7 @@ import { auth } from "@/lib/auth";
 import { loadAccount } from "@/lib/account";
 import { UserStatus } from "../../generated/prisma/client";
 
-export type SessionUser = { id: string; username: string };
+export type SessionUser = { id: string; username: string; createdAt: Date };
 
 /** The logged-in, active person, or null (nobody logged in, session expired, account not active). */
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -19,7 +19,7 @@ export async function getSessionUser(): Promise<SessionUser | null> {
     if (!id) return null;
     const user = await loadAccount(id); // also lifts a temporary suspension that has ended
     if (!user || user.status !== UserStatus.ACTIVE) return null;
-    return { id: user.id, username: user.username };
+    return { id: user.id, username: user.username, createdAt: user.createdAt };
   } catch (error) {
     if ((error as { digest?: string })?.digest === "HANGING_PROMISE_REJECTION") return null; // build-time prerender only, not a real failure
     console.error("getSessionUser failed:", error);

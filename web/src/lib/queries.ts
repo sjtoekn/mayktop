@@ -27,6 +27,7 @@ import { adsConfig, rankingConfig, socialLimits } from "@/config/site";
 import { nowMs } from "@/lib/now";
 import { rankTrendingTags, type TrendingTag } from "@/lib/social-discover-rules";
 import { rankPopularDetailed, type RankItem } from "@/lib/ranking";
+import { collapsePlainReposts } from "@/lib/social-fair-rank-rules";
 import { socialAuthorShown } from "@/lib/social-visibility";
 import { followingAuthorIds, MAX_FOLLOWING_IDS } from "@/lib/social-following";
 import { afterCursorWhere, comparePageItems, cursorToText, cutPage, parseCursor } from "@/lib/social-paging";
@@ -284,6 +285,8 @@ export type SocialRepostItem = {
   reposterName: string | null;
   quote: string | null;
   post: SocialPostSummary;
+  /** Plain reposts of the same post merged into this one on this page (SOCIAL_TODO B10). Absent = none. */
+  alsoCount?: number;
 };
 
 export type SocialFeedItem =
@@ -395,7 +398,7 @@ function toFeedPage(items: SocialFeedItem[]): SocialFeedPage {
   }));
   keyed.sort(comparePageItems);
   const { items: kept, next } = cutPage(keyed, SOCIAL_FEED_SIZE);
-  return { items: kept.map((entry) => entry.item), next: next ? cursorToText(next) : null };
+  return { items: collapsePlainReposts(kept.map((entry) => entry.item)), next: next ? cursorToText(next) : null };
 }
 
 /**
@@ -522,7 +525,7 @@ export async function getHomeFeed(includeSocial: boolean): Promise<HomeFeedItem[
   const kindRank = { social: 0, repost: 1, community: 2 } as const;
   const idOf = (item: HomeFeedItem) => (item.kind === "repost" ? item.repostId : item.post.id);
 
-  return [...communityItems, ...socialItems, ...repostItems]
+  const merged = [...communityItems, ...socialItems, ...repostItems]
     .sort((a, b) => {
       const difference = b.createdAtMs - a.createdAtMs;
       if (difference !== 0) return difference;
@@ -530,6 +533,7 @@ export async function getHomeFeed(includeSocial: boolean): Promise<HomeFeedItem[
       return idOf(b) - idOf(a);
     })
     .slice(0, 50);
+  return collapsePlainReposts(merged); // SOCIAL_TODO B10
 }
 
 /**
@@ -940,7 +944,7 @@ export type AdPoolItem = {
  * of them are returned. The visitor's browser then picks one it has not shown lately (AdBox.tsx).
  * Shared by everybody and cached for a short time, so it holds no personal data.
  */
-export async function getAdPool(slot: "SIDEBAR" | "FEED" | "SOCIAL_FEED", communitySlug: string | null): Promise<AdPoolItem[]> {
+export async function getAdPool(slot: "SIDEBAR" | "FEED" | "SOCIAL_FEED" | "HEADER", communitySlug: string | null): Promise<AdPoolItem[]> {
   "use cache";
   cacheLife("minutes");
   cacheTag("ads");

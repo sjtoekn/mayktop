@@ -10,7 +10,7 @@ import { t, tn } from "@/i18n";
 import { countNewSocialItems } from "@/lib/queries";
 import { getSessionUser } from "@/lib/session";
 import { loadHiddenAuthors } from "@/lib/social-block-view";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { clampNewCount, NEW_POSTS_MANY, parseNewPostsFeed, parseSince } from "@/lib/social-new-posts";
 
 const rules = socialLimits.newPosts.map((rule) => ({ max: rule.max, windowMs: rule.windowSeconds * 1000 }));
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
     const since = parseSince(params.get("since"));
     if (feed === null || since === null) return NextResponse.json(none, { status: 400, headers });
 
-    if (!takeAction(`social-new:${viewer.id}`, rules).ok) return NextResponse.json(none, { status: 429, headers });
+    if (!(await takeActionDb(`social-new:${viewer.id}`, rules)).ok) return NextResponse.json(none, { status: 429, headers });
 
     const hidden = await loadHiddenAuthors(viewer.id); // Block and Mute: the same lists as the feeds
     const count = clampNewCount(await countNewSocialItems(viewer.id, feed, since, hidden.all));

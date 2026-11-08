@@ -41,7 +41,8 @@ export type StaffError =
   | "pending" // this person already has an open ban proposal
   | "noproposal" // no such open proposal (wrong number, already decided, or lapsed)
   | "approver" // the proposer cannot approve their own proposal
-  | "lastadmin"; // the last active admin cannot lose admin rights
+  | "lastadmin" // the last active admin cannot lose admin rights
+  | "superonly"; // only the SUPER admin can make or remove admins
 export type StaffResult = { ok: true; auditId: number } | { error: StaffError };
 export type ProposeResult = { ok: true; proposalId: number } | { error: StaffError };
 
@@ -65,7 +66,7 @@ function cleanReason(reason: string): string | null {
 async function findActor(username: string) {
   const actor = await prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
-    select: { id: true, role: true, status: true },
+    select: { id: true, role: true, status: true, isSuperAdmin: true },
   });
   return actor && actor.role === Role.ADMIN && actor.status === UserStatus.ACTIVE ? actor : null;
 }
@@ -73,7 +74,7 @@ async function findActor(username: string) {
 async function findTarget(username: string) {
   return prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
-    select: { id: true, username: true, email: true, displayName: true, role: true, status: true, suspensionKind: true },
+    select: { id: true, username: true, email: true, displayName: true, role: true, status: true, suspensionKind: true, isSuperAdmin: true },
   });
 }
 
@@ -241,7 +242,7 @@ export async function decideBan(input: { actor: string; proposalId: number; appr
   if (!proposal) return { error: "noproposal" };
   const target = await prisma.user.findUnique({
     where: { id: proposal.targetId },
-    select: { id: true, username: true, email: true, displayName: true, role: true, status: true, suspensionKind: true },
+    select: { id: true, username: true, email: true, displayName: true, role: true, status: true, suspensionKind: true, isSuperAdmin: true },
   });
   if (!target) return { error: "notfound" };
   // Rejecting is allowed to anyone (the proposer can withdraw); APPROVING needs a second person.
@@ -383,10 +384,11 @@ export async function liftSuspension(input: Input): Promise<StaffResult> {
 }
 
 /**
- * Bootstrap: the very first admin. Allowed ONLY while no admin exists (afterwards roles change
- * through the Phase 4 admin panel). It is written to the audit log like everything else.
+ * Bootstrap: the SUPER admin. Allowed ONLY while no super admin exists (run once from the terminal; after that
+ * the super admin makes and removes every other admin from the admin panel, /admin/team). The person also gets
+ * the ADMIN role. Written to the audit log like everything else.
  */
-export async function makeFirstAdmin(username: string): Promise<"ok" | "notfound" | "exists"> {
+export async function makeFirstSuperAdmin(username: string): Promise<"ok" | "notfound" | "exists"> {
   const person = await prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
     select: { id: true },
@@ -394,8 +396,8 @@ export async function makeFirstAdmin(username: string): Promise<"ok" | "notfound
   if (!person) return "notfound";
   try {
     await prisma.$transaction(async (tx) => {
-      if ((await tx.user.count({ where: { role: Role.ADMIN } })) > 0) throw new Refused("actor");
-      await tx.user.update({ where: { id: person.id }, data: { role: Role.ADMIN } });
+      if ((await tx.user.count({ where: { isSuperAdmin: true } })) > 0) throw new Refused("actor");
+      await tx.user.update({ where: { id: person.id }, data: { role: Role.ADMIN, isSuperAdmin: true } });
       await tx.auditLog.create({
         data: {
           actorId: person.id,
@@ -403,7 +405,7 @@ export async function makeFirstAdmin(username: string): Promise<"ok" | "notfound
           action: AuditAction.ROLE_CHANGED,
           targetType: AuditTarget.USER,
           targetId: person.id,
-          reason: "First admin (bootstrap, no admin existed)",
+          reason: "Super admin (bootstrap, no super admin existed)",
         },
       });
     });
@@ -415,12 +417,13 @@ export async function makeFirstAdmin(username: string): Promise<"ok" | "notfound
 }
 
 /**
- * An existing admin makes another ACTIVE person an admin (a ban needs two admins, so there must be a way to
- * get a second one). Audited (ROLE_CHANGED). Removing admin rights: removeAdmin() below.
+ * The SUPER admin makes another ACTIVE person an admin (a ban needs two admins, so there must be a way to
+ * get a second one). Ordinary admins can not do this. Audited (ROLE_CHANGED). Removing admin rights: removeAdmin() below.
  */
 export async function makeAdmin(input: { actor: string; target: string }): Promise<StaffResult> {
   const actor = await findActor(input.actor);
   if (!actor) return { error: "actor" };
+  if (!actor.isSuperAdmin) return { error: "superonly" };
   const target = await findTarget(input.target);
   if (!target) return { error: "notfound" };
   if (target.id === actor.id) return { error: "self" };
@@ -444,7 +447,7 @@ export async function makeAdmin(input: { actor: string; target: string }): Promi
 }
 
 /**
- * An existing admin takes admin rights away from ANOTHER admin (admin panel, Part 2). Rules: a written reason
+ * The SUPER admin takes admin rights away from another admin (never from a super admin). Rules: a written reason
  * is required; nobody does it to themselves; the LAST active admin can never be removed (the check and the
  * change happen in ONE transaction, so two admins cannot remove each other at the same moment). Audited (ROLE_CHANGED).
  */
@@ -453,10 +456,11 @@ export async function removeAdmin(input: Input): Promise<StaffResult> {
   if (!reason) return { error: "reason" };
   const actor = await findActor(input.actor);
   if (!actor) return { error: "actor" };
+  if (!actor.isSuperAdmin) return { error: "superonly" };
   const target = await findTarget(input.target);
   if (!target) return { error: "notfound" };
   if (target.id === actor.id) return { error: "self" };
-  if (target.role !== Role.ADMIN) return { error: "target" };
+  if (target.role !== Role.ADMIN || target.isSuperAdmin) return { error: "target" };
   try {
     const auditId = await prisma.$transaction(async (tx) => {
       const others = await tx.user.count({

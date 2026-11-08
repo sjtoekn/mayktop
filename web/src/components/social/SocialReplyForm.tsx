@@ -12,7 +12,9 @@ export type SocialReplyFormText = {
   saving: string;
   login: string;
   tooMany: string; // contains {minutes}
+  duplicate: string; // the same reply was already sent recently (SOCIAL_TODO C2)
   invalid: string;
+  restricted: string; // the author of the post limited who can reply (SOCIAL_TODO B9)
   error: string;
 };
 
@@ -38,7 +40,9 @@ export default function SocialReplyForm({ postId, max, text }: { postId: number;
         setError(
           result.login ? text.login
             : result.tooMany ? fill(text.tooMany, { minutes: result.waitMinutes ?? 1 })
+            : result.duplicate ? text.duplicate
             : result.invalid ? text.invalid
+            : result.restricted ? text.restricted
             : text.error,
         );
         return;

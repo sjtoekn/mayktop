@@ -14,7 +14,7 @@ export type MyAd = {
   id: number;
   status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REJECTED" | "ACTIVE" | "PAUSED" | "ENDED";
   format: "TEXT" | "IMAGE" | "VIDEO";
-  slot: "SIDEBAR" | "FEED" | "SOCIAL_FEED";
+  slot: "SIDEBAR" | "FEED" | "SOCIAL_FEED" | "HEADER";
   title: string;
   body: string;
   imageUrl: string | null; // the picture, or the poster of a video ad (our own address)

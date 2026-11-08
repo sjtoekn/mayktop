@@ -3,7 +3,7 @@
 // The buttons on a person's page (admin Part 2). The ACTOR is always the logged-in admin (requireAdmin),
 // never a value sent by the form. All fairness rules live in staff.ts and are checked again there.
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/admin";
+import { requireAdmin, requireSuperAdmin } from "@/lib/admin";
 import { liftSuspension, makeAdmin, proposeBan, removeAdmin, suspendUser, type StaffError, type StaffResult } from "@/lib/staff";
 
 export type PersonActionInput = {
@@ -16,10 +16,11 @@ export type PersonActionInput = {
 export type PersonActionResult = { ok: true } | { error: StaffError | "other" };
 
 export async function personAction(input: PersonActionInput): Promise<PersonActionResult> {
-  const me = await requireAdmin(); // not logged in -> login page; not an admin -> 404
   if (!input || typeof input.username !== "string" || input.username.length === 0 || input.username.length > 100) {
     return { error: "other" };
   }
+  // Making / removing admins: the SUPER admin only (everyone else gets a 404). The rest: any active admin.
+  const me = input.kind === "makeAdmin" || input.kind === "removeAdmin" ? await requireSuperAdmin() : await requireAdmin();
   const target = input.username;
   const reason = typeof input.reason === "string" ? input.reason : "";
   try {

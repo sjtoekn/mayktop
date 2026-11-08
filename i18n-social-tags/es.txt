@@ -1,4 +1,0 @@
-  // Hashtags and mentions (SOCIAL_TODO 6, patch-social-tags)
-  "social.tag.title": "Hashtag",
-  "social.tag.empty": "Aún no hay publicaciones sociales con este hashtag.",
-  "notifications.type.mention": "{name} te mencionó en una publicación",

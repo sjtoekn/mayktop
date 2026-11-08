@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { applySocialPin } from "@/lib/social-pin";
 
 // Pin / unpin one of your own posts (SOCIAL_TODO B6). The limit is kept in server memory (a shared limiter is TODO 50).
@@ -19,7 +19,7 @@ export async function setSocialPin(socialPostId: number, desiredPinned: boolean)
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
 
-  if (!takeAction(`pin:${viewer.id}`, pinRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`pin:${viewer.id}`, pinRules)).ok) return { error: true, tooMany: true };
 
   try {
     const result = await prisma.$transaction((tx) =>

@@ -22,7 +22,7 @@ const AUDIT_LABELS: Record<string, MessageKey> = {
   SAFETY_RECORD_SWEPT: "admin.audit.SAFETY_RECORD_SWEPT",
 };
 
-const ERROR_CODES = ["actor", "notfound", "target", "self", "rule", "reason", "days", "state", "ladder", "pending", "noproposal", "approver", "lastadmin"] as const;
+const ERROR_CODES = ["actor", "notfound", "target", "self", "rule", "reason", "days", "state", "ladder", "pending", "noproposal", "approver", "lastadmin", "superonly"] as const;
 const ERROR_KEYS: Record<(typeof ERROR_CODES)[number], MessageKey> = {
   actor: "admin.err.actor",
   notfound: "admin.err.notfound",
@@ -37,6 +37,7 @@ const ERROR_KEYS: Record<(typeof ERROR_CODES)[number], MessageKey> = {
   noproposal: "admin.err.noproposal",
   approver: "admin.err.approver",
   lastadmin: "admin.err.lastadmin",
+  superonly: "admin.err.superonly",
 };
 
 function timeText(date: Date): string {
@@ -61,7 +62,7 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
   if (!person) notFound();
 
   const isSelf = person.id === me.id;
-  const actions = actionsFor(person, isSelf);
+  const actions = actionsFor(person, isSelf, me.isSuperAdmin);
   const name = person.displayName || person.username;
   const statusText = person.banned ? t("admin.people.status.BANNED") : t(`admin.people.status.${person.status}`);
   const statusBadge = person.banned
@@ -124,7 +125,7 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
           <div className="ad-badges">
             <span className={`pc-badge ${statusBadge}`}>{statusText}</span>
             <span className={`pc-badge ${person.role === "ADMIN" ? "pc-badge-info" : "pc-badge-neutral"}`}>
-              {t(`admin.people.role.${person.role}`)}
+              {person.isSuperAdmin ? t("admin.people.role.SUPER") : t(`admin.people.role.${person.role}`)}
             </span>
           </div>
         </div>

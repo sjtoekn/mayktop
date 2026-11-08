@@ -1,5 +1,0 @@
-
-/* Social post Bookmark button (SOCIAL_TODO B2) */
-.sp-bookmarkButton { cursor: pointer; border: 0; font: inherit; display: inline-flex; align-items: center; gap: 4px; transition: opacity .15s ease, color .15s ease; }
-.sp-bookmarkButton.is-saved { color: var(--brand); }
-.sp-bookmarkButton:disabled { cursor: wait; opacity: .65; }

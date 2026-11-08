@@ -39,6 +39,7 @@ const ICONS: Record<string, string> = {
   arrowright: "M5 12h14M12 5l7 7-7 7",
   star: "M12 2l3 6.9 7.5.7-5.7 5 1.7 7.4L12 18l-6.5 4 1.7-7.4-5.7-5 7.5-.7z",
   scale: "M12 3v18M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z",
+  megaphone: "M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a4 4 0 0 1 0 6M18 7a7 7 0 0 1 0 10",
 };
 
 export default function Icon({

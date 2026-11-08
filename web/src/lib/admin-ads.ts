@@ -19,7 +19,7 @@ export type AdItem = {
   videoUrl: string | null;
   destinationUrl: string;
   host: string; // the address shown under the ad, as in the real box
-  slot: "SIDEBAR" | "FEED" | "SOCIAL_FEED";
+  slot: "SIDEBAR" | "FEED" | "SOCIAL_FEED" | "HEADER";
   community: string | null; // null = any page
   advertiser: string; // username
   contactEmail: string;

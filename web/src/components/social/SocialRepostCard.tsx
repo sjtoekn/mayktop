@@ -39,7 +39,7 @@ export default function SocialRepostCard({
   if (item.quote === null) {
     return (
       <div className="sp-repostGroup">
-        <p className="sp-repostNote">↻ {t("social.repost.by", { name })} <span dir="ltr">@{item.reposter}</span></p>
+        <p className="sp-repostNote">↻ {item.alsoCount ? t("social.repost.byMany", { name, count: item.alsoCount }) : t("social.repost.by", { name })} <span dir="ltr">@{item.reposter}</span></p>
         <SocialPostCard post={original} isLiked={isLiked} isReposted={isReposted} isBookmarked={isBookmarked} isPinned={isPinned} viewer={viewer} isFollowing={isFollowing} />
       </div>
     );

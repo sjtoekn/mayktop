@@ -410,3 +410,16 @@ textarea.pc-field { resize: vertical; }
 .pc-cp > .pc-body > .pc-text,
 .pc-cp > .pc-body > .notice { margin-inline-start: calc(-1 * var(--pc-indent)); }
 .sp-card > .pc-body > .sp-body { margin-inline-start: calc(-1 * var(--sp-indent)); }
+
+/* Reply control (SOCIAL_TODO B9) */
+.sp-replyNotice { font-size: 14px; margin: 8px 0; opacity: 0.85; }
+.sp-hiddenReplies { margin-top: 14px; }
+.sp-hiddenReplies > summary { cursor: pointer; font-weight: 600; padding: 6px 0; }
+.sp-hiddenReplies .sp-reply { opacity: 0.85; }
+.sf-reply { margin-top: 14px; }
+
+/* Fair ranking of replies and reposts (SOCIAL_TODO B10) */
+.sp-replySort { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.sp-replySort .pc-pill { text-decoration: none; }
+.sp-replySort .pc-pill.is-active { font-weight: 700; }
+.sp-replySortHow { font-size: 13px; opacity: 0.8; margin-inline-start: auto; }

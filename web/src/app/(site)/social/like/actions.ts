@@ -6,7 +6,8 @@ import { getSessionUser } from "@/lib/session";
 import { socialAuthorShown } from "@/lib/social-visibility";
 import { isBlockedEitherWay } from "@/lib/social-block";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
+import { limitsFor } from "@/lib/account-limits";
 import { ContentStatus } from "../../../../../generated/prisma/client";
 
 // Like / unlike counts against a per-person limit kept in server memory (SOCIAL_TODO 10; a shared limiter is TODO 50).
@@ -34,7 +35,7 @@ export async function setSocialPostLike(
     return { error: true, login: true };
   }
 
-  if (!takeAction(`like:${viewer.id}`, likeRules).ok) {
+  if (!(await takeActionDb(`like:${viewer.id}`, limitsFor(likeRules, viewer))).ok) {
     return { error: true, tooMany: true };
   }
 

@@ -9,7 +9,8 @@ import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
+import { limitsFor } from "@/lib/account-limits";
 import { applySocialFollow } from "@/lib/social-follow";
 
 const followRules = socialLimits.follows.map((rule) => ({ max: rule.max, windowMs: rule.windowSeconds * 1000 }));
@@ -27,7 +28,7 @@ export async function setSocialFollow(
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
 
-  if (!takeAction(`follow:${viewer.id}`, followRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`follow:${viewer.id}`, limitsFor(followRules, viewer))).ok) return { error: true, tooMany: true };
 
   // Two quick clicks can both pass the "not following yet" check; the database refuses the second row (P2002).
   // One more try then sees the first row and simply reports the state, so the person never sees an error for it.

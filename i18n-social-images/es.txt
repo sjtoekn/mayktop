@@ -1,9 +1,0 @@
-  // Pictures in Social posts (patch-social-images)
-  "social.form.image.add": "Añadir una imagen",
-  "social.form.image.remove": "Quitar imagen",
-  "social.form.image.help": "Una imagen por publicación: JPG, PNG o WebP, hasta {mb} MB. Se eliminan de la imagen los datos de ubicación y de la cámara.",
-  "social.form.image.type": "Este archivo no es una imagen JPG, PNG o WebP.",
-  "social.form.image.size": "Esta imagen pesa más de {mb} MB.",
-  "social.form.image.pixels": "Esta imagen tiene demasiados píxeles. Elige una más pequeña.",
-  "social.form.image.preview": "Vista previa de la imagen elegida",
-  "social.image.alt": "Imagen en una publicación de {name}",

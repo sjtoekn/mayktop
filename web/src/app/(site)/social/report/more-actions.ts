@@ -10,7 +10,8 @@ import type { Prisma } from "../../../../../generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialReportConfig } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
+import { limitsFor } from "@/lib/account-limits";
 import { applySocialAccountReport, applySocialReplyReport } from "@/lib/social-report-more";
 import type { ApplyReportResult } from "@/lib/social-report";
 
@@ -54,7 +55,7 @@ export async function reportSocialReply(input: {
   }
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
-  if (!takeAction(`report:${viewer.id}`, reportRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`report:${viewer.id}`, limitsFor(reportRules, viewer))).ok) return { error: true, tooMany: true };
   return run(viewer.id, (tx) => applySocialReplyReport(tx, { reporterId: viewer.id, socialReplyId: replyId, siteRule, reason }), "reportSocialReply");
 }
 
@@ -70,7 +71,7 @@ export async function reportSocialAccount(input: {
   }
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
-  if (!takeAction(`report:${viewer.id}`, reportRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`report:${viewer.id}`, limitsFor(reportRules, viewer))).ok) return { error: true, tooMany: true };
   return run(
     viewer.id,
     (tx) => applySocialAccountReport(tx, { reporterId: viewer.id, username: username.toLowerCase(), siteRule, reason }),

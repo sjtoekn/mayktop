@@ -1,9 +1,0 @@
-  // Following feed (SOCIAL_TODO 17, patch-social-17-finish)
-  "social.tabs.label": "صفحات اجتماعي",
-  "social.tabs.all": "الكل",
-  "social.tabs.following": "المتابَعون",
-  "social.following.title": "المتابَعون",
-  "social.following.sub": "منشورات وإعادات نشر الأشخاص الذين تتابعهم ومنشوراتك، الأحدث أولًا. دون ترتيب حسب الشعبية.",
-  "social.following.none": "أنت لا تتابع أحدًا بعد. تابع أشخاصًا من منشوراتهم وستظهر منشوراتهم هنا.",
-  "social.following.quiet": "لم ينشر الأشخاص الذين تتابعهم شيئًا بعد.",
-  "social.following.browse": "تصفّح كل منشورات اجتماعي",

@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { socialLimits } from "@/config/site";
 import { looksLikeBot } from "@/lib/ad-guard";
 import { getSessionUser } from "@/lib/session";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { addSocialView } from "@/lib/social-view-db";
 import { firstViewInWindow, parsePostId } from "@/lib/social-views";
 
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     const viewer = await getSessionUser();
     if (!viewer) return done();
 
-    if (!takeAction(`social-view:${viewer.id}`, rules).ok) return done(); // too many: ignore quietly
+    if (!(await takeActionDb(`social-view:${viewer.id}`, rules)).ok) return done(); // too many: ignore quietly
     if (!firstViewInWindow(viewer.id, id)) return done(); // already counted for this person today
 
     await addSocialView(id, viewer.id);

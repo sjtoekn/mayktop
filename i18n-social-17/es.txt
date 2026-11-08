@@ -1,9 +1,0 @@
-  // Following feed (SOCIAL_TODO 17, patch-social-17-finish)
-  "social.tabs.label": "Feeds de Social",
-  "social.tabs.all": "Todos",
-  "social.tabs.following": "Siguiendo",
-  "social.following.title": "Siguiendo",
-  "social.following.sub": "Publicaciones y republicaciones de las personas que sigues y tuyas, las más recientes primero. Sin ordenar por popularidad.",
-  "social.following.none": "Todavía no sigues a nadie. Sigue a personas desde sus publicaciones y las suyas aparecerán aquí.",
-  "social.following.quiet": "Las personas que sigues aún no han publicado nada.",
-  "social.following.browse": "Ver todas las publicaciones de Social",

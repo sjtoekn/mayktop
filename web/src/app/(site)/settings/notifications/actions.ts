@@ -4,7 +4,7 @@ import { revalidatePath, updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { applyNotificationSettings } from "@/lib/notification-settings";
 
 // Save the notification settings (SOCIAL_TODO B8): the list of types that are ON. The person comes from the login cookie only.
@@ -15,7 +15,7 @@ export type NotificationSettingsActionResult = { error: true; login?: true; tooM
 export async function saveNotificationSettings(enabled: string[]): Promise<NotificationSettingsActionResult> {
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
-  if (!takeAction(`notif-settings:${viewer.id}`, rules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`notif-settings:${viewer.id}`, rules)).ok) return { error: true, tooMany: true };
 
   try {
     const result = await prisma.$transaction((tx) => applyNotificationSettings(tx, { userId: viewer.id, enabled }));

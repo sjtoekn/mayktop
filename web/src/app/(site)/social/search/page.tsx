@@ -13,7 +13,7 @@ import { getMyFollowing, searchSocialPeople, searchSocialPosts, searchSocialTags
 import { getSessionUser } from "@/lib/session";
 import { dropHiddenItems } from "@/lib/social-block-rules";
 import { loadHiddenAuthors } from "@/lib/social-block-view";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { cursorToText, parseCursor } from "@/lib/social-paging";
 import { parseSocialSearch, searchHref, SOCIAL_SEARCH_LIST_SIZE } from "@/lib/social-search";
 import { tagHref } from "@/lib/social-tags";
@@ -95,7 +95,7 @@ export default async function SocialSearchPage({ searchParams }: { searchParams:
   }
 
   // Every search page that really reads the database counts (also "Older posts"). Server memory, like the other Social limits.
-  if (!takeAction(`social-search:${viewer.id}`, searchRules).ok) {
+  if (!(await takeActionDb(`social-search:${viewer.id}`, searchRules)).ok) {
     return (
       <>
         {header}

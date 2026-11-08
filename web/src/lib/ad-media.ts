@@ -2,7 +2,7 @@
 // Pure functions: no database, no disk, no React, so `npm run test:ad-media` can run them.
 //
 // What is checked:
-//  - size: adsConfig.media.imageMaxBytes / videoMaxBytes
+//  - size: adsConfig.media.imageUploadMaxBytes (the picture is shrunk afterwards, ad-image.ts) / videoMaxBytes
 //  - REAL content, not the name or the type the browser declared: the first bytes of the file must be a JPEG, PNG,
 //    WebP (pictures) or MP4, WebM (videos). A file called "x.png" that is really something else is refused.
 // The file name an advertiser typed is never used for anything: the stored name is random (ad-storage.ts).
@@ -72,7 +72,7 @@ export function sniffVideo(bytes: Uint8Array): MediaExt | null {
 /** Checks one file. `bytes` = the whole file. */
 export function checkMedia(kind: MediaKind, bytes: Uint8Array | null | undefined): CheckedMedia {
   if (!bytes || bytes.length === 0) return { ok: false, error: "media-missing" };
-  const max = kind === "image" ? adsConfig.media.imageMaxBytes : adsConfig.media.videoMaxBytes;
+  const max = kind === "image" ? adsConfig.media.imageUploadMaxBytes : adsConfig.media.videoMaxBytes; // pictures are made smaller later (ad-image.ts)
   if (bytes.length > max) return { ok: false, error: "media-size" };
   const ext = kind === "image" ? sniffImage(bytes) : sniffVideo(bytes);
   if (!ext) return { ok: false, error: "media-type" };

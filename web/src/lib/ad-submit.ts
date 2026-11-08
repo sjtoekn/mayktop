@@ -14,6 +14,7 @@ import { adsConfig } from "@/config/site";
 import { cleanAdInput, checkSubmitLimits, type AdInputError } from "@/lib/ad-input";
 import { checkMedia, mediaNeeds, type MediaError } from "@/lib/ad-media";
 import { deleteAdFiles, saveAdFile } from "@/lib/ad-storage";
+import { shrinkAdImage } from "@/lib/ad-image";
 import { AdStatus } from "../../generated/prisma/client";
 
 export type SubmitAdResult =
@@ -41,6 +42,13 @@ export async function submitAd(
   if (image && !image.ok) return { ok: false, error: image.error };
   const video = needs.video ? checkMedia("video", files.video) : null;
   if (video && !video.ok) return { ok: false, error: video.error };
+  // A big picture is made small HERE (ad-image.ts): the advertiser never has to shrink it first. Videos are saved as they are.
+  let imageFile: { bytes: Uint8Array; ext: "jpg" | "png" | "webp" } | null = null;
+  if (image && image.ok && files.image) {
+    const shrunk = await shrinkAdImage(files.image);
+    if (!shrunk.ok) return { ok: false, error: shrunk.error };
+    imageFile = { bytes: shrunk.bytes, ext: shrunk.ext };
+  }
 
   const written: string[] = []; // addresses of files saved in this call; deleted again if the ad is not saved
   try {
@@ -64,8 +72,8 @@ export async function submitAd(
       if (limit !== "ok") return limit;
       let imageUrl: string | null = null;
       let videoUrl: string | null = null;
-      if (image && image.ok && files.image) {
-        imageUrl = await saveAdFile(files.image, image.ext);
+      if (imageFile) {
+        imageUrl = await saveAdFile(imageFile.bytes, imageFile.ext);
         written.push(imageUrl);
       }
       if (video && video.ok && files.video) {

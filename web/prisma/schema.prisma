@@ -120,6 +120,7 @@ enum AdSlotType {
   SIDEBAR // the right-hand sidebar box
   FEED // between posts in a feed (max 2 per page, see src/lib/ad-positions.ts)
   SOCIAL_FEED // between posts in the Social feed, in the clearly different social look (ADS_PLAN decision 11, Session S)
+  HEADER // a wide picture banner at the top of every page, under the site header (IMAGE ads only)
 }
 
 enum AdPaymentStatus {
@@ -143,6 +144,7 @@ model User {
   displayName String? // Better Auth's "name" field is saved here (see src/lib/auth.ts)
   bio         String?
   role        Role       @default(USER) // platform level: USER, MODERATOR or ADMIN
+  isSuperAdmin Boolean   @default(false) // a SUPER admin (also role ADMIN) is the only one who can make or remove other admins
   status      UserStatus @default(ACTIVE) // suspend / delete = change this, never remove the row
   language    String     @default("en")
   timezone    String? // e.g. "Asia/Colombo"; null = follow the browser
@@ -185,6 +187,7 @@ model User {
   following           Follow[]       @relation("UserFollowing")
   socialPosts         SocialPost[]
   socialPostLikes     SocialPostLike[]
+  socialReplyLikes    SocialReplyLike[]
   socialReplies       SocialReply[]
   socialReposts       SocialRepost[]
   socialMentions      SocialMention[]
@@ -429,6 +432,8 @@ model SocialPost {
   deletedAt DateTime?
   // Running total of views (SOCIAL_TODO B5, patch-social-views): a bare number, nothing about who looked is saved.
   viewCount Int @default(0)
+  // Who may reply (SOCIAL_TODO B9, ACCOUNT_RULES.md 3.21): EVERYONE | FOLLOWING | MENTIONED. Chosen once, when the post is written.
+  replyPolicy String @default("EVERYONE")
   // Why the status is not VISIBLE (SOCIAL_TODO 27). Social moderation uses the SITE-WIDE rule keys (staffConfig.siteRules).
   statusSiteRule  String?
   statusNote      String?
@@ -715,6 +720,8 @@ model SocialReply {
   status       ContentStatus @default(VISIBLE)
   createdAt    DateTime      @default(now())
   deletedAt    DateTime?
+  // Hidden by the AUTHOR OF THE POST (SOCIAL_TODO B9). Not moderation: the reply stays readable in a "Hidden replies" part. Empty = not hidden.
+  hiddenByAuthorAt DateTime?
   // Why the status is not VISIBLE (patch-social-report-more). Same idea as SocialPost: SITE-WIDE rule keys (staffConfig.siteRules).
   statusSiteRule  String?
   statusNote      String?
@@ -723,6 +730,7 @@ model SocialReply {
   socialPost SocialPost @relation(fields: [socialPostId], references: [id], onDelete: Restrict)
   author     User       @relation(fields: [authorId], references: [id], onDelete: Restrict)
   reports    Report[]
+  likes      SocialReplyLike[]
 
   @@index([socialPostId, createdAt])
   @@index([authorId, createdAt])
@@ -846,4 +854,27 @@ model NewsArticle {
   @@index([category, publishedAt])
   @@index([sourceId, publishedAt])
 }
+// A Like on a reply (SOCIAL_TODO B10). One row per person per reply. Only a number is shown to others; it feeds the fair "Top" order.
+model SocialReplyLike {
+  userId        String
+  socialReplyId Int
+  createdAt     DateTime @default(now())
 
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
+  socialReply SocialReply @relation(fields: [socialReplyId], references: [id], onDelete: Restrict)
+
+  @@id([userId, socialReplyId])
+  @@index([socialReplyId])
+}
+
+// Rate-limit events kept in the database (SOCIAL_TODO C2). One row = one counted action (for example key "like:<userId>").
+// Not linked to User on purpose: these rows are temporary counters, not content, and are swept after 2 days (src/lib/rate-limit-db.ts).
+// Survives a server restart and is shared by every server that uses this database.
+model RateEvent {
+  id  Int      @id @default(autoincrement())
+  key String
+  at  DateTime
+
+  @@index([key, at])
+  @@index([at])
+}

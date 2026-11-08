@@ -7,11 +7,11 @@ import type { Prisma } from "../../generated/prisma/client";
 type Db = Prisma.TransactionClient; // the normal `prisma` client can be passed too
 
 export async function getSocialExport(db: Db, userId: string) {
-  const [posts, likes, reposts, following, followersCount, notifications, replies, blocks, mutes, bookmarks, pinned, optOuts] = await Promise.all([
+  const [posts, likes, reposts, following, followersCount, notifications, replies, blocks, mutes, bookmarks, pinned, optOuts, replyLikes] = await Promise.all([
     db.socialPost.findMany({
       where: { authorId: userId },
       orderBy: { id: "asc" },
-      select: { id: true, body: true, mediaUrl: true, status: true, createdAt: true, editedAt: true, deletedAt: true },
+      select: { id: true, body: true, mediaUrl: true, status: true, replyPolicy: true, createdAt: true, editedAt: true, deletedAt: true },
     }),
     db.socialPostLike.findMany({
       where: { userId },
@@ -63,6 +63,8 @@ export async function getSocialExport(db: Db, userId: string) {
     }),
     // Notification settings (SOCIAL_TODO B8): the types the person switched off.
     db.notificationOptOut.findMany({ where: { userId }, orderBy: { type: "asc" }, select: { type: true } }),
+    // Likes on replies (SOCIAL_TODO B10): only the reply numbers the person liked, and when.
+    db.socialReplyLike.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { socialReplyId: true, createdAt: true } }),
   ]);
 
   return {
@@ -76,6 +78,7 @@ export async function getSocialExport(db: Db, userId: string) {
     muted: mutes.map((m) => ({ username: m.muted.username, since: m.createdAt })),
     bookmarks: bookmarks.map((b) => ({ socialPostId: b.socialPostId, since: b.createdAt })),
     notificationsOff: optOuts.map((row) => row.type),
+    replyLikes: replyLikes.map((l) => ({ socialReplyId: l.socialReplyId, since: l.createdAt })),
     pinnedPost: pinned ? { socialPostId: pinned.socialPostId, since: pinned.createdAt } : null,
     notifications: notifications.map(({ actor, ...n }) => ({ ...n, from: actor.username })),
   };

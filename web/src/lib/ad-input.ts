@@ -130,6 +130,8 @@ export function cleanAdInput(input: unknown, now: Date = new Date()): CleanAdRes
 
   const slot = (adsConfig.slots as readonly string[]).includes(raw.slot as string) ? (raw.slot as CleanAd["slot"]) : null;
   if (!slot) return { ok: false, error: "slot" };
+  // The header banner is a wide PICTURE: no text-only or video ads there.
+  if (slot === "HEADER" && format !== "IMAGE") return { ok: false, error: "format" };
 
   const communityRaw = (raw.community as string).trim().toLowerCase();
   if (communityRaw !== "" && !/^[a-z0-9-]{1,40}$/.test(communityRaw)) return { ok: false, error: "type" };

@@ -1,3 +1,5 @@
+import { Fragment } from "react";
+import AdSlot, { isSocialAdPosition } from "@/components/AdSlot";
 import SocialPostCard from "@/components/social/SocialPostCard";
 import SocialRepostCard from "@/components/social/SocialRepostCard";
 import { getMyFollowing, getMySocialLikes, getMySocialReposts, type SocialFeedItem } from "@/lib/queries";
@@ -12,9 +14,12 @@ import { getMyPinnedSocialPostId } from "@/lib/social-pin-view";
 export default async function SocialFeedList({
   feed,
   viewer,
+  withAds = false,
 }: {
   feed: SocialFeedItem[];
   viewer: { id: string; username: string };
+  /** Social ads (ADS_PLAN decision 11): ONLY the main feeds (/social, /social/following) pass true. Search, tags, bookmarks and profiles never show ads. */
+  withAds?: boolean;
 }) {
   const posts = feed.map((item) => item.post);
   const likedIds = new Set(await getMySocialLikes(viewer.id, posts.map((post) => post.id)));
@@ -27,10 +32,10 @@ export default async function SocialFeedList({
 
   return (
     <>
-      {feed.map((item) =>
-        item.kind === "repost" ? (
+      {feed.map((item, index) => (
+        <Fragment key={item.kind === "repost" ? `repost-${item.repostId}` : `post-${item.post.id}`}>
+        {item.kind === "repost" ? (
           <SocialRepostCard
-            key={`repost-${item.repostId}`}
             item={item}
             isBookmarked={bookmarkedIds.has(item.post.id)}
             isPinned={pinnedId === item.post.id}
@@ -41,7 +46,6 @@ export default async function SocialFeedList({
           />
         ) : (
           <SocialPostCard
-            key={`post-${item.post.id}`}
             post={item.post}
             isBookmarked={bookmarkedIds.has(item.post.id)}
             isPinned={pinnedId === item.post.id}
@@ -50,8 +54,10 @@ export default async function SocialFeedList({
             viewer={viewer.username}
             isFollowing={followingNames.has(item.post.author)}
           />
-        ),
-      )}
+        )}
+        {withAds && isSocialAdPosition(index) && <AdSlot variant="social" />}
+        </Fragment>
+      ))}
     </>
   );
 }

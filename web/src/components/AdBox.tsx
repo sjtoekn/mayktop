@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { getRememberState, pickAd, setRemember, subscribeRemember } from "@/lib/ad-memory";
 import AdMedia from "@/components/AdMedia";
 import "./ad-social.css";
+import "./ad-header.css";
 
 // format / imageUrl / videoUrl: Session 3b. imageUrl is the picture of an IMAGE ad, or the poster of a VIDEO ad.
 type Ad = {
@@ -29,6 +30,7 @@ export type AdLabels = {
   remember: string; // button text to switch the one-hour memory on
   rememberOn: string; // button text when it is on (click to switch off)
   blocked: string; // shown instead of the button when the browser sends a privacy signal
+  sponsored?: string; // the badge on the header banner (\"Sponsored\")
   advertiser?: string; // "Advertiser": the social variant names the advertiser as an advertiser, never as a person
   houseTitle: string;
   houseBody: string;
@@ -89,13 +91,13 @@ export default function AdBox({
   noRepeatMinutes,
   labels,
 }: {
-  variant: "sidebar" | "feed" | "social";
+  variant: "sidebar" | "feed" | "social" | "header";
   noRepeatMinutes: number;
   labels: AdLabels;
 }) {
   const pathname = usePathname();
   const community = communityFromPath(pathname);
-  const slot = variant === "sidebar" ? "SIDEBAR" : variant === "social" ? "SOCIAL_FEED" : "FEED";
+  const slot = variant === "sidebar" ? "SIDEBAR" : variant === "social" ? "SOCIAL_FEED" : variant === "header" ? "HEADER" : "FEED";
   const [shown, setShown] = useState<Shown>(null);
   const boxRef = useRef<HTMLElement>(null);
 
@@ -132,6 +134,22 @@ export default function AdBox({
   }, [adId, viewKey]);
 
   const ad = shown?.ad ?? null;
+
+  // HEADER: a wide picture banner at the top of the page. With no ad running it shows NOTHING (no empty box).
+  // The whole picture is the link; the "Sponsored" badge sits on top of it; no text under the picture.
+  if (variant === "header") {
+    if (!ad || !ad.imageUrl) return null;
+    return (
+      <aside ref={boxRef} aria-label={labels.label} className="ad-header">
+        <a href={`/api/ad/click/${ad.id}`} target="_blank" rel="sponsored nofollow noopener noreferrer" className="ad-header-link" aria-label={ad.title}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- our own protected file (/api/ad/media/...) */}
+          <img src={ad.imageUrl} alt="" className="ad-header-img" decoding="async" fetchPriority="low" />
+          <span className="ad-header-badge">{labels.sponsored ?? labels.badge}</span>
+        </a>
+      </aside>
+    );
+  }
+
   const height = variant === "sidebar" ? "min-h-64" : "min-h-24";
   // The social variant must look clearly different from a post (ADS_PLAN decision 11): own border + background (ad-social.css),
   // the "Ad" badge on top, the advertiser named as an advertiser; no avatar, no profile link, no like / repost / reply / share buttons.

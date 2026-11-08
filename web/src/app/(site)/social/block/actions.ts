@@ -9,7 +9,7 @@ import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { applySocialBlock, applySocialMute } from "@/lib/social-block";
 import type { Prisma } from "../../../../../generated/prisma/client";
 
@@ -27,7 +27,7 @@ async function run(
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
 
-  if (!takeAction(`block:${viewer.id}`, blockRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`block:${viewer.id}`, blockRules)).ok) return { error: true, tooMany: true };
 
   // Two quick clicks can both pass the "no row yet" check; the database refuses the second row (P2002). One more try
   // then sees the first row and reports the state, so the person never sees an error for it.

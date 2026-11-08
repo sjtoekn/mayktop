@@ -26,6 +26,7 @@ export default async function SocialSubmitPage({ searchParams }: { searchParams:
         error: t("social.form.error"),
         invalid: t("social.form.invalid"),
         tooMany: t("social.form.toomany"),
+        duplicate: t("social.form.duplicate"),
         login: t("auth.required"),
         loginLink: t("topbar.login"),
         imageAdd: t("social.form.image.add"),
@@ -47,6 +48,11 @@ export default async function SocialSubmitPage({ searchParams }: { searchParams:
         videoTitle: t("social.video.title"),
         videoOpen: t("social.video.open"),
         linkOpen: t("social.link.open", { host: "{host}" }),
+        replyLabel: t("social.replyControl.label"),
+        replyHelp: t("social.replyControl.help"),
+        replyEveryone: t("social.replyControl.everyone"),
+        replyFollowing: t("social.replyControl.following"),
+        replyMentioned: t("social.replyControl.mentioned"),
       }}
     />
   );

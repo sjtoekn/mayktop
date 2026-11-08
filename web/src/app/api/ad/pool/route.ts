@@ -6,7 +6,7 @@ import { getAdPool } from "@/lib/queries";
 
 export async function GET(request: NextRequest) {
   const slot = request.nextUrl.searchParams.get("slot");
-  if (slot !== "SIDEBAR" && slot !== "FEED" && slot !== "SOCIAL_FEED") {
+  if (slot !== "SIDEBAR" && slot !== "FEED" && slot !== "SOCIAL_FEED" && slot !== "HEADER") {
     return NextResponse.json({ ads: [] }, { status: 400 });
   }
   if (!(adsConfig.slots as readonly string[]).includes(slot)) {

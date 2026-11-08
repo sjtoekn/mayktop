@@ -6,6 +6,9 @@
 //  - you can only reply to a post that may be shown (visible, not deleted, author's posts shown: the same rule as the
 //    feeds, `isSocialAuthorShown`). Anything else is "not found" (it does not say which);
 //  - the text is cleaned like a post (`cleanSocialBody`) and is at most `socialReplyConfig.maxBody` characters;
+//  - REPLY CONTROL (SOCIAL_TODO B9): the author of the post chose who may reply (everyone / people they follow / people they
+//    @mention, `replyPolicy`). Somebody who is not allowed gets the reason "restricted" (the post is visible to them, so the
+//    page says plainly that the author limited who can reply). The author can always reply to their own post;
 //  - replying to your OWN post is allowed and notifies nobody;
 //  - the author of the post gets a `SOCIAL_POST_REPLY` notification, but only ONE unread one per person per post: ten
 //    quick replies from one person make one line in the author's notifications, not ten;
@@ -19,6 +22,7 @@ import { socialReplyConfig } from "@/config/site";
 import { cleanSocialBody } from "@/lib/social-input";
 import { isSocialAuthorShown } from "@/lib/social-visibility";
 import { isBlockedEitherWay } from "@/lib/social-block";
+import { canReplyToPost } from "@/lib/social-reply-control";
 
 type Db = Prisma.TransactionClient;
 
@@ -36,7 +40,7 @@ export function cleanReplyBody(input: unknown): CleanReplyResult {
 
 export type ApplyReplyResult =
   | { ok: true; replyId: number; notified: boolean }
-  | { ok: false; reason: "error" | "invalid" | "notfound" };
+  | { ok: false; reason: "error" | "invalid" | "notfound" | "restricted" };
 
 export async function applySocialReply(
   db: Db,
@@ -50,13 +54,15 @@ export async function applySocialReply(
 
   const post = await db.socialPost.findUnique({
     where: { id: input.socialPostId },
-    select: { id: true, authorId: true, status: true, deletedAt: true, author: { select: { status: true, deletedAt: true } } },
+    select: { id: true, authorId: true, status: true, deletedAt: true, replyPolicy: true, author: { select: { status: true, deletedAt: true } } },
   });
   if (!post || post.deletedAt !== null || post.status !== ContentStatus.VISIBLE || !isSocialAuthorShown(post.author)) {
     return { ok: false, reason: "notfound" };
   }
   // Block (SOCIAL_TODO A7): neither person may have blocked the other. The same "not found", it never says why.
   if (await isBlockedEitherWay(db, input.authorId, post.authorId)) return { ok: false, reason: "notfound" };
+  // Reply control (SOCIAL_TODO B9): the same question the post page asks before it shows the reply box.
+  if (!(await canReplyToPost(db, { viewerId: input.authorId, post }))) return { ok: false, reason: "restricted" };
 
   const reply = await db.socialReply.create({
     data: { socialPostId: post.id, authorId: input.authorId, body: cleaned.body },

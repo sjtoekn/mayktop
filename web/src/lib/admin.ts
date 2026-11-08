@@ -17,7 +17,7 @@ import {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export type AdminUser = { id: string; username: string };
+export type AdminUser = { id: string; username: string; isSuperAdmin: boolean };
 
 /**
  * Only an ACTIVE ADMIN gets past this. Not logged in -> the login page. Logged in but not an admin ->
@@ -30,10 +30,17 @@ export async function requireAdmin(): Promise<AdminUser> {
   if (!me) redirect("/login");
   const row = await prisma.user.findUnique({
     where: { id: me.id },
-    select: { id: true, username: true, role: true, status: true },
+    select: { id: true, username: true, role: true, status: true, isSuperAdmin: true },
   });
   if (!row || row.role !== Role.ADMIN || row.status !== UserStatus.ACTIVE) notFound();
-  return { id: row.id, username: row.username };
+  return { id: row.id, username: row.username, isSuperAdmin: row.isSuperAdmin };
+}
+
+/** Like requireAdmin, but only the SUPER admin gets through (everyone else sees a 404). Used by /admin/team. */
+export async function requireSuperAdmin(): Promise<AdminUser> {
+  const me = await requireAdmin();
+  if (!me.isSuperAdmin) notFound();
+  return me;
 }
 
 export type Overview = {

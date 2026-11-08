@@ -19,6 +19,7 @@ export type Account = {
   suspendedUntil: Date | null;
   suspensionNote: string | null;
   eraseAt: Date | null;
+  createdAt: Date;
 };
 
 const select = {
@@ -30,6 +31,7 @@ const select = {
   suspendedUntil: true,
   suspensionNote: true,
   eraseAt: true,
+  createdAt: true,
 } as const;
 
 export async function loadAccount(id: string): Promise<Account | null> {

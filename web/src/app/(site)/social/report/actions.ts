@@ -10,7 +10,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialReportConfig } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
+import { limitsFor } from "@/lib/account-limits";
 import { applySocialReport } from "@/lib/social-report";
 
 const reportRules = socialReportConfig.reports.map((rule) => ({ max: rule.max, windowMs: rule.windowSeconds * 1000 }));
@@ -33,7 +34,7 @@ export async function reportSocialPost(input: {
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
 
-  if (!takeAction(`report:${viewer.id}`, reportRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`report:${viewer.id}`, limitsFor(reportRules, viewer))).ok) return { error: true, tooMany: true };
 
   // Two quick clicks can both pass the "no report yet" check; the database refuses the second row (P2002).
   // One more try then sees the first row and simply says "already reported".

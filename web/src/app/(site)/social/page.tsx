@@ -82,7 +82,7 @@ export default async function SocialFeedPage({ searchParams }: { searchParams: P
         </section>
       ) : (
         <>
-          <SocialFeedList feed={page.items} viewer={viewer} />
+          <SocialFeedList feed={page.items} viewer={viewer} withAds />
           <SocialFeedPager basePath="/social" next={page.next} isFirstPage={!cursor} />
         </>
       )}

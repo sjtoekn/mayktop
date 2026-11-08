@@ -1,5 +1,0 @@
-  // Feed pages (SOCIAL_TODO 4, patch-social-pagination)
-  "social.feed.older": "更早的帖子",
-  "social.feed.newest": "返回最新帖子",
-  "social.feed.end": "已经到底了，没有更早的帖子了。",
-  "social.feed.pageLabel": "动态分页",

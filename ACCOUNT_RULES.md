@@ -105,11 +105,12 @@ Follow is open: anybody who is logged in can follow anybody whose Social posts a
 | Action | Who |
 |---|---|
 | Delete / recover own account, export data, write an appeal | the person |
-| Temporary suspension, lift, make another admin | one ADMIN (not on self / staff; lift not on self) |
+| Temporary suspension, lift | one ADMIN (not on self / staff; lift not on self) |
+| Make / remove an admin | the SUPER ADMIN only (panel: /admin/team) |
 | Propose a ban | one ADMIN |
 | Approve a ban | a DIFFERENT ADMIN |
 | Reject / withdraw a ban proposal | any ADMIN |
-| First admin | `make-first-admin`, only while no admin exists (audited) |
+| Super admin | `make-super-admin`, once, only while no super admin exists (audited) |
 
 ## 5. Where it lives in the code
 
@@ -128,8 +129,8 @@ Follow is open: anybody who is logged in can follow anybody whose Social posts a
 ### Staff commands (run in `web/`)
 ```
 npm run staff -- rules
-npm run staff -- make-first-admin <username>
-npm run staff -- make-admin <admin> <person>
+npm run staff -- make-super-admin <username>
+npm run staff -- make-admin <super-admin> <person>
 npm run staff -- suspend <admin> <person> <days 1-30> <RULE> "<reason>"
 npm run staff -- propose-ban <admin> <person> <RULE> "<reason>"
 npm run staff -- proposals
@@ -237,3 +238,19 @@ npm run staff -- lift <admin> <person> "<reason>"
 - Limits: 20 saves per minute and 200 per day (server memory, TODO 50).
 - The site sends NO email for notifications today, so there is no email setting. If email notifications are added later, they need their own switch that is OFF until the person switches it on.
 - Not decided yet: a "mute everything" switch, quiet hours, not creating the notification at all for a switched-off kind.
+
+### 3.21 Reply control (SOCIAL_TODO B9, decided 2026-11-16, PROVISIONAL)
+- WHO CAN REPLY. The author of a Social post chooses, when writing it: everyone (default), only the people the author follows, or only the people the author @mentions in that post. The author can always reply to their own post. The choice cannot be changed after posting. A person who may not reply sees a plain notice (it names the author and the rule); the server refuses the reply too. A Block (3.16) is checked first and is never revealed.
+- Replies written before a restriction stay. A quote repost is not a reply and is not limited.
+- HIDING A REPLY. The author of a post may hide a reply of somebody else under their own post, and show it again. Hiding is NOT moderation and not a rule decision: nothing is removed, the reply stays readable for everybody in a "Hidden replies" part, its author is not told, nobody is notified. Site moderation (hide for review, remove, appeal; 3.13-3.16) is separate and always wins: a reply hidden or removed by staff is not shown here at all.
+- Why it is built this way (fairness): the author controls their own conversation, but cannot make a reply disappear: a hidden reply is one click away for every reader. This follows the site's rule that people are never silenced without being able to see it.
+- Limits: 60 hides / shows per minute and 600 per day (server memory, TODO 50).
+- "Download my data" (3.7) lists the reply choice of each of your posts. Nothing about hidden replies is exported (the hide mark is a setting of the post's author, not data about the reply's author). Final erasure (3.7) needs no change: the choice is a column of the post and the hide mark is a column of the reply, and both rows are already handled.
+- Not decided yet: changing the choice later, "nobody can reply", telling the reply author, a limit on how many replies one author may hide.
+
+### 3.22 Fair ranking of replies and reposts (SOCIAL_TODO B10, PROVISIONAL)
+- **Replies.** Under a Social post the reader can choose "Oldest" (the default, plain time order) or "Top". "Top" uses the same three rules as the Popular page (PROJECT.md 8e), with numbers in `socialReplyRank` (site.ts): (1) likes count with diminishing returns (log2) and fade with age (half-life 7 days); (2) one account cannot fill the list: each earlier reply of the same account already placed halves that account's next one; (3) every 4th place is reserved for a reply by a "new voice" (account younger than 30 days, or 3 or fewer visible Social posts) that is at most 72 hours old and not downvoted (replies cannot be downvoted), ordered by likes plus a fair draw that changes every 6 hours. A reply that took a reserved place shows the small "New voice" label that links to /fairness.
+- What "Top" does NOT use: follower counts, who the person is, whether the reader follows the author, the post author's identity. Only likes, reply age, the author's account age and post count. Ranking never hides a reply: every visible reply is in the list in either order. Replies hidden by the post's author (3.21) stay in their own part, oldest first.
+- **Likes on replies.** A like is a quiet signal: no notification. Needs a visible reply on a visible post and no block either way with the reply's author or the post's author; taking a like back is always allowed. Same per-person limit as liking a post.
+- **Reposts in a feed.** Inside one feed page (Social feed, Following, Home) several PLAIN reposts of the same post become one line "<name> and N more reposted" (the newest repost stays). A quote repost is the person's own text and is never merged. Nothing is deleted; the merge is made when the page is built, per page (the same post can show again on the next page).
+- **Not done on purpose:** ranking the "Quotes" list (a quote has no like or other signal, so it stays newest first), ranking the feed itself (the feed stays newest first, 8j), a "Top" order that puts the post author's own replies first.

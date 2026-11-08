@@ -1,8 +1,0 @@
-  // 对被删除的 Social 帖子或回复提出申诉 (patch-social-appeal)
-  "appeal.social.what.post": "你的 Social 帖子已被删除：{excerpt}",
-  "appeal.social.what.reply": "你的 Social 回复已被删除：{excerpt}",
-  "admin.appeals.social.post": "一条 Social 帖子",
-  "admin.appeals.social.reply": "一条 Social 回复",
-  "email.socialappeal.line": "如果你认为这是个错误，可以在 {days} 天内提出申诉。未参与此决定的管理员会阅读你的申诉：\n{url}",
-  "email.appeal.social.accepted.body": "你好 {name}，\n\n你的申诉已由未参与第一次决定的人阅读，并已被接受。以下内容已恢复显示：\n\nSocial：{excerpt}\n审核人备注：{note}\n\n{url}",
-  "email.appeal.social.rejected.body": "你好 {name}，\n\n你的申诉已由未参与第一次决定的人阅读。删除决定维持不变：\n\nSocial：{excerpt}\n规则：{rule}\n审核人备注：{note}\n\n你可以在这里查看答复：\n{url}",

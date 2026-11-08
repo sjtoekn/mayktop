@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import "./shell.css";
+import "./header-phone.css";
 import "./content.css";
 import { siteConfig } from "@/config/site";
 import { getDirection, getLocale, t } from "@/i18n";

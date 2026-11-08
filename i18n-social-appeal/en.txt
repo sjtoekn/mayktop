@@ -1,8 +1,0 @@
-  // Appeal of a removed Social post or reply (patch-social-appeal)
-  "appeal.social.what.post": "Your Social post was removed: {excerpt}",
-  "appeal.social.what.reply": "Your Social reply was removed: {excerpt}",
-  "admin.appeals.social.post": "A Social post",
-  "admin.appeals.social.reply": "A Social reply",
-  "email.socialappeal.line": "If you think this was a mistake, you can appeal within {days} days. An admin who was not part of the decision will read it:\n{url}",
-  "email.appeal.social.accepted.body": "Hello {name},\n\nYour appeal was read by someone who was not part of the first decision, and it was accepted. This is visible again:\n\nSocial: {excerpt}\nNote from the reviewer: {note}\n\n{url}",
-  "email.appeal.social.rejected.body": "Hello {name},\n\nYour appeal was read by someone who was not part of the first decision. The removal stands:\n\nSocial: {excerpt}\nRule: {rule}\nNote from the reviewer: {note}\n\nYou can read the answer here:\n{url}",

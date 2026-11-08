@@ -51,11 +51,11 @@ check("empty / missing file", checkMedia("image", new Uint8Array(0)).ok === fals
 
 // sizes
 {
-  const bigImage = new Uint8Array(adsConfig.media.imageMaxBytes + 1);
+  const bigImage = new Uint8Array(adsConfig.media.imageUploadMaxBytes + 1);
   bigImage.set(JPEG);
   const r = checkMedia("image", bigImage);
   check("a picture over the limit gives media-size", !r.ok && r.error === "media-size");
-  const okImage = new Uint8Array(adsConfig.media.imageMaxBytes);
+  const okImage = new Uint8Array(adsConfig.media.imageUploadMaxBytes);
   okImage.set(JPEG);
   check("a picture exactly at the limit is fine", checkMedia("image", okImage).ok === true);
   const bigVideo = new Uint8Array(adsConfig.media.videoMaxBytes + 1);

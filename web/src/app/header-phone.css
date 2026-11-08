@@ -1,0 +1,30 @@
+/* PHONE HEADER (own file on purpose: if shell.css is restored from an old zip, this layout survives).
+   Imported in app/layout.tsx right after shell.css. Phones and small tablets (800px and narrower):
+     row 1 = site name on the LEFT  +  theme / avatar / Log out on the RIGHT
+     row 2 = search bar, FULL width
+   Tokens only (colours come from globals.css), so light and dark both work. `.ch-root` in every selector
+   makes these win over the older rules in shell.css, whatever the order. */
+@media (max-width: 800px) {
+  .ch-root .ch-header { grid-template-columns: minmax(0, 1fr) auto; align-items: stretch; row-gap: 10px; column-gap: 8px; }
+
+  /* Row 1, left: the site name, pushed to the left edge of its card */
+  .ch-root .ch-logoBox { grid-column: 1; grid-row: 1; justify-content: flex-start; gap: 8px; padding: 8px 12px; }
+  .ch-root .ch-logoIcon { width: 44px; height: 40px; border-radius: 16px 16px 16px 4px; flex: none; }
+  .ch-root .ch-logoIcon svg { width: 26px; height: 26px; }
+  .ch-root .ch-logoText { font-size: 22px; white-space: nowrap; }
+
+  /* The old top bar card disappears; its two children are placed on the grid directly */
+  .ch-root .ch-topbar { display: contents; }
+
+  /* Row 1, right: theme / avatar / Log out as one small card, same height as the logo card */
+  .ch-root .ch-topRight { grid-column: 2; grid-row: 1; align-self: stretch; align-items: center; gap: 4px; padding: 0 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); }
+  .ch-root .ch-topRight > svg { display: none; }
+  .ch-root .ch-topRight .ch-iconBtn { width: 30px; height: 36px; }
+  .ch-root .ch-topRight .ch-avatarSm { width: 34px; height: 34px; flex: none; }
+  .ch-root .ch-topRight .pc-pill { height: 34px; padding: 0 9px; font-size: 13px; white-space: nowrap; flex: none; }
+
+  /* Row 2: the search bar takes the whole width */
+  .ch-root .ch-search { grid-column: 1 / -1; grid-row: 2; flex: none; width: 100%; height: 48px; background: var(--surface); box-shadow: var(--shadow-sm); border-radius: var(--radius-xl); }
+  .ch-root .ch-search input { min-width: 0; width: 100%; font-size: 15px; text-overflow: ellipsis; }
+  .ch-root .ch-search > svg { flex: none; width: 18px; height: 18px; }
+}

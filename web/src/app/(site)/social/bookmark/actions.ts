@@ -3,7 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialLimits } from "@/config/site";
-import { takeAction } from "@/lib/social-limits";
+import { takeActionDb } from "@/lib/rate-limit-db";
 import { applySocialBookmark } from "@/lib/social-bookmark";
 
 // Save / remove a bookmark (SOCIAL_TODO B2). Private: nothing is cached, nobody is notified, no tag is updated
@@ -25,7 +25,7 @@ export async function setSocialBookmark(
   const viewer = await getSessionUser();
   if (!viewer) return { error: true, login: true };
 
-  if (!takeAction(`bookmark:${viewer.id}`, bookmarkRules).ok) return { error: true, tooMany: true };
+  if (!(await takeActionDb(`bookmark:${viewer.id}`, bookmarkRules)).ok) return { error: true, tooMany: true };
 
   try {
     const result = await prisma.$transaction((tx) =>

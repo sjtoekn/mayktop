@@ -17,7 +17,7 @@ export const adsConfig = {
   endingSoonDays: 3, // the "your ad ends soon" email goes out once, when the end date is at most this many days away (Session 4c)
   currency: "USD",
   // Must match the AdSlotType enum in prisma/schema.prisma.
-  slots: ["SIDEBAR", "FEED", "SOCIAL_FEED"] as const,
+  slots: ["SIDEBAR", "FEED", "SOCIAL_FEED", "HEADER"] as const,
   // Rotation (Session 2). There is NO limit on how many ads can run: all active ads share the slots fairly.
   rotation: {
     noRepeatMinutes: 60, // the same browser is not shown the same ad again within this time
@@ -42,7 +42,10 @@ export const adsConfig = {
   formatsOpen: ["TEXT", "IMAGE", "VIDEO"] as const, // all three are open since Session 3b
   // Media limits (decision 10, PROVISIONAL). Files are kept in OUR storage, never as an advertiser-hosted address (Session 3b).
   media: {
-    imageMaxBytes: 5 * 1024 * 1024, // a picture, or the poster of a video ad
+    // A picture, or the poster of a video ad. Two numbers: the advertiser may SEND up to imageUploadMaxBytes (phone photos are
+    // big); our server then makes it smaller (src/lib/ad-image.ts) so the SAVED file is at most imageMaxBytes.
+    imageUploadMaxBytes: 25 * 1024 * 1024,
+    imageMaxBytes: 5 * 1024 * 1024,
     videoMaxBytes: 30 * 1024 * 1024,
     imageTypes: ["image/jpeg", "image/png", "image/webp"] as const,
     videoTypes: ["video/mp4", "video/webm"] as const,
@@ -95,6 +98,24 @@ export const accountConfig = {
 //  likes: like + unlike actions per person, counted in server memory.
 //  edits: edits of one's own posts per person, counted in server memory.
 // A shared limiter for many servers, and limits for everything else, are TODO 50.
+// Stricter limits for NEW accounts (SOCIAL_TODO C2, part 2). PROVISIONAL numbers: tune after real use.
+// An account younger than `days` gets `factor` of every limit below (rounded down, never less than 1):
+// posts, replies, follows, likes (posts and replies), reposts and reports. Spam accounts are almost always brand new.
+// Nothing else changes for them. After `days` days the normal numbers apply, with no action from anybody.
+export const newAccountLimits = {
+  days: 7,
+  factor: 0.5,
+};
+
+// The same text sent again and again (SOCIAL_TODO C2, part 3). PROVISIONAL numbers: tune after real use.
+// A new post or reply is refused when the SAME person already sent the same text within `windowHours`.
+// "Same" ignores capital letters, spaces, line breaks, punctuation and emoji ("Buy now!!" = "buy  now").
+// Texts shorter than `minChars` (after that cleaning) are never counted as repeats, so "thanks" or "+1" can be said twice.
+export const socialDuplicate = {
+  windowHours: 24,
+  minChars: 12,
+};
+
 export const socialLimits = {
   posts: [
     { max: 5, windowMinutes: 10 },
@@ -254,4 +275,25 @@ export const socialReplyConfig = {
     { max: 10, windowMinutes: 10 },
     { max: 100, windowMinutes: 24 * 60 },
   ], // replies per person
+};
+
+// Reply control (SOCIAL_TODO B9). PROVISIONAL numbers. Hiding / showing again a reply under your own post, counted in server memory (TODO 50).
+export const socialReplyControl = {
+  hideLimits: [
+    { max: 60, windowSeconds: 60 },
+    { max: 600, windowSeconds: 24 * 60 * 60 },
+  ],
+};
+// Fair ranking of replies under a Social post (SOCIAL_TODO B10, ACCOUNT_RULES.md 3.22). PROVISIONAL numbers.
+// Same rules and same meaning as rankingConfig (the Popular page), tuned for one conversation: replies fade slower (7 days).
+export const socialReplyRank = {
+  halfLifeHours: 168,
+  sameAuthorFactor: 0.5,
+  risingEvery: 4,
+  risingWindowHours: 72,
+  risingLuck: 2,
+  newAccountDays: 30,
+  newVoiceMaxPosts: 3,
+  seedHours: 6,
+  maxCandidates: 300,
 };

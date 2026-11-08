@@ -76,6 +76,7 @@ export type PersonDetail = {
   displayName: string | null;
   email: string;
   role: Role;
+  isSuperAdmin: boolean;
   status: UserStatus;
   banned: boolean;
   suspendedUntil: Date | null;
@@ -92,7 +93,7 @@ export async function getPerson(username: string): Promise<PersonDetail | null> 
   const user = await prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
     select: {
-      id: true, username: true, displayName: true, email: true, role: true, status: true, suspensionKind: true,
+      id: true, username: true, displayName: true, email: true, role: true, isSuperAdmin: true, status: true, suspensionKind: true,
       suspendedUntil: true, suspensionNote: true, eraseAt: true, createdAt: true,
     },
   });
@@ -113,6 +114,7 @@ export async function getPerson(username: string): Promise<PersonDetail | null> 
     displayName: user.displayName,
     email: user.email,
     role: user.role,
+    isSuperAdmin: user.isSuperAdmin,
     status: user.status,
     banned: user.status === UserStatus.SUSPENDED && user.suspensionKind === "BAN",
     suspendedUntil: user.suspendedUntil,
@@ -140,14 +142,34 @@ export function proposalDaysLeft(createdAt: Date): number {
 
 export type PersonAction = "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan";
 
-/** Which buttons to show. The rules themselves are enforced again in staff.ts when the button is used. */
-export function actionsFor(person: Pick<PersonDetail, "role" | "status" | "banned">, isSelf: boolean): PersonAction[] {
+/**
+ * Which buttons to show. The rules themselves are enforced again in staff.ts when the button is used.
+ * "Make admin" and "Remove admin" are shown ONLY to the super admin; a super admin can never be removed.
+ */
+export function actionsFor(
+  person: Pick<PersonDetail, "role" | "status" | "banned" | "isSuperAdmin">,
+  isSelf: boolean,
+  viewerIsSuper: boolean,
+): PersonAction[] {
   if (isSelf) return [];
-  if (person.role === Role.ADMIN) return ["removeAdmin"];
+  if (person.role === Role.ADMIN) return viewerIsSuper && !person.isSuperAdmin ? ["removeAdmin"] : [];
   if (person.role !== Role.USER) return [];
-  if (person.status === UserStatus.ACTIVE) return ["suspend", "proposeBan", "makeAdmin"];
+  if (person.status === UserStatus.ACTIVE) return viewerIsSuper ? ["suspend", "proposeBan", "makeAdmin"] : ["suspend", "proposeBan"];
   // A ban can be proposed for an active person, one waiting for deletion, or one under a TEMPORARY suspension.
   if (person.status === UserStatus.SUSPENDED) return person.banned ? ["lift"] : ["lift", "proposeBan"];
   if (person.status === UserStatus.DELETION_PENDING) return ["proposeBan"];
   return [];
+}
+
+export type AdminRow = { username: string; displayName: string | null; isSuperAdmin: boolean; since: Date };
+
+/** Everyone who is an active admin (the team list on /admin/team). Super admin first. */
+export async function listAdmins(): Promise<AdminRow[]> {
+  await connection();
+  const rows = await prisma.user.findMany({
+    where: { role: Role.ADMIN, status: UserStatus.ACTIVE },
+    orderBy: [{ isSuperAdmin: "desc" }, { username: "asc" }],
+    select: { username: true, displayName: true, isSuperAdmin: true, updatedAt: true },
+  });
+  return rows.map((r) => ({ username: r.username, displayName: r.displayName, isSuperAdmin: r.isSuperAdmin, since: r.updatedAt }));
 }
