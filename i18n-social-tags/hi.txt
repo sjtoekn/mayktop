@@ -1,0 +1,4 @@
+  // Hashtags and mentions (SOCIAL_TODO 6, patch-social-tags)
+  "social.tag.title": "हैशटैग",
+  "social.tag.empty": "अभी तक इस हैशटैग वाली कोई सोशल पोस्ट नहीं है।",
+  "notifications.type.mention": "{name} ने एक पोस्ट में आपका ज़िक्र किया",

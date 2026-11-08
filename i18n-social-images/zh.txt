@@ -1,0 +1,9 @@
+  // Pictures in Social posts (patch-social-images)
+  "social.form.image.add": "添加图片",
+  "social.form.image.remove": "移除图片",
+  "social.form.image.help": "每条帖子一张图片：JPG、PNG 或 WebP，最大 {mb} MB。图片中的位置和相机信息会被删除。",
+  "social.form.image.type": "此文件不是 JPG、PNG 或 WebP 图片。",
+  "social.form.image.size": "此图片超过 {mb} MB。",
+  "social.form.image.pixels": "此图片像素过多，请选择较小的图片。",
+  "social.form.image.preview": "所选图片的预览",
+  "social.image.alt": "{name} 的帖子中的图片",

@@ -1,0 +1,4 @@
+  // Hashtags and mentions (SOCIAL_TODO 6, patch-social-tags)
+  "social.tag.title": "话题标签",
+  "social.tag.empty": "还没有使用这个话题标签的动态。",
+  "notifications.type.mention": "{name} 在帖子中提到了你",

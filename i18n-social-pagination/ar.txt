@@ -1,0 +1,5 @@
+  // Feed pages (SOCIAL_TODO 4, patch-social-pagination)
+  "social.feed.older": "منشورات أقدم",
+  "social.feed.newest": "العودة إلى أحدث المنشورات",
+  "social.feed.end": "وصلت إلى النهاية. لا توجد منشورات أقدم.",
+  "social.feed.pageLabel": "صفحات الخلاصة",

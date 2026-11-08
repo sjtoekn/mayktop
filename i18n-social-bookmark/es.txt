@@ -1,0 +1,13 @@
+  // Marcadores (SOCIAL_TODO B2, patch-social-bookmark)
+  "social.bookmark.save": "Guardar",
+  "social.bookmark.saved": "Guardado",
+  "social.bookmark.save.title": "Guardar esta publicación en tus marcadores privados",
+  "social.bookmark.saved.title": "Guardada en tus marcadores. Selecciona para quitarla.",
+  "social.bookmark.login": "Primero inicia sesión.",
+  "social.bookmark.toomany": "Demasiados guardados en poco tiempo. Espera un momento.",
+  "social.bookmark.full": "Tu lista de marcadores está llena. Quita algunos primero.",
+  "social.bookmark.error": "No se pudo guardar. Inténtalo de nuevo.",
+  "social.tabs.bookmarks": "Marcadores",
+  "social.bookmarks.title": "Tus marcadores",
+  "social.bookmarks.sub": "Las publicaciones que guardaste, las más recientes primero. Solo tú ves esta lista.",
+  "social.bookmarks.empty": "Todavía no has guardado ninguna publicación. Elige Guardar en una publicación y aparecerá aquí.",

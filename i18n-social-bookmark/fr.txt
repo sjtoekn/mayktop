@@ -1,0 +1,13 @@
+  // Favoris (SOCIAL_TODO B2, patch-social-bookmark)
+  "social.bookmark.save": "Enregistrer",
+  "social.bookmark.saved": "Enregistré",
+  "social.bookmark.save.title": "Enregistrer cette publication dans vos favoris privés",
+  "social.bookmark.saved.title": "Enregistrée dans vos favoris. Sélectionnez pour la retirer.",
+  "social.bookmark.login": "Connectez-vous d'abord.",
+  "social.bookmark.toomany": "Trop d'enregistrements en peu de temps. Patientez un instant.",
+  "social.bookmark.full": "Votre liste de favoris est pleine. Retirez-en d'abord quelques-uns.",
+  "social.bookmark.error": "Impossible d'enregistrer. Veuillez réessayer.",
+  "social.tabs.bookmarks": "Favoris",
+  "social.bookmarks.title": "Vos favoris",
+  "social.bookmarks.sub": "Les publications que vous avez enregistrées, les plus récentes d'abord. Vous seul voyez cette liste.",
+  "social.bookmarks.empty": "Vous n'avez encore enregistré aucune publication. Choisissez Enregistrer sur une publication et elle apparaîtra ici.",

@@ -1,0 +1,5 @@
+  // Feed pages (SOCIAL_TODO 4, patch-social-pagination)
+  "social.feed.older": "पुरानी पोस्ट",
+  "social.feed.newest": "नई पोस्ट पर वापस जाएँ",
+  "social.feed.end": "आप अंत तक पहुँच गए हैं। इससे पुरानी कोई पोस्ट नहीं है।",
+  "social.feed.pageLabel": "फ़ीड के पृष्ठ",

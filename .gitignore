@@ -1,0 +1,11 @@
+*.db
+*.db-journal
+dev.db.*
+.env*
+node_modules/
+.next/
+web-backup-*/
+backups/
+*.zip
+*.bak
+*.bak*

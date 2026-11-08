@@ -1,0 +1,9 @@
+  // Pictures in Social posts (patch-social-images)
+  "social.form.image.add": "तस्वीर जोड़ें",
+  "social.form.image.remove": "तस्वीर हटाएं",
+  "social.form.image.help": "हर पोस्ट में एक तस्वीर: JPG, PNG या WebP, अधिकतम {mb} MB। तस्वीर से स्थान और कैमरे की जानकारी हटा दी जाती है।",
+  "social.form.image.type": "यह फ़ाइल JPG, PNG या WebP तस्वीर नहीं है।",
+  "social.form.image.size": "यह तस्वीर {mb} MB से बड़ी है।",
+  "social.form.image.pixels": "इस तस्वीर में पिक्सल बहुत ज़्यादा हैं। कृपया छोटी तस्वीर चुनें।",
+  "social.form.image.preview": "चुनी गई तस्वीर का पूर्वावलोकन",
+  "social.image.alt": "{name} की पोस्ट में तस्वीर",

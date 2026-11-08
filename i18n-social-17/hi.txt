@@ -1,0 +1,9 @@
+  // Following feed (SOCIAL_TODO 17, patch-social-17-finish)
+  "social.tabs.label": "सोशल फ़ीड",
+  "social.tabs.all": "सभी",
+  "social.tabs.following": "फ़ॉलो कर रहे हैं",
+  "social.following.title": "फ़ॉलो कर रहे हैं",
+  "social.following.sub": "आप जिन्हें फ़ॉलो करते हैं उनकी और आपकी पोस्ट और रीपोस्ट, सबसे नई पहले। लोकप्रियता के हिसाब से नहीं।",
+  "social.following.none": "आप अभी किसी को फ़ॉलो नहीं करते। लोगों की पोस्ट से उन्हें फ़ॉलो करें, उनकी पोस्ट यहाँ दिखेंगी।",
+  "social.following.quiet": "आप जिन्हें फ़ॉलो करते हैं उन्होंने अभी कुछ पोस्ट नहीं किया।",
+  "social.following.browse": "सभी सोशल पोस्ट देखें",

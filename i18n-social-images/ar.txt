@@ -1,0 +1,9 @@
+  // Pictures in Social posts (patch-social-images)
+  "social.form.image.add": "إضافة صورة",
+  "social.form.image.remove": "إزالة الصورة",
+  "social.form.image.help": "صورة واحدة لكل منشور: JPG أو PNG أو WebP، حتى {mb} ميغابايت. تُحذف بيانات الموقع والكاميرا من الصورة.",
+  "social.form.image.type": "هذا الملف ليس صورة JPG أو PNG أو WebP.",
+  "social.form.image.size": "حجم هذه الصورة أكبر من {mb} ميغابايت.",
+  "social.form.image.pixels": "عدد البكسلات في هذه الصورة كبير جدًا. يُرجى اختيار صورة أصغر.",
+  "social.form.image.preview": "معاينة الصورة المختارة",
+  "social.image.alt": "صورة في منشور من {name}",

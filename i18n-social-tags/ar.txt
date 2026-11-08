@@ -1,0 +1,4 @@
+  // Hashtags and mentions (SOCIAL_TODO 6, patch-social-tags)
+  "social.tag.title": "وسم",
+  "social.tag.empty": "لا توجد منشورات اجتماعية بهذا الوسم بعد.",
+  "notifications.type.mention": "أشار {name} إليك في منشور",

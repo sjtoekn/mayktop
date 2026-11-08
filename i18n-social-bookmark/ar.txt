@@ -1,0 +1,13 @@
+  // العلامات المرجعية (SOCIAL_TODO B2, patch-social-bookmark)
+  "social.bookmark.save": "حفظ",
+  "social.bookmark.saved": "تم الحفظ",
+  "social.bookmark.save.title": "احفظ هذا المنشور في علاماتك المرجعية الخاصة",
+  "social.bookmark.saved.title": "محفوظ في علاماتك المرجعية. اخترْه لإزالته.",
+  "social.bookmark.login": "يرجى تسجيل الدخول أولًا.",
+  "social.bookmark.toomany": "عدد كبير من عمليات الحفظ في وقت قصير. يرجى الانتظار قليلًا.",
+  "social.bookmark.full": "قائمة علاماتك المرجعية ممتلئة. أزل بعضها أولًا.",
+  "social.bookmark.error": "تعذّر الحفظ. يرجى المحاولة مرة أخرى.",
+  "social.tabs.bookmarks": "العلامات المرجعية",
+  "social.bookmarks.title": "علاماتك المرجعية",
+  "social.bookmarks.sub": "المنشورات التي حفظتها، الأحدث حفظًا أولًا. أنت وحدك ترى هذه القائمة.",
+  "social.bookmarks.empty": "لم تحفظ أي منشور بعد. اختر «حفظ» على أي منشور وسيظهر هنا.",

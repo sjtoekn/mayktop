@@ -1,0 +1,25 @@
+
+/**
+ * The Bookmarks page (/social/bookmarks, SOCIAL_TODO B2): the Social posts THIS person saved, the most recently SAVED first.
+ * Same visibility rules as every feed (`socialFeedWhere`: visible, not deleted, author's account shown), so a hidden or deleted
+ * post drops out of the list and comes back with the post. NOT cached on purpose: the list is private and belongs to one viewer.
+ * `before` is the cursor of social-bookmark-rules.ts. The page applies Block afterwards (the same as the feeds).
+ */
+export async function getSocialBookmarks(
+  viewerId: string,
+  before: string | null = null,
+): Promise<{ items: SocialFeedItem[]; next: string | null }> {
+  const cursor = parseBookmarkCursor(before);
+  const rows = await prisma.socialPostBookmark.findMany({
+    where: { AND: [{ userId: viewerId, socialPost: socialFeedWhere }, bookmarkAfterWhere(cursor)] },
+    orderBy: [{ createdAt: "desc" }, { socialPostId: "desc" }],
+    take: SOCIAL_FEED_SIZE + 1,
+    select: { createdAt: true, socialPostId: true, socialPost: { select: socialPostSelect } },
+  });
+  const keyed = rows.map((row) => ({ row, savedAtMs: row.createdAt.getTime(), id: row.socialPostId }));
+  const { items, next } = cutBookmarkPage(keyed, SOCIAL_FEED_SIZE);
+  return {
+    items: items.map(({ row, savedAtMs }): SocialFeedItem => ({ kind: "post", createdAtMs: savedAtMs, post: toSocialSummary(row.socialPost) })),
+    next: next ? bookmarkCursorToText(next) : null,
+  };
+}

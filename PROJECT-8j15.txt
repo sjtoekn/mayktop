@@ -1,0 +1,8 @@
+8j.15 Follow (decided 2026-11-07, SOCIAL_TODO 15)
+- Follow is open: any logged-in person can follow any person whose Social posts are shown. No approval, no private accounts (Social is already for logged-in people only, 8j.11).
+- Only an ACTIVE account follows or unfollows (a suspended / banned / deleting person is refused, like every write). Nobody follows themselves.
+- Only a person whose posts are shown can be followed (ACTIVE, or suspended / banned): the same single rule as the feeds (`isSocialAuthorShown`). A person waiting for deletion or an erased account cannot be followed.
+- Unfollow is always allowed. A state change of an account never removes its follows; final erasure deletes them in both directions (ACCOUNT_RULES.md 3.7, 3.9).
+- The person followed gets ONE FOLLOW notification per follower, ever; unfollow is silent.
+- Limits: 30 follow / unfollow actions per minute and 500 per 24 hours per person.
+- Not in this step: follower / following counts and lists (item 24), the Following feed (item 17), blocking people (no table yet, would be its own item), a cap on how many people one account may follow.

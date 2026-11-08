@@ -1,0 +1,8 @@
+
+### 3.17 Bookmarks (SOCIAL_TODO B2, decided 2026-11-08, PROVISIONAL)
+- A bookmark is a PRIVATE list of Social posts that one person saved for later. Nobody else can see it: no count on the post (not even for the author), no notification, no public page, no moderator view. Staff can read the table only for a legal reason (3.7 legal hold).
+- Saving needs a post that may be shown (visible, not deleted, the author's account shown, 3.8) and no Block between the two people (3.16): a refused save looks like "not found". A muted person's post can be saved. A person may save their own posts. Removing a bookmark is always allowed.
+- Limits: 2000 bookmarks per person (when full, saving another is refused, removing always works); 60 saves / removes per minute and 600 per day (server memory, TODO 50).
+- The Bookmarks page leaves out posts that are hidden, removed or deleted by moderation or by their author (the bookmark stays and the post returns when it is restored) and posts of a person who blocked the viewer or whom the viewer blocked (a muted person's saved post is still listed: saving it was the viewer's own choice).
+- "Download my data" lists the numbers of the posts the person saved, and when. Final erasure (3.7) deletes every bookmark the person made and every bookmark that points to one of the person's posts.
+- Not decided yet: folders or tags for bookmarks, a Bookmarks tab on the person's own profile, saving a reply or a community post here (community posts have their own Saved page), a note on the bookmark, whether a deleted post should leave a "no longer available" line in the list.

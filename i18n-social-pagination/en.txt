@@ -1,0 +1,5 @@
+  // Feed pages (SOCIAL_TODO 4, patch-social-pagination)
+  "social.feed.older": "Older posts",
+  "social.feed.newest": "Back to the newest posts",
+  "social.feed.end": "You have reached the end. There are no older posts.",
+  "social.feed.pageLabel": "Pages of the feed",

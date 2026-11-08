@@ -1,0 +1,8 @@
+  // Contestation d'une publication ou d'une réponse Social supprimée (patch-social-appeal)
+  "appeal.social.what.post": "Votre publication Social a été supprimée : {excerpt}",
+  "appeal.social.what.reply": "Votre réponse Social a été supprimée : {excerpt}",
+  "admin.appeals.social.post": "Une publication Social",
+  "admin.appeals.social.reply": "Une réponse Social",
+  "email.socialappeal.line": "Si vous pensez qu'il s'agit d'une erreur, vous pouvez faire appel dans un délai de {days} jours. Un administrateur qui n'a pas pris part à la décision la lira :\n{url}",
+  "email.appeal.social.accepted.body": "Bonjour {name},\n\nVotre appel a été lu par quelqu'un qui n'a pas pris part à la première décision, et il a été accepté. Ce contenu est de nouveau visible :\n\nSocial : {excerpt}\nNote du réviseur : {note}\n\n{url}",
+  "email.appeal.social.rejected.body": "Bonjour {name},\n\nVotre appel a été lu par quelqu'un qui n'a pas pris part à la première décision. La suppression est maintenue :\n\nSocial : {excerpt}\nRègle : {rule}\nNote du réviseur : {note}\n\nVous pouvez lire la réponse ici :\n{url}",

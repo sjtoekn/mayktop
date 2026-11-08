@@ -1,0 +1,8 @@
+  // استئناف منشور أو رد محذوف في Social (patch-social-appeal)
+  "appeal.social.what.post": "تمت إزالة منشورك في Social: {excerpt}",
+  "appeal.social.what.reply": "تمت إزالة ردك في Social: {excerpt}",
+  "admin.appeals.social.post": "منشور في Social",
+  "admin.appeals.social.reply": "رد في Social",
+  "email.socialappeal.line": "إذا كنت تعتقد أن هذا كان خطأً، يمكنك الاستئناف خلال {days} يومًا. سيقرؤه مشرف لم يشارك في القرار:\n{url}",
+  "email.appeal.social.accepted.body": "مرحبًا {name}،\n\nقرأ استئنافك شخص لم يشارك في القرار الأول، وتم قبوله. أصبح هذا ظاهرًا من جديد:\n\nSocial: {excerpt}\nملاحظة المراجع: {note}\n\n{url}",
+  "email.appeal.social.rejected.body": "مرحبًا {name}،\n\nقرأ استئنافك شخص لم يشارك في القرار الأول. تبقى الإزالة كما هي:\n\nSocial: {excerpt}\nالقاعدة: {rule}\nملاحظة المراجع: {note}\n\nيمكنك قراءة الرد هنا:\n{url}",

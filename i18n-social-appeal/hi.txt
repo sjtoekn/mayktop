@@ -1,0 +1,8 @@
+  // हटाई गई Social पोस्ट या जवाब पर अपील (patch-social-appeal)
+  "appeal.social.what.post": "आपकी Social पोस्ट हटा दी गई: {excerpt}",
+  "appeal.social.what.reply": "आपका Social जवाब हटा दिया गया: {excerpt}",
+  "admin.appeals.social.post": "एक Social पोस्ट",
+  "admin.appeals.social.reply": "एक Social जवाब",
+  "email.socialappeal.line": "अगर आपको लगता है कि यह गलती थी, तो आप {days} दिनों के भीतर अपील कर सकते हैं। जो एडमिन इस फ़ैसले में शामिल नहीं था, वही इसे पढ़ेगा:\n{url}",
+  "email.appeal.social.accepted.body": "नमस्ते {name},\n\nआपकी अपील को ऐसे व्यक्ति ने पढ़ा जो पहले फ़ैसले में शामिल नहीं था, और उसे स्वीकार कर लिया गया। यह फिर से दिखाई देगा:\n\nSocial: {excerpt}\nसमीक्षक का नोट: {note}\n\n{url}",
+  "email.appeal.social.rejected.body": "नमस्ते {name},\n\nआपकी अपील को ऐसे व्यक्ति ने पढ़ा जो पहले फ़ैसले में शामिल नहीं था। हटाने का फ़ैसला बना रहेगा:\n\nSocial: {excerpt}\nनियम: {rule}\nसमीक्षक का नोट: {note}\n\nजवाब यहाँ पढ़ सकते हैं:\n{url}",
