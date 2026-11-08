@@ -3,7 +3,7 @@
 // The "Create an ad" form (ADS_PLAN Session 3). All visible text comes in as props (translated on the server
 // with t()), so this file holds no hard-coded words. The server checks everything again (src/lib/ad-input.ts):
 // what is checked here is only for the person's comfort. TEXT, IMAGE and VIDEO ads can be sent (Session 3b): a picture
-// (or the poster of a video) and a video travel with the form as files. The files are checked again on the server by
+// (an IMAGE ad) or a video (a VIDEO ad, no poster) travels with the form as a file. The files are checked again on the server by
 // their real content (src/lib/ad-media.ts). Nothing is uploaded until the person presses "send".
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
@@ -37,8 +37,6 @@ export type AdvertiseText = {
   fieldStartHint: string;
   fieldImage: string; // the picture of an image ad
   fieldImageHint: string;
-  fieldPoster: string; // the poster picture of a video ad
-  fieldPosterHint: string;
   fieldVideo: string;
   fieldVideoHint: string;
   previewNoFile: string; // shown in the preview before a file is chosen
@@ -153,7 +151,7 @@ export default function AdvertiseForm({
   const [email, setEmail] = useState(initialEmail);
   const [start, setStart] = useState("");
   const [agree, setAgree] = useState(false);
-  const [image, setImage] = useState<File | null>(null); // the picture, or the poster of a video ad
+  const [image, setImage] = useState<File | null>(null); // the picture of an IMAGE ad
   const [video, setVideo] = useState<File | null>(null);
   const [error, setError] = useState<{ key: string; phrase?: string } | null>(null);
   const [sent, setSent] = useState<{ id: number; email: string } | null>(null);
@@ -186,7 +184,7 @@ export default function AdvertiseForm({
     }
   }
 
-  const filesReady = format === "TEXT" || (image !== null && (format === "IMAGE" || video !== null));
+  const filesReady = format === "TEXT" || (format === "IMAGE" ? image !== null : video !== null);
   const ready =
     title.trim().length > 0 &&
     body.trim().length > 0 &&
@@ -216,6 +214,8 @@ export default function AdvertiseForm({
       pickFile("video", null);
     } else if (f === "IMAGE") {
       pickFile("video", null);
+    } else {
+      pickFile("image", null); // a VIDEO ad has no picture / poster
     }
   }
 
@@ -243,7 +243,7 @@ export default function AdvertiseForm({
     form.set("email", email);
     form.set("start", start);
     form.set("agree", agree ? "true" : "false");
-    if (format !== "TEXT" && image) form.set("image", image);
+    if (format === "IMAGE" && image) form.set("image", image);
     if (format === "VIDEO" && video) form.set("video", video);
     startTransition(async () => {
       const result = await createAd(form);
@@ -385,10 +385,10 @@ export default function AdvertiseForm({
               />
             </div>
 
-            {format !== "TEXT" && (
+            {format === "IMAGE" && (
               <div className="adf-field">
                 <label className="adf-label" htmlFor="adv-image">
-                  {format === "VIDEO" ? text.fieldPoster : text.fieldImage}
+                  {text.fieldImage}
                 </label>
                 <input
                   id="adv-image"
@@ -397,7 +397,7 @@ export default function AdvertiseForm({
                   accept="image/jpeg,image/png,image/webp"
                   onChange={(e) => pickFile("image", e.target.files?.[0] ?? null)}
                 />
-                <p className="adf-hint">{format === "VIDEO" ? text.fieldPosterHint : text.fieldImageHint}</p>
+                <p className="adf-hint">{text.fieldImageHint}</p>
               </div>
             )}
             {format === "VIDEO" && (

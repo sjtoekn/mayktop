@@ -120,6 +120,7 @@ enum AdSlotType {
   SIDEBAR // the right-hand sidebar box
   FEED // between posts in a feed (max 2 per page, see src/lib/ad-positions.ts)
   SOCIAL_FEED // between posts in the Social feed, in the clearly different social look (ADS_PLAN decision 11, Session S)
+  HEADER // a wide picture banner at the top of every page, under the site header (IMAGE ads only)
 }
 
 enum AdPaymentStatus {

@@ -3,7 +3,6 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
-import Icon from "@/components/shell/Icon";
 import SocialPostCard from "@/components/social/SocialPostCard";
 import SocialRepostCard from "@/components/social/SocialRepostCard";
 import { t } from "@/i18n";
@@ -55,47 +54,30 @@ async function SocialPostContent({ params, searchParams }: { params: Promise<{ i
   const sort = parseReplySort((await searchParams).sort); // SOCIAL_TODO B10: "oldest" (default) or "top"
   const viewer = await getSessionUser();
 
-  if (!viewer) {
-    return (
-      <>
-        <header className="card pg-head">
-          <h1 className="sf-h1">{t("social.feed.title")}</h1>
-        </header>
-        <section className="card pg-empty">
-          <span className="pc-avatar pc-a4" aria-hidden="true"><Icon name="shield" size={26} /></span>
-          <p>{t("social.feed.loginRequired")}</p>
-          <div className="fa-actions">
-            <Link href="/login" className="pc-btn">{t("topbar.login")}</Link>
-            <Link href="/signup" className="pc-btn pc-btn-ghost">{t("topbar.signup")}</Link>
-          </div>
-        </section>
-      </>
-    );
-  }
 
   const postId = parseSocialPostId(rawId);
   if (postId === null) notFound();
   const post = await getSocialPost(postId);
   if (!post) notFound();
   // Block (SOCIAL_TODO A7): a post of a person who blocked you, or whom you blocked, is "not found". A muted person's post opens.
-  const hidden = await loadHiddenAuthors(viewer.id);
+  const hidden = await loadHiddenAuthors(viewer?.id ?? null);
   if (hidden.blocked.has(post.author)) notFound();
 
-  const liked = (await getMySocialLikes(viewer.id, [post.id])).includes(post.id);
-  const following = (await getMyFollowing(viewer.id, [post.author])).includes(post.author);
-  const reposted = (await getMySocialReposts(viewer.id, [post.id])).includes(post.id);
-  const bookmarked = (await getMySocialBookmarks(viewer.id, [post.id])).includes(post.id);
-  const pinnedId = post.author === viewer.username ? await getMyPinnedSocialPostId(viewer.id) : null; // SOCIAL_TODO B6
+  const liked = viewer ? (await getMySocialLikes(viewer.id, [post.id])).includes(post.id) : false;
+  const following = viewer ? (await getMyFollowing(viewer.id, [post.author])).includes(post.author) : false;
+  const reposted = viewer ? (await getMySocialReposts(viewer.id, [post.id])).includes(post.id) : false;
+  const bookmarked = viewer ? (await getMySocialBookmarks(viewer.id, [post.id])).includes(post.id) : false;
+  const pinnedId = viewer && post.author === viewer.username ? await getMyPinnedSocialPostId(viewer.id) : null; // SOCIAL_TODO B6
   // Quote reposts of this post (SOCIAL_TODO 16): the post is already known to be shown, so the list is safe to read.
   const quotes = dropHiddenItems(await getSocialQuotes(post.id), hidden.all);
   // Replies (SOCIAL_TODO 18): the post is already known to be shown, so the list is safe to read.
   const replies = dropHiddenAuthors(await getSocialReplies(post.id), hidden.all);
   // Reply control (SOCIAL_TODO B9): who may reply to this post, and may THIS person (read per request, never cached).
-  const replyAccess = await getReplyAccess(viewer.id, post.id);
+  const replyAccess = viewer ? await getReplyAccess(viewer.id, post.id) : { policy: "EVERYONE" as const, canReply: false }; // a visitor sees "log in to reply"
   // Fair order of replies (SOCIAL_TODO B10): hidden-by-author replies stay in their own part, oldest first.
   const ordered = orderReplies(replies.filter((reply) => !reply.hiddenByAuthor), sort, nowMs(), socialReplyRank);
   const orderedReplies = [...ordered.items, ...replies.filter((reply) => reply.hiddenByAuthor)];
-  const likedReplyIds = await getMyReplyLikes(viewer.id, replies.map((reply) => reply.id));
+  const likedReplyIds = viewer ? await getMyReplyLikes(viewer.id, replies.map((reply) => reply.id)) : [];
 
   return (
     <>
@@ -111,14 +93,14 @@ async function SocialPostContent({ params, searchParams }: { params: Promise<{ i
         isBookmarked={bookmarked}
         isPinned={pinnedId === post.id}
         permalink={false}
-        viewer={viewer.username}
+        viewer={viewer?.username ?? null}
         isFollowing={following}
       />
 
       <SocialReplyList
         postId={post.id}
         replies={orderedReplies}
-        viewer={viewer.username}
+        viewer={viewer?.username ?? null}
         postAuthor={post.author}
         policy={replyAccess.policy}
         canReply={replyAccess.canReply}

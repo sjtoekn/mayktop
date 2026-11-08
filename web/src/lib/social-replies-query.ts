@@ -1,6 +1,6 @@
 // The replies under one Social post (SOCIAL_TODO 18): visible, not deleted, written by an account whose posts may be
 // shown (the same rules as the feeds), oldest first. Only called for a logged-in person on a post that is shown.
-// Cached like the feeds (tag "social-posts"): a new, deleted, hidden, shown-again or liked reply calls updateTag("social-posts").
+// Cached like the feeds (tag "social-posts"): a new, deleted, hidden or liked reply calls updateTag("social-replies"); an admin decision or a post change calls updateTag("social-posts") (tags: social-cache-tags.ts).
 // `hiddenByAuthor` and the like counts are the same for every viewer (they hold no personal data), so they can live in this shared cache.
 // Fair ranking (SOCIAL_TODO B10): each reply also carries what the "Top" order needs (likes, the author's account age and post count).
 import { cacheLife, cacheTag } from "next/cache";
@@ -28,7 +28,7 @@ export type SocialReplyItem = {
 export async function getSocialReplies(socialPostId: number): Promise<SocialReplyItem[]> {
   "use cache";
   cacheLife("minutes");
-  cacheTag("social-posts");
+  cacheTag("social-posts", "social-replies"); // "social-replies": a new / deleted / hidden reply or a reply like (social-cache-tags.ts)
 
   const rows = await prisma.socialReply.findMany({
     where: { socialPostId, status: ContentStatus.VISIBLE, deletedAt: null, author: socialAuthorShown },

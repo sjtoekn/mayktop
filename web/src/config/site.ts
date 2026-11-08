@@ -46,7 +46,12 @@ export const adsConfig = {
     // big); our server then makes it smaller (src/lib/ad-image.ts) so the SAVED file is at most imageMaxBytes.
     imageUploadMaxBytes: 25 * 1024 * 1024,
     imageMaxBytes: 5 * 1024 * 1024,
-    videoMaxBytes: 30 * 1024 * 1024,
+    // A video ad is sent WITHOUT a poster. The advertiser may send a longer video: only the first `videoSeconds` seconds are ever
+    // shown (the server cuts it with ffmpeg when it is installed, src/lib/ad-video.ts, and the player itself stops at that second
+    // and starts again, components/AdVideo.tsx). The video is silent and starts by itself (changed 2026-11-08, ADS_PLAN decision 10b).
+    // The form sends only the video for a video ad, so it fits in the 60 MB form limit of next.config.ts.
+    videoMaxBytes: 50 * 1024 * 1024,
+    videoSeconds: 10,
     imageTypes: ["image/jpeg", "image/png", "image/webp"] as const,
     videoTypes: ["video/mp4", "video/webm"] as const,
   },
@@ -114,6 +119,14 @@ export const newAccountLimits = {
 export const socialDuplicate = {
   windowHours: 24,
   minChars: 12,
+};
+
+// Editing your own Social post (SOCIAL_TODO item 6). PROVISIONAL numbers: tune after real use. The usual way (X / Twitter):
+// a post can be edited for `windowMinutes` after it was WRITTEN (an edit does not restart the time), at most `maxEdits` times.
+// Every earlier version is kept and shown on /social/<id>/history to everybody who can see the post.
+export const socialEdit = {
+  windowMinutes: 60,
+  maxEdits: 5,
 };
 
 export const socialLimits = {

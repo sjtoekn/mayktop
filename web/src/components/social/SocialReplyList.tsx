@@ -29,7 +29,7 @@ export default function SocialReplyList({
   postId: number;
   replies: SocialReplyItem[];
   /** Username of the logged-in person (needed to show Delete under their own replies). */
-  viewer: string;
+  viewer: string | null;
   /** Username of the author of the post (the one who may hide replies, and who is named in the notice). */
   postAuthor: string;
   /** Who may reply (SOCIAL_TODO B9) and whether the logged-in person may. */
@@ -42,7 +42,7 @@ export default function SocialReplyList({
   /** Ids of replies that took a reserved "new voice" place in the "Top" order (they get the small label). */
   risingIds: number[];
 }) {
-  const isPostAuthor = viewer === postAuthor;
+  const isPostAuthor = viewer !== null && viewer === postAuthor;
   const shown = replies.filter((reply) => !reply.hiddenByAuthor);
   const hidden = replies.filter((reply) => reply.hiddenByAuthor);
   const policyLabel = policy === "EVERYONE" ? t("social.replyControl.everyone") : policy === "FOLLOWING" ? t("social.replyControl.following") : t("social.replyControl.mentioned");
@@ -81,7 +81,7 @@ export default function SocialReplyList({
               error: t("social.like.error"),
             }}
           />
-          {reply.author !== viewer && <SocialReportMore target={{ kind: "reply", id: reply.id }} {...socialReportMoreProps("reply")} />}
+          {viewer !== null && reply.author !== viewer && <SocialReportMore target={{ kind: "reply", id: reply.id }} {...socialReportMoreProps("reply")} />}
           {reply.author === viewer && (
             <SocialReplyDelete
               id={reply.id}
@@ -118,7 +118,11 @@ export default function SocialReplyList({
         <p className="sp-replyNotice" role="status">{t("social.replyControl.current", { who: policyLabel })}</p>
       )}
 
-      {canReply ? (
+      {viewer === null ? (
+        <p className="sp-replyNotice" role="status">
+          <Link href="/login">{t("social.reply.login")}</Link>
+        </p>
+      ) : canReply ? (
         <SocialReplyForm
           postId={postId}
           max={socialReplyConfig.maxBody}

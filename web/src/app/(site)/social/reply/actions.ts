@@ -8,6 +8,7 @@
 //  3. The rules (a post that may be shown, own post allowed, one unread notification per person per post) are in
 //     src/lib/social-reply.ts. The browser is not trusted: the person comes from the login cookie only.
 import { updateTag } from "next/cache";
+import { socialPostTag } from "@/lib/social-cache-tags";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialDuplicate, socialReplyConfig, socialReplyControl } from "@/config/site";
@@ -62,7 +63,8 @@ export async function createSocialReply(input: { postId: number; body: string })
       return { error: true, restricted: true }; // the author limited who can reply (SOCIAL_TODO B9)
     }
     if (!outcome.result || !outcome.result.ok) return { error: true };
-    updateTag("social-posts"); // the post page and the reply counts
+    updateTag("social-replies"); // the reply list
+    updateTag(socialPostTag(postId)); // the reply number on the post page; the feed cards follow within the cache time
     if (outcome.result.notified) updateTag("notifications");
     return { ok: true };
   } catch (error) {
@@ -80,7 +82,7 @@ export async function deleteSocialReply(input: { id: number }): Promise<DeleteSo
   try {
     const result = await prisma.$transaction((tx) => applySocialReplyDelete(tx, { id: input.id, authorId: user.id }));
     if (!result.ok) return { error: true };
-    updateTag("social-posts");
+    updateTag("social-replies"); // the reply list; the reply numbers follow within the cache time
     return { ok: true };
   } catch (error) {
     console.error("deleteSocialReply failed:", error);
@@ -105,7 +107,7 @@ export async function setSocialReplyHidden(input: { id: number; hidden: boolean 
       applySocialReplyHide(tx, { replyId: input.id, actorId: user.id, hide: input.hidden }),
     );
     if (!result.ok) return { error: true };
-    updateTag("social-posts");
+    updateTag("social-replies"); // the reply list ("Hidden replies" part)
     return { ok: true, hidden: result.hidden };
   } catch (error) {
     console.error("setSocialReplyHidden failed:", error);

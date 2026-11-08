@@ -1,0 +1,12 @@
+/* Edit history of a Social post (SOCIAL_TODO item 6). Tokens only: light and dark both work. */
+.sp-editedLink { text-decoration: underline; text-underline-offset: 2px; }
+.sp-editedLink:hover { color: var(--brand); }
+
+.sh-head { padding: 22px 26px; display: grid; gap: 8px; }
+.sh-head p { margin: 0; color: var(--muted); }
+.sh-version { padding: 18px 22px; display: grid; gap: 8px; }
+.sh-version.sh-current { border: 2px solid var(--brand); }
+.sh-when { font-size: 14px; font-weight: 700; color: var(--muted); }
+.sh-current .sh-when { color: var(--brand); }
+.sh-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.sh-note { padding: 14px 22px; color: var(--muted); }

@@ -1,7 +1,8 @@
 // GET /api/social/media/<file>: serves the picture of a Social post from OUR storage folder (patch-social-images).
-//  - ONLY for logged-in people (Social is for logged-in people only, PROJECT.md 8j point 11). Nobody logged in: 404.
+//  - Visitors (not logged in) may see the picture of a post that may be shown (changed 2026-11-08, Social is readable
+//    without a login). A hidden / removed post's picture is never given to a visitor: 404.
 //  - Only a file that belongs to a post is served (found by its address in the database); anything else is 404.
-//  - A post that may be shown (visible, not deleted, author shown: src/lib/social-visibility.ts): any logged-in person.
+//  - A post that may be shown (visible, not deleted, author shown: src/lib/social-visibility.ts): anybody, logged in or not.
 //    A hidden / removed post, or one whose author is not shown: only its author and admins (moderators must be able to
 //    judge a report). A deleted post has no picture any more.
 //  - The role is read from the database, never from the cookie.
@@ -26,8 +27,7 @@ export async function GET(_request: Request, context: { params: Promise<{ file: 
   const full = socialMediaPath(file);
   if (!full) return NOT_FOUND();
 
-  const user = await getSessionUser();
-  if (!user) return NOT_FOUND();
+  const user = await getSessionUser(); // null = a visitor
 
   const post = await prisma.socialPost.findFirst({
     where: { mediaUrl: socialImageUrl(file) },
@@ -36,9 +36,12 @@ export async function GET(_request: Request, context: { params: Promise<{ file: 
   if (!post || post.deletedAt) return NOT_FOUND();
 
   const shown = post.status === ContentStatus.VISIBLE && isSocialAuthorShown(post.author);
-  if (!shown && user.id !== post.authorId) {
-    const row = await prisma.user.findUnique({ where: { id: user.id }, select: { role: true } });
-    if (row?.role !== Role.ADMIN) return NOT_FOUND();
+  if (!shown) {
+    if (!user) return NOT_FOUND();
+    if (user.id !== post.authorId) {
+      const row = await prisma.user.findUnique({ where: { id: user.id }, select: { role: true } });
+      if (row?.role !== Role.ADMIN) return NOT_FOUND();
+    }
   }
 
   let size: number;
@@ -56,9 +59,9 @@ export async function GET(_request: Request, context: { params: Promise<{ file: 
       "X-Content-Type-Options": "nosniff",
       "Content-Security-Policy": "default-src 'none'; sandbox",
       "Content-Disposition": "inline",
-      // Private: the picture is for logged-in people only, so a shared cache must not keep it. The name never changes
-      // for the same bytes, so the browser may keep it for an hour.
-      "Cache-Control": shown ? "private, max-age=3600" : "private, no-store",
+      // A picture that may be shown is public now (a visitor may see it), so a shared cache may keep it. The name never
+      // changes for the same bytes, so one hour is safe. A hidden picture (only its author / admins) is never cached.
+      "Cache-Control": shown ? "public, max-age=3600" : "private, no-store",
     },
   });
 }

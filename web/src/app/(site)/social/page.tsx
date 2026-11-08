@@ -1,6 +1,6 @@
 import { nowMs } from "@/lib/now";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { Suspense } from "react";
 import PageHero from "@/components/PageHero";
 import FeedTypeTabs from "@/components/feed/FeedTypeTabs";
 import { connection } from "next/server";
@@ -25,37 +25,31 @@ export const metadata: Metadata = {
 
 // The Social feed (SOCIAL_TODO 11): Social posts only, newest first. The mixed feed stays on Home.
 // Tabs "All | Following" (SOCIAL_TODO 17); the Following tab is /social/following.
-// Social posts are ONLY for logged-in people (PROJECT.md 8j point 11): a visitor sees a short log-in message,
-// and the posts are not even read from the database.
+// Visitors (not logged in) can READ the feed (decision changed 2026-11-08 from PROJECT.md 8j point 11): no composer,
+// no "Who to follow", and no personal state on the cards. Writing (like, repost, reply, follow, save) still needs a login.
 // Loading: app/(site)/loading.tsx. Unexpected error: app/(site)/error.tsx. Both cover this page.
-export default async function SocialFeedPage({ searchParams }: { searchParams: Promise<{ before?: string }> }) {
+// The page reads the login cookie and the database, so it runs per request: connection() and the data sit INSIDE <Suspense>
+// (Next.js 16 "instant" check: dynamic data outside <Suspense> blocks the route), the same way /social/[id] does it.
+type Search = Promise<{ before?: string }>;
+
+export default function SocialFeedPage({ searchParams }: { searchParams: Search }) {
+  return (
+    <Suspense fallback={<p className="pc-empty">…</p>}>
+      <SocialFeedContent searchParams={searchParams} />
+    </Suspense>
+  );
+}
+
+async function SocialFeedContent({ searchParams }: { searchParams: Search }) {
   await connection();
   const { before } = await searchParams;
   const cursor = parseCursor(before); // anything that is not a cursor means the first page
 
   const viewer = await getSessionUser();
 
-  if (!viewer) {
-    return (
-      <>
-        <header className="card pg-head">
-          <h1 className="sf-h1">{t("social.feed.title")}</h1>
-        </header>
-        <section className="card pg-empty">
-          <span className="pc-avatar pc-a4" aria-hidden="true"><Icon name="shield" size={26} /></span>
-          <p>{t("social.feed.loginRequired")}</p>
-          <div className="fa-actions">
-            <Link href="/login" className="pc-btn">{t("topbar.login")}</Link>
-            <Link href="/signup" className="pc-btn pc-btn-ghost">{t("topbar.signup")}</Link>
-          </div>
-        </section>
-      </>
-    );
-  }
-
   const fetched = await getSocialFeed(cursor ? cursorToText(cursor) : null);
   // Block and Mute (SOCIAL_TODO A7): applied after the shared cache, for this viewer only.
-  const hidden = await loadHiddenAuthors(viewer.id);
+  const hidden = await loadHiddenAuthors(viewer?.id ?? null);
   const page = { ...fetched, items: dropHiddenItems(fetched.items, hidden.all) };
 
   return (
@@ -69,9 +63,9 @@ export default async function SocialFeedPage({ searchParams }: { searchParams: P
         <p className="pc-text">{t("social.feed.sub")}</p>
       </header>
 
-      <SocialComposer />
+      {viewer ? <SocialComposer /> : null}
 
-      {!cursor ? <SocialDiscover viewer={viewer} /> : null}
+      {!cursor && viewer ? <SocialDiscover viewer={viewer} /> : null}
 
       {!cursor ? <SocialNewPostsBanner feed="all" since={newestMs(page.items, nowMs())} /> : null}
 

@@ -41,23 +41,6 @@ export default async function SocialSearchPage({ searchParams }: { searchParams:
   const params = await searchParams;
   const viewer = await getSessionUser();
 
-  if (!viewer) {
-    return (
-      <>
-        <header className="card pg-head">
-          <h1 className="sf-h1">{t("social.search.title")}</h1>
-        </header>
-        <section className="card pg-empty">
-          <span className="pc-avatar pc-a4" aria-hidden="true"><Icon name="shield" size={26} /></span>
-          <p>{t("social.feed.loginRequired")}</p>
-          <div className="fa-actions">
-            <Link href="/login" className="pc-btn">{t("topbar.login")}</Link>
-            <Link href="/signup" className="pc-btn pc-btn-ghost">{t("topbar.signup")}</Link>
-          </div>
-        </section>
-      </>
-    );
-  }
 
   const search = parseSocialSearch(params.q, params.tab); // a repeated ?q=a&q=b is not a string: treated as nothing typed
   const header = (
@@ -95,7 +78,8 @@ export default async function SocialSearchPage({ searchParams }: { searchParams:
   }
 
   // Every search page that really reads the database counts (also "Older posts"). Server memory, like the other Social limits.
-  if (!(await takeActionDb(`social-search:${viewer.id}`, searchRules)).ok) {
+  // Visitors share ONE bucket (the project keeps no IP address); a logged-in person has their own.
+  if (!(await takeActionDb(`social-search:${viewer ? viewer.id : "visitors"}`, searchRules)).ok) {
     return (
       <>
         {header}
@@ -106,7 +90,7 @@ export default async function SocialSearchPage({ searchParams }: { searchParams:
     );
   }
 
-  const hidden = await loadHiddenAuthors(viewer.id);
+  const hidden = await loadHiddenAuthors(viewer?.id ?? null);
 
   if (search.tab === "people") {
     const people = await searchSocialPeople(search.person, hidden.blocked);
@@ -120,11 +104,11 @@ export default async function SocialSearchPage({ searchParams }: { searchParams:
         </>
       );
     }
-    const followingNames = new Set(await getMyFollowing(viewer.id, people.map((person) => person.username)));
+    const followingNames = new Set(viewer ? await getMyFollowing(viewer.id, people.map((person) => person.username)) : []);
     return (
       <>
         {header}
-        <SocialPeopleList people={people} viewer={viewer.username} followingNames={followingNames} />
+        <SocialPeopleList people={people} viewer={viewer?.username ?? null} followingNames={followingNames} />
         {people.length >= SOCIAL_SEARCH_LIST_SIZE ? (
           <p className="ss-note">{t("social.search.more", { n: String(SOCIAL_SEARCH_LIST_SIZE) })}</p>
         ) : null}

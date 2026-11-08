@@ -1,9 +1,11 @@
 // The picture or video of an ad (ADS_PLAN Session 3b). Used by the real ad box, the form preview and the admin review,
 // so a reviewer sees exactly what visitors will see. No hooks: it works in server and client components.
 //  - IMAGE: one picture.
-//  - VIDEO: a poster picture with the browser's own play controls. NEVER autoplay (PROJECT.md section 5):
-//    `preload="none"` means nothing is even downloaded until the visitor presses play.
+//  - VIDEO: no poster. It starts by itself, silent, for at most 10 seconds, with no controls (AdVideo.tsx; changed 2026-11-08,
+//    ADS_PLAN decision 10b). Inside AdBox the whole ad is a link, so a click on the video opens the advertiser's page.
 // `imageUrl` / `videoUrl` are always OUR OWN addresses (/api/ad/media/...), checked when the ad is saved and by the media route.
+import AdVideo from "@/components/AdVideo";
+import { adsConfig } from "@/config/site";
 import "./ad-media.css";
 
 export type AdMediaProps = {
@@ -19,7 +21,7 @@ export default function AdMedia({ format, imageUrl, videoUrl, title, empty }: Ad
   if (format === "VIDEO" && videoUrl) {
     return (
       <div className="ad-media">
-        <video controls preload="none" playsInline poster={imageUrl ?? undefined} src={videoUrl} aria-label={title} />
+        <AdVideo src={videoUrl} title={title} seconds={adsConfig.media.videoSeconds} />
       </div>
     );
   }

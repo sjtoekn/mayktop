@@ -8,13 +8,14 @@ import SocialBookmarkButton from "@/components/social/SocialBookmarkButton";
 import SocialPinButton from "@/components/social/SocialPinButton";
 import SocialRepostButton from "@/components/social/SocialRepostButton";
 import SocialReportButton from "@/components/social/SocialReportButton";
-import { socialReportConfig, staffConfig } from "@/config/site";
+import { socialEdit, socialReportConfig, staffConfig } from "@/config/site";
 import type { MessageKey } from "@/i18n/messages/en";
 import SocialOwnerActions from "@/components/social/SocialOwnerActions";
 import SocialShareButton from "@/components/social/SocialShareButton";
 import Link from "next/link";
 import { formatCompact, t, tn } from "@/i18n";
 import SocialViewCount from "@/components/social/SocialViewCount";
+import "@/components/social/social-history.css";
 
 export default function SocialPostCard({
   post,
@@ -58,7 +59,14 @@ export default function SocialPostCard({
           {" · @"}{post.author}
           {" · "}
           {permalink ? <Link href={`/social/${post.id}`}>{post.time}</Link> : post.time}
-          {post.edited ? ` · ${t("social.edited")}` : ""}
+          {post.edited ? (
+            <>
+              {" · "}
+              <Link href={`/social/${post.id}/history`} className="sp-editedLink" title={t("social.history.open")}>
+                {t("social.edited")}
+              </Link>
+            </>
+          ) : null}
         </div>
 
         <SocialBody body={post.body} mentions={post.mentions} />
@@ -206,6 +214,8 @@ export default function SocialPostCard({
           id={post.id}
           author={post.author}
           body={post.body}
+          createdAtMs={post.createdAtMs}
+          editCount={post.editCount ?? 0}
           text={{
             edit: t("social.edit"),
             field: t("social.edit.field"),
@@ -217,6 +227,9 @@ export default function SocialPostCard({
             tooMany: t("social.edit.toomany"),
             login: t("social.edit.login"),
             loginLink: t("topbar.login"),
+            windowClosed: t("social.edit.window", { minutes: socialEdit.windowMinutes }),
+            limitReached: t("social.edit.limit", { max: socialEdit.maxEdits }),
+            hint: t("social.edit.hint", { left: "{left}", max: socialEdit.maxEdits }),
             delete: t("social.delete"),
             deleteConfirm: t("social.delete.confirm"),
             deleteYes: t("social.delete.yes"),

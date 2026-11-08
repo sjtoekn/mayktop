@@ -20,6 +20,7 @@
 //
 // Return plain data only (text, numbers, lists), never Prisma objects or Dates.
 import { cacheLife, cacheTag } from "next/cache";
+import { socialPostTag } from "@/lib/social-cache-tags";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getLocale, t } from "@/i18n";
@@ -269,6 +270,10 @@ export type SocialPostSummary = {
   /** Usernames saved as mentioned in the text (accounts that exist and may be shown): only these are links (SOCIAL_TODO 6). */
   mentions: string[];
   edited?: true;
+  /** When the text was last changed (SOCIAL_TODO item 6). Absent = never edited. */
+  editedAtMs?: number;
+  /** How many earlier versions are saved = how many edits were made since the edit history exists (SOCIAL_TODO item 6). */
+  editCount?: number;
 };
 
 /**
@@ -315,6 +320,7 @@ const socialPostSelect = {
     select: {
       likes: true,
       reposts: true,
+      edits: true, // saved earlier versions (SOCIAL_TODO item 6)
       replies: { where: { status: ContentStatus.VISIBLE, deletedAt: null } },
     },
   },
@@ -349,7 +355,8 @@ function toSocialSummary(row: SocialRow): SocialPostSummary {
     replies: row._count.replies,
     views: row.viewCount,
     mentions: row.mentions.map((mention) => mention.user.username),
-    ...(row.editedAt !== null ? { edited: true as const } : {}),
+    editCount: row._count.edits,
+    ...(row.editedAt !== null ? { edited: true as const, editedAtMs: row.editedAt.getTime() } : {}),
   };
 }
 
@@ -466,7 +473,7 @@ export async function getSocialQuotes(socialPostId: number): Promise<SocialRepos
 export async function getSocialPost(id: number): Promise<SocialPostSummary | null> {
   "use cache";
   cacheLife("minutes");
-  cacheTag("social-posts");
+  cacheTag("social-posts", socialPostTag(id)); // a like or a reply on THIS post refreshes only this page (social-cache-tags.ts)
 
   const row = await prisma.socialPost.findFirst({
     where: { ...socialFeedWhere, id },

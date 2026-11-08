@@ -3,7 +3,8 @@
 // Edit (SOCIAL_TODO 12) and delete (SOCIAL_TODO 13) your OWN Social post.
 //  1. Nobody logged in: refused with login: true.
 //  2. Rate limit: socialLimits.edits per person (server memory).
-//  3. The text rules and the "own post, still visible" rule are in src/lib/social-edit.ts (one transaction).
+//  3. The text rules, the "own post, still visible" rule, the EDIT WINDOW (socialEdit in site.ts) and the saving of the
+//     earlier version (edit history) are in src/lib/social-edit.ts (one transaction).
 // The browser is not trusted: the person comes from the login cookie only.
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -15,13 +16,14 @@ import { applySocialDelete } from "@/lib/social-delete";
 import { deleteSocialImages } from "@/lib/social-image-storage";
 import { removeSocialTags, syncSocialTags } from "@/lib/social-tag-sync";
 import { removeSocialPinOfPost } from "@/lib/social-pin";
+import { eraseSocialPostEdits } from "@/lib/social-edit-history";
 
 const editRules = [{ max: socialLimits.edits.max, windowMs: socialLimits.edits.windowMinutes * 60_000 }];
 const deleteRules = [{ max: socialLimits.deletes.max, windowMs: socialLimits.deletes.windowMinutes * 60_000 }];
 
 export type EditSocialPostResult =
   | { ok: true }
-  | { error: true; login?: true; invalid?: true; tooMany?: true; waitMinutes?: number };
+  | { error: true; login?: true; invalid?: true; tooMany?: true; waitMinutes?: number; windowClosed?: true; limitReached?: true };
 
 export async function editSocialPost(input: { id: number; body: string }): Promise<EditSocialPostResult> {
   if (typeof input?.id !== "number") return { error: true };
@@ -44,7 +46,12 @@ export async function editSocialPost(input: { id: number; body: string }): Promi
       }
       return edited;
     });
-    if (!result.ok) return result.reason === "invalid" ? { error: true, invalid: true } : { error: true };
+    if (!result.ok) {
+      if (result.reason === "invalid") return { error: true, invalid: true };
+      if (result.reason === "window") return { error: true, windowClosed: true }; // the edit time is over
+      if (result.reason === "limit") return { error: true, limitReached: true }; // all allowed edits are used
+      return { error: true };
+    }
     if (result.changed) updateTag("social-posts");
     return { ok: true };
   } catch (error) {
@@ -77,6 +84,7 @@ export async function deleteSocialPost(input: { id: number }): Promise<DeleteSoc
       if (deleted.ok) {
         await removeSocialTags(tx, input.id); // its hashtags and mentions go with the text (SOCIAL_TODO 6)
         await removeSocialPinOfPost(tx, input.id); // a deleted post cannot stay pinned (SOCIAL_TODO B6)
+        await eraseSocialPostEdits(tx, input.id); // the earlier versions of the text go with it (SOCIAL_TODO item 6)
         pictureUrl = before?.mediaUrl ?? null;
       }
       return deleted;

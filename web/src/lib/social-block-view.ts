@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { makeHiddenAuthors, type BlockRelation, type HiddenAuthors } from "@/lib/social-block-rules";
 
 /** Usernames whose posts this person must not see: people they blocked, people who blocked them, people they muted. */
-export async function loadHiddenAuthors(viewerId: string): Promise<HiddenAuthors> {
+export async function loadHiddenAuthors(viewerId: string | null): Promise<HiddenAuthors> {
+  // A visitor (not logged in) has no Block / Mute lists: nothing is hidden for them.
+  if (viewerId === null) return makeHiddenAuthors({ blockedByMe: [], blockedMe: [], mutedByMe: [] });
   const [blockedByMe, blockedMe, mutedByMe] = await Promise.all([
     prisma.socialBlock.findMany({ where: { blockerId: viewerId }, select: { blocked: { select: { username: true } } } }),
     prisma.socialBlock.findMany({ where: { blockedId: viewerId }, select: { blocker: { select: { username: true } } } }),

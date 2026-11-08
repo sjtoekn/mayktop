@@ -21,7 +21,7 @@ export async function setSocialReplyLike(replyId: number, desiredLiked: boolean)
   try {
     const result = await prisma.$transaction((tx) => applySocialReplyLike(tx, { replyId, userId: viewer.id, like: desiredLiked }));
     if (!result.ok) return { error: true };
-    updateTag("social-posts"); // the shared reply list holds the like counts
+    updateTag("social-replies"); // the shared reply list holds the like counts
     return { liked: result.liked, likes: result.likes };
   } catch (error) {
     console.error("setSocialReplyLike failed:", error);

@@ -60,8 +60,6 @@ function text(): AdvertiseText {
     fieldStartHint: t("advertise.new.field.start.hint", { days: adsConfig.periodDays }),
     fieldImage: t("advertise.new.field.image"),
     fieldImageHint: t("advertise.new.field.image.hint", { mb: mb(adsConfig.media.imageUploadMaxBytes) }),
-    fieldPoster: t("advertise.new.field.poster"),
-    fieldPosterHint: t("advertise.new.field.poster.hint", { mb: mb(adsConfig.media.imageUploadMaxBytes) }),
     fieldVideo: t("advertise.new.field.video"),
     fieldVideoHint: t("advertise.new.field.video.hint", { mb: mb(adsConfig.media.videoMaxBytes) }),
     previewNoFile: t("advertise.new.preview.nofile"),

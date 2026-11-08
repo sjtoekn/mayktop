@@ -35,6 +35,8 @@ export async function eraseSocial(db: Db, userId: string, now: Date): Promise<So
     where: { authorId: userId, deletedAt: null },
     data: { body: "", mediaUrl: null, deletedAt: now },
   });
+  // The earlier versions of those posts go too (SOCIAL_TODO item 6): the text is erased for good, in every version.
+  await db.socialPostEdit.deleteMany({ where: { socialPost: { authorId: userId } } });
   const replies = await db.socialReply.updateMany({
     where: { authorId: userId, deletedAt: null },
     data: { body: "", deletedAt: now },

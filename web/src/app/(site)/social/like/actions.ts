@@ -1,6 +1,7 @@
 "use server";
 
 import { updateTag } from "next/cache";
+import { socialPostTag } from "@/lib/social-cache-tags";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { socialAuthorShown } from "@/lib/social-visibility";
@@ -110,7 +111,7 @@ export async function setSocialPostLike(
 
     if (!result) return { error: true };
 
-    updateTag("social-posts");
+    updateTag(socialPostTag(socialPostId)); // only this post page; the feed cards follow within the cache time (social-cache-tags.ts)
 
     if (result.notificationCreated) {
       updateTag("notifications");

@@ -79,7 +79,7 @@ export function checkMedia(kind: MediaKind, bytes: Uint8Array | null | undefined
   return { ok: true, ext, mime: MIME[ext] };
 }
 
-/** Which files each format needs. TEXT: none. IMAGE: a picture. VIDEO: a video AND its poster picture. */
+/** Which files each format needs. TEXT: none. IMAGE: a picture. VIDEO: only the video (no poster: it starts by itself, silent). */
 export function mediaNeeds(format: "TEXT" | "IMAGE" | "VIDEO"): { image: boolean; video: boolean } {
-  return { image: format !== "TEXT", video: format === "VIDEO" };
+  return { image: format === "IMAGE", video: format === "VIDEO" };
 }

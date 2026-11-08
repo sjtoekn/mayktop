@@ -14,7 +14,7 @@ export default function SocialPeopleList({
   followingNames,
 }: {
   people: SocialPerson[];
-  viewer: string;
+  viewer: string | null;
   followingNames: Set<string>;
 }) {
   return (
@@ -31,7 +31,7 @@ export default function SocialPeopleList({
               <Link href={profileHref(person.username)} className="sp-personName">
                 <strong>{name}</strong> <span dir="ltr">@{person.username}</span>
               </Link>
-              {person.username !== viewer && (
+              {viewer !== null && person.username !== viewer && (
                 <SocialFollowButton
                   username={person.username}
                   initialFollowing={followingNames.has(person.username)}

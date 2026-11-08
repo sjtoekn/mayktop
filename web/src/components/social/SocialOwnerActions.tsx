@@ -4,6 +4,9 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
+import { nowMs } from "@/lib/now";
+import { socialEdit } from "@/config/site";
+import { editsLeft, editWindowEndsAtMs } from "@/lib/social-edit-rules";
 import { deleteSocialPost, editSocialPost } from "@/app/(site)/social/manage/actions";
 import "@/app/(site)/manage/owner.css";
 
@@ -19,6 +22,9 @@ export type SocialOwnerText = {
   tooMany: string; // edit; contains {minutes}
   login: string; // edit
   loginLink: string;
+  windowClosed: string; // edit: the edit time is over
+  limitReached: string; // edit: all allowed edits are used
+  hint: string; // edit form; contains {left}
   delete: string;
   deleteConfirm: string;
   deleteYes: string;
@@ -30,7 +36,7 @@ export type SocialOwnerText = {
 
 const MAX = 5000;
 
-type Failure = { kind: "error" | "login" | "invalid" | "tooMany"; action: "edit" | "delete" };
+type Failure = { kind: "error" | "login" | "invalid" | "tooMany" | "window" | "limit"; action: "edit" | "delete" };
 
 /**
  * "Edit post" and "Delete" under a Social post. Shown ONLY to the person who wrote it (the server checks again on
@@ -40,11 +46,17 @@ export default function SocialOwnerActions({
   id,
   author,
   body: initialBody,
+  createdAtMs,
+  editCount,
   text,
 }: {
   id: number;
   author: string;
   body: string;
+  /** When the post was written: the edit window counts from here (it does not restart with an edit). */
+  createdAtMs: number;
+  /** How many times the post was already edited (earlier versions saved). */
+  editCount: number;
   text: SocialOwnerText;
 }) {
   const { data: session } = authClient.useSession();
@@ -54,9 +66,14 @@ export default function SocialOwnerActions({
   const [failed, setFailed] = useState<Failure | null>(null);
   const [waitMinutes, setWaitMinutes] = useState(1);
   const [pending, startTransition] = useTransition();
+  const [now] = useState(() => nowMs()); // read once when the box appears; the server checks the time again on every save
+  const [locked, setLocked] = useState<"window" | "limit" | null>(null); // the server said no: stop offering Edit
 
   if (!session || !author || session.user.username !== author) return null;
 
+  const left = editsLeft(editCount, socialEdit);
+  const closed: "window" | "limit" | null =
+    locked ?? (now > editWindowEndsAtMs(createdAtMs, socialEdit) ? "window" : left <= 0 ? "limit" : null);
   const trimmed = body.trim();
   const canSave = !pending && trimmed.length > 0 && body.length <= MAX && trimmed !== initialBody.trim();
 
@@ -80,6 +97,12 @@ export default function SocialOwnerActions({
       const result = await editSocialPost({ id, body });
       if ("error" in result) {
         if (result.tooMany) setWaitMinutes(result.waitMinutes ?? 1);
+        if (result.windowClosed || result.limitReached) {
+          setLocked(result.windowClosed ? "window" : "limit");
+          setMode("idle");
+          setFailed(null);
+          return;
+        }
         setFailed({
           action: "edit",
           kind: result.login ? "login" : result.tooMany ? "tooMany" : result.invalid ? "invalid" : "error",
@@ -117,6 +140,8 @@ export default function SocialOwnerActions({
     }
     if (f.kind === "tooMany") return (del ? text.deleteTooMany : text.tooMany).replace("{minutes}", String(waitMinutes));
     if (f.kind === "invalid") return text.invalid;
+    if (f.kind === "window") return text.windowClosed;
+    if (f.kind === "limit") return text.limitReached;
     return del ? text.deleteError : text.error;
   }
 
@@ -124,13 +149,19 @@ export default function SocialOwnerActions({
     <div className="sp-owner">
       {mode === "idle" && (
         <div className="oa-row">
-          <button type="button" className="pc-pill pc-pill-sm" onClick={() => open("edit")}>
-            {text.edit}
-          </button>
+          {!closed && (
+            <button type="button" className="pc-pill pc-pill-sm" onClick={() => open("edit")}>
+              {text.edit}
+            </button>
+          )}
           <button type="button" className="pc-pill pc-pill-sm" onClick={() => open("confirm")}>
             {text.delete}
           </button>
         </div>
+      )}
+
+      {mode === "idle" && closed && (
+        <p className="pc-meta" role="status">{closed === "window" ? text.windowClosed : text.limitReached}</p>
       )}
 
       {mode === "confirm" && (
@@ -159,6 +190,7 @@ export default function SocialOwnerActions({
             onChange={(e) => setBody(e.target.value)}
           />
           <div className="sp-counter">{body.length}/{MAX}</div>
+          <p className="pc-meta">{text.hint.replace("{left}", String(left))}</p>
           <div className="oa-buttons">
             <button type="button" className="pc-pill pc-pill-sm" disabled={pending} onClick={cancel}>
               {text.cancel}

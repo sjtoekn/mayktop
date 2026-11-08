@@ -341,6 +341,7 @@ model Post {
   reports    Report[]
 
   @@index([communityId, createdAt])
+  @@index([createdAt, id]) // Home feed across communities (patch-social-perf-index)
   @@index([authorId])
   @@index([status])
 }
@@ -448,6 +449,7 @@ model SocialPost {
   mentions SocialMention[]
   bookmarks SocialPostBookmark[]
   pinnedBy  SocialPinnedPost[]
+  edits     SocialPostEdit[]
 
   @@index([createdAt, id])
   @@index([authorId, createdAt])
@@ -480,6 +482,7 @@ model SocialRepost {
   @@unique([userId, socialPostId])
   @@index([socialPostId, createdAt])
   @@index([userId, createdAt])
+  @@index([createdAt, id]) // feed order (patch-social-perf-index)
 }
 
 model Notification {
@@ -496,6 +499,7 @@ model Notification {
   actor     User @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Restrict)
 
   @@index([recipientId, readAt, createdAt])
+  @@index([recipientId, createdAt]) // list order (patch-social-perf-index)
   @@index([actorId, createdAt])
 }
 
@@ -748,6 +752,7 @@ model SocialPostTag {
 
   @@id([socialPostId, tag])
   @@index([tag, socialPostId])
+  @@index([createdAt]) // trending scan (patch-social-perf-index)
 }
 
 // One row per person mentioned (@username) in a Social post: only accounts that exist and may be shown.
@@ -877,4 +882,17 @@ model RateEvent {
 
   @@index([key, at])
   @@index([at])
+}
+
+// Edit history of a Social post (SOCIAL_TODO item 6): one row = one earlier version, saved when an edit replaced it.
+// `writtenAt` = when that version was written (the post's time, or the time of the edit before). Deleted with the post's text.
+model SocialPostEdit {
+  id           Int      @id @default(autoincrement())
+  socialPostId Int
+  body         String
+  writtenAt    DateTime
+
+  socialPost SocialPost @relation(fields: [socialPostId], references: [id], onDelete: Restrict)
+
+  @@index([socialPostId, id])
 }

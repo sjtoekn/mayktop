@@ -7,7 +7,7 @@ import type { Prisma } from "../../generated/prisma/client";
 type Db = Prisma.TransactionClient; // the normal `prisma` client can be passed too
 
 export async function getSocialExport(db: Db, userId: string) {
-  const [posts, likes, reposts, following, followersCount, notifications, replies, blocks, mutes, bookmarks, pinned, optOuts, replyLikes] = await Promise.all([
+  const [posts, likes, reposts, following, followersCount, notifications, replies, blocks, mutes, bookmarks, pinned, optOuts, replyLikes, postEdits] = await Promise.all([
     db.socialPost.findMany({
       where: { authorId: userId },
       orderBy: { id: "asc" },
@@ -65,6 +65,8 @@ export async function getSocialExport(db: Db, userId: string) {
     db.notificationOptOut.findMany({ where: { userId }, orderBy: { type: "asc" }, select: { type: true } }),
     // Likes on replies (SOCIAL_TODO B10): only the reply numbers the person liked, and when.
     db.socialReplyLike.findMany({ where: { userId }, orderBy: { createdAt: "asc" }, select: { socialReplyId: true, createdAt: true } }),
+    // Earlier versions of the person's OWN posts (SOCIAL_TODO item 6).
+    db.socialPostEdit.findMany({ where: { socialPost: { authorId: userId } }, orderBy: { id: "asc" }, select: { socialPostId: true, body: true, writtenAt: true } }),
   ]);
 
   return {
@@ -78,6 +80,7 @@ export async function getSocialExport(db: Db, userId: string) {
     muted: mutes.map((m) => ({ username: m.muted.username, since: m.createdAt })),
     bookmarks: bookmarks.map((b) => ({ socialPostId: b.socialPostId, since: b.createdAt })),
     notificationsOff: optOuts.map((row) => row.type),
+    postEdits: postEdits.map((e) => ({ socialPostId: e.socialPostId, text: e.body, writtenAt: e.writtenAt })),
     replyLikes: replyLikes.map((l) => ({ socialReplyId: l.socialReplyId, since: l.createdAt })),
     pinnedPost: pinned ? { socialPostId: pinned.socialPostId, since: pinned.createdAt } : null,
     notifications: notifications.map(({ actor, ...n }) => ({ ...n, from: actor.username })),

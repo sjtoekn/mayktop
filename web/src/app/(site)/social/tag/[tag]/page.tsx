@@ -50,23 +50,6 @@ async function SocialTagContent({ params, searchParams }: { params: Params; sear
   const { before } = await searchParams;
   const viewer = await getSessionUser();
 
-  if (!viewer) {
-    return (
-      <>
-        <header className="card pg-head">
-          <h1 className="sf-h1">{t("social.tag.title")}</h1>
-        </header>
-        <section className="card pg-empty">
-          <span className="pc-avatar pc-a4" aria-hidden="true"><Icon name="shield" size={26} /></span>
-          <p>{t("social.feed.loginRequired")}</p>
-          <div className="fa-actions">
-            <Link href="/login" className="pc-btn">{t("topbar.login")}</Link>
-            <Link href="/signup" className="pc-btn pc-btn-ghost">{t("topbar.signup")}</Link>
-          </div>
-        </section>
-      </>
-    );
-  }
 
   const tag = parseTagParam(rawTag);
   if (!tag) notFound();
@@ -74,7 +57,7 @@ async function SocialTagContent({ params, searchParams }: { params: Params; sear
   const cursor = parseCursor(before); // anything that is not a cursor means the first page
   const fetched = await getSocialTagFeed(tag, cursor ? cursorToText(cursor) : null);
   // Block and Mute (SOCIAL_TODO A7): applied for this viewer only.
-  const hidden = await loadHiddenAuthors(viewer.id);
+  const hidden = await loadHiddenAuthors(viewer?.id ?? null);
   const page = { ...fetched, items: dropHiddenItems(fetched.items, hidden.all) };
 
   return (

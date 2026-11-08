@@ -67,7 +67,7 @@ check("empty / missing file", checkMedia("image", new Uint8Array(0)).ok === fals
 // what each format needs
 check("TEXT needs no file", JSON.stringify(mediaNeeds("TEXT")) === '{"image":false,"video":false}');
 check("IMAGE needs a picture", JSON.stringify(mediaNeeds("IMAGE")) === '{"image":true,"video":false}');
-check("VIDEO needs a video and a poster picture", JSON.stringify(mediaNeeds("VIDEO")) === '{"image":true,"video":true}');
+check("VIDEO needs only a video (no poster)", JSON.stringify(mediaNeeds("VIDEO")) === '{"image":false,"video":true}');
 
 // addresses
 {

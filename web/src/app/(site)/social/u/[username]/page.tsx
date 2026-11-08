@@ -31,10 +31,10 @@ import { cursorToText, parseCursor } from "@/lib/social-paging";
 import { parseProfileTab, parseProfileUsername, profileHref } from "@/lib/social-profile";
 
 // A Social profile (SOCIAL_TODO 2): the person's posts and reposts, replies, likes (only for yourself), followers and
-// following. Social is ONLY for logged-in people (PROJECT.md 8j point 11), so, like the post page:
+// following. Visitors (not logged in) may read it (changed 2026-11-08 from PROJECT.md 8j point 11):
 //  - the title is always the same plain words and the page is marked noindex;
-//  - a visitor sees the log-in message for ANY name (nothing is read, it does not say whether the person exists);
-//  - a logged-in person gets "not found" for a name that is invalid, unknown, or an account whose posts are not shown
+//  - a visitor gets no Report / Block / Mute buttons, and the Likes tab stays private (own profile only);
+//  - everybody gets "not found" for a name that is invalid, unknown, or an account whose posts are not shown
 //    (deleted, or deletion pending: the same rule as the feeds, social-visibility.ts).
 export const metadata: Metadata = {
   title: t("social.profile.title"),
@@ -65,33 +65,16 @@ async function SocialProfileContent({ params, searchParams }: { params: Params; 
   const { tab: rawTab, before } = await searchParams;
   const viewer = await getSessionUser();
 
-  if (!viewer) {
-    return (
-      <>
-        <header className="card pg-head">
-          <h1 className="sf-h1">{t("social.feed.title")}</h1>
-        </header>
-        <section className="card pg-empty">
-          <span className="pc-avatar pc-a4" aria-hidden="true"><Icon name="shield" size={26} /></span>
-          <p>{t("social.feed.loginRequired")}</p>
-          <div className="fa-actions">
-            <Link href="/login" className="pc-btn">{t("topbar.login")}</Link>
-            <Link href="/signup" className="pc-btn pc-btn-ghost">{t("topbar.signup")}</Link>
-          </div>
-        </section>
-      </>
-    );
-  }
 
   const username = parseProfileUsername(rawUsername);
   if (username === null) notFound();
   const profile = await getSocialProfile(username);
   if (!profile) notFound();
 
-  const isOwn = profile.id === viewer.id;
+  const isOwn = viewer !== null && profile.id === viewer.id;
   // Block (SOCIAL_TODO A7): if THEY blocked me the page is "not found" (it never says why); if I blocked them I see a short
   // page with Unblock. Mute changes nothing here except a note and the Unmute button.
-  const relation = isOwn ? noRelation : await getBlockRelation(viewer.id, profile.id);
+  const relation = isOwn || !viewer ? noRelation : await getBlockRelation(viewer.id, profile.id);
   if (relation.blockedMe && !relation.blockedByMe) notFound();
   if (relation.blockedByMe) {
     return (
@@ -112,7 +95,7 @@ async function SocialProfileContent({ params, searchParams }: { params: Params; 
   const cursor = parseCursor(before); // only the Posts tab pages through older posts
   const name = profile.displayName?.trim() || profile.username;
   const tone = ((profile.username.charCodeAt(0) || 0) % 5) + 1;
-  const following = isOwn ? false : (await getMyFollowing(viewer.id, [profile.username])).includes(profile.username);
+  const following = isOwn || !viewer ? false : (await getMyFollowing(viewer.id, [profile.username])).includes(profile.username);
 
   return (
     <>
@@ -151,16 +134,16 @@ async function SocialProfileContent({ params, searchParams }: { params: Params; 
                 error: t("social.follow.error"),
               }}
             />
-            <SocialReportMore target={{ kind: "account", username: profile.username }} {...socialReportMoreProps("account")} />
-            <SocialBlockButtons username={profile.username} initialMuted={relation.mutedByMe} initialBlocked={false} text={socialBlockText(profile.username)} />
+            {viewer && <SocialReportMore target={{ kind: "account", username: profile.username }} {...socialReportMoreProps("account")} />}
+            {viewer && <SocialBlockButtons username={profile.username} initialMuted={relation.mutedByMe} initialBlocked={false} text={socialBlockText(profile.username)} />}
           </div>
         )}
         <SocialProfileTabs username={profile.username} active={tab} showLikes={isOwn} />
       </header>
 
       {tab === "posts" && <PostsTab profileId={profile.id} username={profile.username} cursorText={cursor ? cursorToText(cursor) : null} viewer={viewer} />}
-      {tab === "replies" && <RepliesTab profileId={profile.id} viewerId={viewer.id} />}
-      {tab === "likes" && isOwn && <LikesTab profileId={profile.id} viewer={viewer} />}
+      {tab === "replies" && <RepliesTab profileId={profile.id} viewerId={viewer?.id ?? null} />}
+      {tab === "likes" && isOwn && viewer && <LikesTab profileId={profile.id} viewer={viewer} />}
       {(tab === "followers" || tab === "following") && <PeopleTab profileId={profile.id} kind={tab} viewer={viewer} />}
     </>
   );
@@ -181,9 +164,10 @@ function LimitNote({ shown }: { shown: number }) {
 }
 
 type Viewer = { id: string; username: string };
+type MaybeViewer = Viewer | null; // null = a visitor who is not logged in
 
-async function PostsTab({ profileId, username, cursorText, viewer }: { profileId: string; username: string; cursorText: string | null; viewer: Viewer }) {
-  const hidden = await loadHiddenAuthors(viewer.id);
+async function PostsTab({ profileId, username, cursorText, viewer }: { profileId: string; username: string; cursorText: string | null; viewer: MaybeViewer }) {
+  const hidden = await loadHiddenAuthors(viewer?.id ?? null);
   const fetched = await getSocialProfileFeed(profileId, cursorText);
   // Block hides what a blocked person wrote or reposted. A MUTED person's own profile still shows their posts.
   // Pinned post (SOCIAL_TODO B6): first page only, shown on top with a label and left out of the list below so it is not twice.
@@ -205,7 +189,7 @@ async function PostsTab({ profileId, username, cursorText, viewer }: { profileId
   );
 }
 
-async function RepliesTab({ profileId, viewerId }: { profileId: string; viewerId: string }) {
+async function RepliesTab({ profileId, viewerId }: { profileId: string; viewerId: string | null }) {
   const hidden = await loadHiddenAuthors(viewerId);
   const replies = (await getSocialProfileReplies(profileId)).filter((reply) => !hidden.blocked.has(reply.postAuthor));
   if (replies.length === 0) return <Empty text={t("social.profile.empty.replies")} />;
@@ -240,14 +224,14 @@ async function LikesTab({ profileId, viewer }: { profileId: string; viewer: View
   );
 }
 
-async function PeopleTab({ profileId, kind, viewer }: { profileId: string; kind: "followers" | "following"; viewer: Viewer }) {
-  const hidden = await loadHiddenAuthors(viewer.id);
+async function PeopleTab({ profileId, kind, viewer }: { profileId: string; kind: "followers" | "following"; viewer: MaybeViewer }) {
+  const hidden = await loadHiddenAuthors(viewer?.id ?? null);
   const people = (await getSocialProfilePeople(profileId, kind)).filter((person) => !hidden.blocked.has(person.username));
   if (people.length === 0) return <Empty text={kind === "followers" ? t("social.profile.empty.followers") : t("social.profile.empty.following")} />;
-  const followingNames = new Set(await getMyFollowing(viewer.id, people.map((person) => person.username)));
+  const followingNames = new Set(viewer ? await getMyFollowing(viewer.id, people.map((person) => person.username)) : []);
   return (
     <>
-      <SocialPeopleList people={people} viewer={viewer.username} followingNames={followingNames} />
+      <SocialPeopleList people={people} viewer={viewer?.username ?? null} followingNames={followingNames} />
       <LimitNote shown={people.length} />
     </>
   );

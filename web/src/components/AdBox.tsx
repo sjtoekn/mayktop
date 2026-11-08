@@ -11,7 +11,7 @@ import AdMedia from "@/components/AdMedia";
 import "./ad-social.css";
 import "./ad-header.css";
 
-// format / imageUrl / videoUrl: Session 3b. imageUrl is the picture of an IMAGE ad, or the poster of a VIDEO ad.
+// format / imageUrl / videoUrl: Session 3b. imageUrl is the picture of an IMAGE ad. A VIDEO ad has only a videoUrl (no poster).
 type Ad = {
   id: number;
   title: string;
@@ -168,21 +168,16 @@ export default function AdBox({
 
       {ad ? (
         <div>
-          {/* VIDEO: the player stays OUTSIDE the link, so pressing play never counts as a click. Never autoplay. */}
-          {ad.format === "VIDEO" && (
-            <div className="mb-2">
-              <AdMedia format="VIDEO" imageUrl={ad.imageUrl ?? null} videoUrl={ad.videoUrl ?? null} title={ad.title} />
-            </div>
-          )}
           <a
             href={`/api/ad/click/${ad.id}`}
             target="_blank"
             rel="sponsored nofollow noopener noreferrer"
             className="block"
           >
-            {ad.format === "IMAGE" && (
+            {/* IMAGE and VIDEO: the picture or the silent, self-starting video is INSIDE the link, so a click anywhere on it opens the ad. */}
+            {(ad.format === "IMAGE" || ad.format === "VIDEO") && (
               <div className="mb-2">
-                <AdMedia format="IMAGE" imageUrl={ad.imageUrl ?? null} videoUrl={null} title={ad.title} />
+                <AdMedia format={ad.format} imageUrl={ad.imageUrl ?? null} videoUrl={ad.videoUrl ?? null} title={ad.title} />
               </div>
             )}
             <strong className="type-heading block">{ad.title}</strong>
