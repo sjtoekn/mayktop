@@ -1,0 +1,9 @@
+/* /notifications (SOCIAL_TODO 21). Colours come from the site variables (globals.css). */
+.nt-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.nt-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; text-decoration: none; color: var(--ink); }
+.nt-item:hover { background: var(--brandsoft); }
+.nt-item.is-unread { background: var(--brandsoft); border-inline-start: 4px solid var(--brand); }
+.nt-text { flex: 1; min-width: 0; }
+.nt-time { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.nt-new { background: var(--brand); color: var(--onbrand); font-size: 12px; padding: 2px 8px; border-radius: var(--radius-full); }
+.nt-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }

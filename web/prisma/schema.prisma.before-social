@@ -1,0 +1,554 @@
+// MaykTop database design (TODO 28). Plain-language guide: DATABASE.md in the project root.
+//
+// Rules this design follows (PROJECT.md, section 8b):
+//  - Nothing is ever hard-deleted. Content has a status; accounts, rules and communities are
+//    "archived" or "deleted" with a date. Every link below is onDelete: Restrict on purpose,
+//    so the database itself refuses to delete something that other rows depend on.
+//  - Every moderator/admin action is written to ONE table (AuditLog). The public mod log reads it.
+//  - All times are saved in UTC (DateTime). We convert to the reader's timezone only when showing.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------------------------------------------------------------- Enums
+// (SQLite does not check enum values itself; Prisma does. That is fine for us.)
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  SUSPENDED // by staff; see suspensionKind
+  DELETION_PENDING // the person asked to delete the account; waits for eraseAt (PROJECT.md 8c)
+  DELETED // personal data erased; the row stays as an anonymous shell
+}
+
+// TEMPORARY: returns by itself at suspendedAt..suspendedUntil, nothing is erased.
+// BAN: 7 days to export data and appeal, then the account is erased (eraseAt).
+enum SuspensionKind {
+  TEMPORARY
+  BAN
+}
+
+enum MemberRole {
+  MEMBER
+  MODERATOR
+}
+
+enum ContentStatus {
+  VISIBLE
+  HIDDEN_PENDING_REVIEW
+  REMOVED
+}
+
+enum ReportStatus {
+  OPEN
+  IN_REVIEW
+  ACTIONED
+  DISMISSED
+}
+
+enum AppealStatus {
+  OPEN
+  ACCEPTED // appeal accepted: the original decision is reversed (e.g. content restored)
+  REJECTED // appeal rejected: the original decision stands
+}
+
+enum AuditAction {
+  CONTENT_HIDDEN
+  CONTENT_REMOVED
+  CONTENT_RESTORED
+  REPORT_ACTIONED
+  REPORT_DISMISSED
+  APPEAL_ACCEPTED
+  APPEAL_REJECTED
+  USER_SUSPENDED
+  USER_BANNED // permanent ban: 7 days to export data and appeal, then erased
+  BAN_PROPOSED // step 1 of a ban: an admin proposes (nothing happens to the person yet)
+  BAN_REJECTED // a proposed ban was rejected / withdrawn
+  LEGAL_HOLD_SET // a safety record (or a person's future record) is held for a legal request (TODO 36e)
+  LEGAL_HOLD_RELEASED
+  USER_RESTORED
+  ROLE_CHANGED
+  MODERATOR_ADDED
+  MODERATOR_REMOVED
+  AD_APPROVED
+  AD_REJECTED
+  AD_PAUSED
+  AD_RESTORED
+}
+
+enum AuditTarget {
+  POST
+  COMMENT
+  USER
+  COMMUNITY
+  REPORT
+  APPEAL
+  AD
+}
+
+// ---- Ads (TODO 44). Flat monthly fee, no per-click / per-impression price.
+enum AdStatus {
+  DRAFT // advertiser is still writing it
+  SUBMITTED // waiting in the review queue
+  APPROVED // passed review; runs once it is paid and the start date comes
+  REJECTED // failed review; always has a policy rule + a written reason
+  ACTIVE // running now (approved + paid + inside its dates)
+  PAUSED // stopped for a while (by the advertiser or an admin)
+  ENDED // finished (end date passed, or ended on purpose)
+}
+
+enum AdSlotType {
+  SIDEBAR // the right-hand sidebar box
+  FEED // between posts in a feed (max 2 per page, see AdSlot.tsx)
+}
+
+enum AdPaymentStatus {
+  UNPAID
+  PAID // marked by an admin for now (manual payment). Refunds: TODO 46.
+}
+
+// ---------------------------------------------------------------- People
+
+model User {
+  id          String     @id @default(cuid())
+  username    String     @unique // saved in lower case by the app (/u/sjethan)
+  email       String     @unique
+  displayName String? // Better Auth's "name" field is saved here (see src/lib/auth.ts)
+  bio         String?
+  role        Role       @default(USER) // platform level: USER, MODERATOR or ADMIN
+  status      UserStatus @default(ACTIVE) // suspend / delete = change this, never remove the row
+  language    String     @default("en")
+  timezone    String? // e.g. "Asia/Colombo"; null = follow the browser
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  deletedAt   DateTime?
+  // Account lifecycle (TODO 36a). See PROJECT.md 8c for the rules.
+  suspendedAt    DateTime?
+  suspendedUntil DateTime? // TEMPORARY suspension: when it ends
+  suspensionKind SuspensionKind?
+  suspensionNote String? // the reason shown to the person (the rule link comes with 36d)
+  eraseAt        DateTime? // when the personal data will be erased (BAN or deletion pending)
+  eraseWarnedAt  DateTime? // when the "your data will be erased" email was sent for the current erase date (TODO 36e)
+  legalHold      Boolean   @default(false) // a legal request: when erased, a safety record is kept and never swept (TODO 36e)
+  // Added for sign-in (Better Auth, TODO 30). Seed users have no password and cannot log in.
+  emailVerified Boolean @default(false)
+  image         String?
+
+  sessions           Session[]
+  accounts           Account[]
+  communitiesCreated Community[]
+  memberships        Membership[]
+  posts              Post[]
+  comments           Comment[]
+  postVotes          PostVote[]
+  commentVotes       CommentVote[]
+  reportsMade        Report[]      @relation("ReportReporter")
+  reportsResolved    Report[]      @relation("ReportResolver")
+  appealsMade        Appeal[]      @relation("AppealAppellant")
+  appealsDecided     Appeal[]      @relation("AppealDecider")
+  auditLogs          AuditLog[]
+  adsOwned           AdCampaign[]  @relation("AdAdvertiser")
+  adsReviewed        AdCampaign[]  @relation("AdReviewer")
+  banProposalsAgainst BanProposal[] @relation("BanTarget")
+  banProposalsMade    BanProposal[] @relation("BanProposer")
+  banProposalsDecided BanProposal[] @relation("BanDecider")
+  safetyRecords       SafetyRecord[]
+}
+
+// ---------------------------------------------------------------- Sign-in (Better Auth)
+// The four tables below follow Better Auth's core schema (models User, Session, Account,
+// Verification). Keep the field names: the library reads and writes them by name.
+
+// One row per logged-in device. Logging out deletes the row.
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+}
+
+// How a person signs in: providerId "credential" = email + password (hash in `password`),
+// "google" / "github" = social sign-in (added later).
+model Account {
+  id                    String    @id @default(cuid())
+  accountId             String
+  providerId            String
+  userId                String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+// Short-lived codes (email verification, password reset, magic links). Expired rows are
+// cleaned up by Better Auth.
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+// ---------------------------------------------------------------- Communities
+
+model Community {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique // /c/learning
+  name        String
+  description String
+  createdById String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  archivedAt  DateTime?
+
+  createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  rules       Rule[]
+  memberships Membership[]
+  posts       Post[]
+  auditLogs   AuditLog[]
+  ads         AdCampaign[]
+}
+
+// Each community has its own 3-5 short rules. A rule is archived, never deleted,
+// because old removals and reports point to it.
+model Rule {
+  id          Int       @id @default(autoincrement())
+  communityId Int
+  position    Int // 1, 2, 3 ... order shown to people
+  title       String
+  text        String
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  community Community  @relation(fields: [communityId], references: [id], onDelete: Restrict)
+  posts     Post[]
+  comments  Comment[]
+  reports   Report[]
+  auditLogs AuditLog[]
+
+  @@unique([communityId, position])
+}
+
+// Joining a community. A person can also be a MODERATOR of that one community.
+model Membership {
+  userId      String
+  communityId Int
+  role        MemberRole @default(MEMBER)
+  joinedAt    DateTime   @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  community Community @relation(fields: [communityId], references: [id], onDelete: Restrict)
+
+  @@id([userId, communityId])
+  @@index([communityId])
+}
+
+// ---------------------------------------------------------------- Content
+
+model Post {
+  id              Int           @id @default(autoincrement())
+  communityId     Int
+  authorId        String
+  title           String
+  body            String
+  status          ContentStatus @default(VISIBLE)
+  // Why the status is not VISIBLE (shown on the page). The full history is in AuditLog.
+  statusRuleId    Int?
+  statusNote      String?
+  statusChangedAt DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  editedAt        DateTime?
+  // The author erased it (patch-40): title/body are emptied for good, the row stays so that
+  // threads, vote totals and the audit log keep their shape. Never shown, never searched.
+  deletedAt       DateTime?
+
+  community  Community   @relation(fields: [communityId], references: [id], onDelete: Restrict)
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  statusRule Rule?       @relation(fields: [statusRuleId], references: [id], onDelete: Restrict)
+  comments   Comment[]
+  votes      PostVote[]
+  reports    Report[]
+
+  @@index([communityId, createdAt])
+  @@index([authorId])
+  @@index([status])
+}
+
+model Comment {
+  id              Int           @id @default(autoincrement())
+  postId          Int
+  authorId        String
+  parentId        Int? // null = top-level comment, otherwise a reply to that comment
+  body            String
+  status          ContentStatus @default(VISIBLE)
+  statusRuleId    Int?
+  statusNote      String?
+  statusChangedAt DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  editedAt        DateTime?
+  // The author erased it (patch-40): title/body are emptied for good, the row stays so that
+  // threads, vote totals and the audit log keep their shape. Never shown, never searched.
+  deletedAt       DateTime?
+
+  post       Post          @relation(fields: [postId], references: [id], onDelete: Restrict)
+  author     User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  parent     Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Restrict)
+  replies    Comment[]     @relation("CommentReplies")
+  statusRule Rule?         @relation(fields: [statusRuleId], references: [id], onDelete: Restrict)
+  votes      CommentVote[]
+  reports    Report[]
+
+  @@index([postId, createdAt])
+  @@index([authorId])
+  @@index([parentId])
+}
+
+// One vote per person per post / comment. value is +1 or -1 (the app checks this).
+model PostVote {
+  userId    String
+  postId    Int
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  post Post @relation(fields: [postId], references: [id], onDelete: Restrict)
+
+  @@id([userId, postId])
+  @@index([postId])
+}
+
+model CommentVote {
+  userId    String
+  commentId Int
+  value     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Restrict)
+  comment Comment @relation(fields: [commentId], references: [id], onDelete: Restrict)
+
+  @@id([userId, commentId])
+  @@index([commentId])
+}
+
+// ---------------------------------------------------------------- Fairness and moderation
+
+// A person reports a post OR a comment (exactly one of postId / commentId is filled;
+// the app checks this). Profiles and ads can be added in Phase 4.
+model Report {
+  id             Int          @id @default(autoincrement())
+  reporterId     String
+  postId         Int?
+  commentId      Int?
+  ruleId         Int? // which rule the reporter says was broken
+  reason         String
+  status         ReportStatus @default(OPEN)
+  createdAt      DateTime     @default(now())
+  resolvedAt     DateTime?
+  resolvedById   String?
+  resolutionNote String?
+
+  reporter   User       @relation("ReportReporter", fields: [reporterId], references: [id], onDelete: Restrict)
+  resolvedBy User?      @relation("ReportResolver", fields: [resolvedById], references: [id], onDelete: Restrict)
+  post       Post?      @relation(fields: [postId], references: [id], onDelete: Restrict)
+  comment    Comment?   @relation(fields: [commentId], references: [id], onDelete: Restrict)
+  rule       Rule?      @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+  auditLogs  AuditLog[]
+
+  @@unique([reporterId, postId])
+  @@unique([reporterId, commentId])
+  @@index([status, createdAt])
+}
+
+// THE audit log: every moderator/admin action is one row here (who, what, when, which rule).
+// Rows are only ever added, never edited or deleted. The public mod log reads this table.
+model AuditLog {
+  id          Int         @id @default(autoincrement())
+  createdAt   DateTime    @default(now())
+  actorId     String
+  actorRole   Role // the actor's role AT THAT TIME (roles can change later)
+  action      AuditAction
+  targetType  AuditTarget
+  targetId    String // id of the post / comment / user ... (text, because user ids are text)
+  communityId Int?
+  ruleId      Int? // required by the app for hide/remove actions
+  reportId    Int?
+  reason      String? // required by the app for hide/remove actions
+  siteRule    String? // site-wide rule key (staffConfig.siteRules) for USER_SUSPENDED / USER_BANNED; community rules use ruleId
+
+  actor     User       @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  community Community? @relation(fields: [communityId], references: [id], onDelete: Restrict)
+  rule      Rule?      @relation(fields: [ruleId], references: [id], onDelete: Restrict)
+  report    Report?    @relation(fields: [reportId], references: [id], onDelete: Restrict)
+  appeals   Appeal[]
+
+  @@index([createdAt])
+  @@index([communityId, createdAt])
+  @@index([targetType, targetId])
+}
+
+// "I disagree with this decision." An appeal always points to the audit-log row of the
+// decision. A different person than the original decider should review it (Phase 3 rule).
+model Appeal {
+  id           Int          @id @default(autoincrement())
+  appellantId  String
+  auditLogId   Int
+  message      String
+  status       AppealStatus @default(OPEN)
+  createdAt    DateTime     @default(now())
+  decidedAt    DateTime?
+  decidedById  String?
+  decisionNote String?
+
+  appellant User     @relation("AppealAppellant", fields: [appellantId], references: [id], onDelete: Restrict)
+  decidedBy User?    @relation("AppealDecider", fields: [decidedById], references: [id], onDelete: Restrict)
+  auditLog  AuditLog @relation(fields: [auditLogId], references: [id], onDelete: Restrict)
+
+  @@unique([appellantId, auditLogId])
+  @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------- Ads (TODO 44)
+// Privacy design (PROJECT.md section 5, ADS_PLAN.md section 0): we store NOTHING about the people
+// who see an ad. Only the advertiser's own data, and per-ad per-day totals.
+
+// One ad that is booked for a period at a flat monthly price. (One row = one ad + its booking.)
+// Never hard-deleted: a finished or rejected ad stays as history (status ENDED / REJECTED).
+model AdCampaign {
+  id             Int             @id @default(autoincrement())
+  advertiserId   String
+  contactEmail   String // where notices go (approved / rejected / ending soon). The only personal data kept.
+  title          String // short headline shown in the ad
+  body           String // the ad text
+  imageUrl       String? // optional; v1 may be text-only (decided in Session 3)
+  destinationUrl String // must be https (checked by the app)
+  slot           AdSlotType
+  communityId    Int? // null = any page; set = only that community's pages (contextual, never per person)
+  startDate      DateTime? // set when approved + paid
+  endDate        DateTime?
+  priceCents     Int // flat price for the booking, in cents (default comes from siteConfig.ads)
+  currency       String          @default("USD")
+  status         AdStatus        @default(DRAFT)
+  paymentStatus  AdPaymentStatus @default(UNPAID)
+  paidAt         DateTime?
+  submittedAt    DateTime?
+  reviewedById   String?
+  reviewedAt     DateTime?
+  reviewRule     String? // key of the ad policy rule (siteConfig.ads.policyRules). Required by the app on REJECTED.
+  reviewNote     String? // the written reason. Required by the app on REJECTED.
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  advertiser User        @relation("AdAdvertiser", fields: [advertiserId], references: [id], onDelete: Restrict)
+  reviewedBy User?       @relation("AdReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
+  community  Community?  @relation(fields: [communityId], references: [id], onDelete: Restrict)
+  stats      AdDailyStat[]
+
+  @@index([status, slot])
+  @@index([advertiserId, createdAt])
+  @@index([communityId])
+}
+
+// Totals only: how many times an ad was shown / clicked on one UTC day. No user id, no IP, no cookie.
+model AdDailyStat {
+  adId        Int
+  date        DateTime // UTC midnight of that day
+  impressions Int      @default(0)
+  clicks      Int      @default(0)
+
+  ad AdCampaign @relation(fields: [adId], references: [id], onDelete: Restrict)
+
+  @@id([adId, date])
+}
+
+// ---------------------------------------------------------------- Ban approval (TODO 36d, patch-36d2)
+// A permanent ban needs TWO different admins: one proposes, another approves (PROJECT.md 8d).
+// Nothing happens to the person until it is approved. A proposal lapses after
+// staffConfig.banProposalDays. Every step is also written to AuditLog (BAN_PROPOSED / USER_BANNED / BAN_REJECTED).
+enum BanProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model BanProposal {
+  id           Int               @id @default(autoincrement())
+  targetId     String
+  proposerId   String
+  siteRule     String // staffConfig.siteRules key
+  reason       String
+  status       BanProposalStatus @default(PENDING)
+  createdAt    DateTime          @default(now())
+  decidedById  String?
+  decidedAt    DateTime?
+  decisionNote String?
+
+  target    User  @relation("BanTarget", fields: [targetId], references: [id], onDelete: Restrict)
+  proposer  User  @relation("BanProposer", fields: [proposerId], references: [id], onDelete: Restrict)
+  decidedBy User? @relation("BanDecider", fields: [decidedById], references: [id], onDelete: Restrict)
+
+  @@index([targetId, status])
+  @@index([status, createdAt])
+}
+
+// ---------------------------------------------------------------- Safety record (TODO 36e, PROJECT.md 8c point 4)
+// Kept AFTER an account is erased, only for: a banned account, an account with an open report on its content at
+// erasure time, or a legal hold. NEVER public, admin access only. Deleted by `npm run purge` when keepUntil has
+// passed (180 days; 2 years after a ban for a serious rule), unless legalHold is true. The person's own row is only
+// an anonymous shell by then; userId points to that shell. Normal self-deleted accounts get NO record.
+model SafetyRecord {
+  id               Int      @id @default(autoincrement())
+  userId           String // the erased person's id (the anonymous shell row)
+  emailHash        String // HMAC-SHA256 of the email with a server secret: one-way, the address cannot be read back
+  accountCreatedAt DateTime
+  erasedAt         DateTime @default(now())
+  reasons          String // comma list: BAN, OPEN_REPORT, LEGAL_HOLD
+  siteRule         String? // the ban's site rule key
+  banReason        String? // the ban's written reason
+  bannedAt         DateTime?
+  auditLogIds      String // JSON list of AuditLog ids about this person and their content (the rows stay in AuditLog)
+  content          String // JSON: copy of the reported / removed posts and comments + the open reports at erasure time
+  appeals          String // JSON: the appeals the person wrote
+  keepUntil        DateTime
+  legalHold        Boolean  @default(false) // true = never swept, whatever keepUntil says
+  user             User     @relation(fields: [userId], references: [id], onDelete: Restrict)
+
+  @@index([userId])
+  @@index([keepUntil])
+}

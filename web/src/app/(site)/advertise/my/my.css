@@ -1,0 +1,16 @@
+/* "My ads" (ADS_PLAN Session 4a). Tokens only (no hex), works in light and dark. */
+.my-list { display: grid; gap: 22px; }
+.my-item { padding: 22px 24px; display: grid; gap: 14px; }
+.my-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.my-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.my-preview { max-width: 100%; overflow-wrap: anywhere; }
+.my-previewTitle { margin: 6px 0 2px; font-size: 18px; font-weight: 700; }
+.my-facts { display: grid; gap: 4px; }
+.my-why { display: grid; gap: 4px; }
+.my-ask { margin: 0 0 4px; font-weight: 600; font-size: 17px; }
+.my-stats { display: grid; gap: 8px; }
+.my-total { margin: 0; font-size: 17px; font-weight: 600; }
+.my-tableWrap { overflow-x: auto; max-width: 100%; }
+.my-table { border-collapse: collapse; font-size: 15px; min-width: 18rem; }
+.my-table th, .my-table td { padding: 6px 14px; text-align: start; border-bottom: 1px solid var(--line-strong); }
+.my-table td:nth-child(n + 2), .my-table th:nth-child(n + 2) { text-align: end; font-variant-numeric: tabular-nums; }

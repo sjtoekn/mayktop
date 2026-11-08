@@ -1,0 +1,214 @@
+/* Profile page. Colours come only from the tokens in globals.css, so light and dark both work.
+   Page frame is in shell.css; shared pieces (.card, .pc-pill, .pc-a1..5) are in content.css. */
+
+/* ---------- Hero: cover, photo, name, stats ---------- */
+.pf-hero { overflow: hidden; }
+.pf-cover {
+  position: relative;
+  height: 200px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--brandsoft) center / cover no-repeat;
+}
+.pf-coverArt { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.pf-wave {
+  position: absolute;
+  bottom: -1px;
+  inset-inline-start: 0;
+  width: min(60%, 560px);
+  height: 100%;
+  fill: var(--surface);
+}
+[dir="rtl"] .pf-wave { transform: scaleX(-1); }
+
+.pf-info {
+  position: relative;
+  display: grid;
+  grid-template-columns: 184px minmax(0, 1fr);
+  column-gap: 30px;
+  padding: 0 28px 24px;
+}
+.pf-avatarWrap { position: relative; width: 184px; height: 184px; margin-top: -104px; }
+.pf-avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background-position: center;
+  background-size: cover;
+  color: #fff;
+  font-weight: 700;
+}
+.pf-avatarLg {
+  width: 100%;
+  height: 100%;
+  border: 7px solid var(--surface);
+  box-shadow: 0 6px 22px rgba(15, 27, 61, 0.18);
+  font-size: 54px;
+}
+.pf-avatarTick {
+  position: absolute;
+  inset-inline-end: 6px;
+  bottom: 8px;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+.pf-verified { flex: none; display: block; }
+
+.pf-main { min-width: 0; margin-top: 16px; }
+.pf-nameRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.pf-name { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; }
+.pf-handle { margin: 2px 0 0; color: var(--muted); font-size: 20px; }
+.pf-tagline { margin: 14px 0 18px; font-size: 19px; }
+
+.pf-btns { position: relative; display: flex; gap: 12px; }
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 52px;
+  padding: 0 24px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface2);
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.pf-btn:hover { background: var(--brandsoft); }
+.pf-btnPrimary { background: var(--brand); border-color: var(--brand); color: var(--onbrand); }
+.pf-btnPrimary:hover { background: var(--brandhover); }
+.pf-btnIcon { width: 52px; padding: 0; }
+.pf-toast {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--surface);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.pf-srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+.pf-stats { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 640px; margin: 0; border: 1px solid var(--line); border-radius: 18px; }
+.pf-stat { display: flex; flex-direction: column-reverse; padding: 12px 8px; text-align: center; }
+.pf-stat + .pf-stat { border-inline-start: 1px solid var(--line); }
+.pf-stat dd { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
+.pf-stat dt { color: var(--muted); font-size: 16px; }
+
+/* ---------- Tabs ---------- */
+.pf-tablist { display: flex; gap: 6px; padding: 8px; overflow-x: auto; }
+.pf-tab {
+  flex: 1 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  height: 54px;
+  padding: 0 22px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.pf-tab:hover { background: var(--surface2); }
+.pf-tabActive, .pf-tabActive:hover { background: var(--brandsoft); color: var(--brand); font-weight: 600; box-shadow: inset 0 -3px 0 var(--brand); }
+.pf-tab:focus-visible, .pf-btn:focus-visible { outline: 3px solid var(--brand); outline-offset: 2px; }
+
+.pf-cols { container-type: inline-size; }
+.pf-colsInner { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; align-items: start; }
+.pf-panels { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.pf-aside { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+@container (min-width: 820px) {
+  .pf-colsInner { grid-template-columns: minmax(0, 1fr) 320px; }
+}
+.pf-panel { display: flex; flex-direction: column; gap: 18px; }
+.pf-panel[hidden] { display: none; }
+.pf-empty { margin: 0; padding: 32px; text-align: center; color: var(--muted); font-size: 18px; }
+
+/* ---------- Post card ---------- */
+.pf-post { padding: 22px 24px; }
+.pf-postHead { display: flex; align-items: center; gap: 14px; }
+.pf-avatarSm { width: 56px; height: 56px; flex: none; font-size: 20px; }
+.pf-postWho { flex: 1; min-width: 0; }
+.pf-postWho b { display: flex; align-items: center; gap: 8px; font-size: 20px; }
+.pf-postWho small { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 16px; }
+.pf-more { display: grid; place-items: center; padding: 6px; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.pf-postText { margin: 16px 0; font-size: 20px; line-height: 1.45; overflow-wrap: anywhere; }
+.pf-postArt { aspect-ratio: 800 / 260; margin-bottom: 18px; border-radius: 18px; overflow: hidden; }
+.pf-postArt svg { display: block; width: 100%; height: 100%; }
+
+/* ---------- About tab ---------- */
+.pf-aboutPanel { padding: 24px; }
+.pf-aboutPanel h2 { margin: 0 0 12px; font-size: 24px; }
+.pf-details { margin: 0; }
+.pf-details > div { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); font-size: 18px; }
+.pf-details dt { color: var(--muted); }
+.pf-details dd { margin: 0; font-weight: 500; text-align: end; overflow-wrap: anywhere; }
+.pf-details a, .pf-meta a { color: var(--brand); }
+
+/* ---------- Communities tab ---------- */
+.pf-commGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+.pf-comm { display: flex; align-items: center; gap: 14px; padding: 18px 20px; transition: background .15s; }
+.pf-comm:hover { background: var(--brandsoft); }
+.pf-commIcon { display: grid; place-items: center; flex: none; width: 52px; height: 52px; border-radius: 16px; background: var(--brandsoft); color: var(--brand); }
+.pf-commText { min-width: 0; display: flex; flex-direction: column; }
+.pf-commText b { font-size: 18px; }
+.pf-commText small { color: var(--muted); font-size: 15px; }
+
+/* ---------- Right column cards ---------- */
+.pf-side { padding: 22px 24px; }
+.pf-side h3 { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; font-size: 22px; }
+.pf-sideHead { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.pf-ico { display: inline-grid; place-items: center; }
+.pf-icoStar { color: #ff9f1a; }
+.pf-icoHeart { color: #ff3d9a; }
+.pf-icoTrophy { color: #f0a400; }
+.pf-bio { margin: 0 0 16px; padding-bottom: 16px; border-bottom: 1px solid var(--line); font-size: 18px; line-height: 1.5; }
+.pf-aboutPanel .pf-bio { border-bottom: 0; padding-bottom: 4px; }
+.pf-meta { display: grid; gap: 14px; margin: 0; padding: 0; list-style: none; font-size: 18px; }
+.pf-meta li { display: flex; align-items: center; gap: 14px; }
+.pf-meta svg { flex: none; color: var(--muted); }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.pf-chip { padding: 7px 16px; border-radius: 999px; font-size: 16px; font-weight: 500; }
+.pf-viewAll { display: inline-flex; align-items: center; gap: 4px; padding-top: 4px; color: var(--brand); font-size: 16px; font-weight: 500; white-space: nowrap; }
+.pf-flip { display: inline-grid; }
+[dir="rtl"] .pf-flip { transform: scaleX(-1); }
+.pf-badges { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; text-align: center; }
+.pf-hex {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 84px;
+  margin: 0 auto 8px;
+  color: #fff;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+.pf-badge small { display: block; font-size: 14px; line-height: 1.25; }
+
+/* ---------- Small screens ---------- */
+@media (max-width: 800px) {
+  .pf-cover { height: 150px; }
+  .pf-info { grid-template-columns: 1fr; padding: 0 18px 20px; }
+  .pf-avatarWrap { width: 128px; height: 128px; margin-top: -72px; }
+  .pf-avatarLg { border-width: 5px; font-size: 40px; }
+  .pf-avatarTick { width: 40px; height: 40px; }
+  .pf-avatarTick svg { width: 34px; height: 34px; }
+  .pf-main { margin-top: 14px; }
+  .pf-name { font-size: 30px; }
+  .pf-btns { padding-top: 0; }
+  .pf-tab { padding: 0 16px; }
+  .pf-post { padding: 18px; }
+  .pf-postText { font-size: 18px; }
+}

@@ -1,0 +1,5 @@
+/* Picture / video part of an ad (ADS_PLAN Session 3b). Tokens only (no hex): works in light and dark.
+   The box has a FIXED shape (16:9) before the file loads, so the page does not jump (no layout shift). */
+.ad-media { position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; border-radius: var(--radius-md); background: var(--surface2); border: 1px solid var(--adline); }
+.ad-media img, .ad-media video { display: block; width: 100%; height: 100%; object-fit: contain; background: var(--surface2); }
+.ad-media-empty { display: flex; align-items: center; justify-content: center; padding: 0.5rem; text-align: center; color: var(--muted); font-size: 0.8rem; }

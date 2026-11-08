@@ -1,0 +1,6 @@
+/* Edit / Delete buttons under your own post or comment (patch-40). */
+.oa-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
+.oa-form { display: grid; gap: 10px; margin-top: 12px; }
+.oa-form textarea { min-height: 120px; resize: vertical; }
+.oa-buttons { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.oa-confirm { margin: 0; font-size: 16px; }

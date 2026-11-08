@@ -1,0 +1,22 @@
+/* Advertiser pages (ADS_PLAN Session 3). Tokens only (no hex), works in light and dark. */
+.adv-wrap { display: grid; gap: 22px; }
+.adv-card { padding: 24px 26px; display: grid; gap: 12px; }
+.adv-h1 { margin: 0 0 4px; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+.adv-text { margin: 0; font-size: 17px; }
+.adv-price { margin: 0; font-size: 18px; font-weight: 700; }
+.adv-hint { margin: 0; color: var(--muted); font-size: 15px; }
+.adv-count { justify-self: end; color: var(--muted); font-size: 14px; margin-top: -6px; }
+.adv-label { font-size: 16px; font-weight: 600; padding: 0; }
+.adv-fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: 8px; min-width: 0; }
+.adv-choices { display: flex; flex-wrap: wrap; gap: 10px; }
+.adv-choice { display: flex; align-items: center; gap: 10px; padding: 10px 16px; border: 1px solid var(--line-strong); border-radius: 14px; font-size: 17px; cursor: pointer; background: var(--surface2); }
+.adv-choice input { width: 20px; height: 20px; accent-color: var(--brand); }
+.adv-choice-off { opacity: 0.6; cursor: not-allowed; }
+.adv-soon { color: var(--muted); font-size: 14px; }
+.adv-actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 6px; flex-wrap: wrap; }
+.adv-steps { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.adv-rule { font-size: 17px; padding-inline-start: 4px; }
+.adv-rule::before { content: "•"; margin-inline-end: 10px; color: var(--brand); }
+.adv-preview { max-width: 100%; }
+.adv-preview-SIDEBAR { max-width: 22rem; }
+.adv-preview .card-ad { overflow-wrap: anywhere; }

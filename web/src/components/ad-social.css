@@ -1,0 +1,5 @@
+/* The look of a SOCIAL ad (ADS_PLAN decision 11, Session S). It must never be mistaken for a Social post:
+   a thick dashed border and the ad colours (not the plain post card), the "Ad" badge first, the advertiser named as an
+   advertiser. Colours come from the same tokens as every ad (--adbg, --adline), so light and dark both work. */
+.ad-social { border-style: dashed; border-width: 2px; border-inline-start-width: 6px; border-color: var(--adline); background: var(--adbg); overflow-wrap: anywhere; }
+.ad-social-head { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }

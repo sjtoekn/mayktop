@@ -1,0 +1,6 @@
+/* The notification settings page (SOCIAL_TODO B8). */
+.ns-form { display: grid; gap: 16px; }
+.ns-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.ns-row { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border: 1px solid var(--line-strong); border-radius: 14px; background: var(--surface2); font-size: 17px; cursor: pointer; }
+.ns-row input { width: 20px; height: 20px; accent-color: var(--brand); flex: none; }
+.ns-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

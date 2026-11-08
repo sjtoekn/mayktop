@@ -1,0 +1,32 @@
+/* PageHero: the big banner at the top of Social and News (same family as the Community banner .ch-banner in home.css).
+   Fixed illustration colours on purpose: the banner looks the same in light and dark mode. */
+.ph-hero { position: relative; overflow: hidden; border-radius: 24px; padding: 34px 40px; text-align: center; min-height: 164px; color: #0f1b3d;
+  background: linear-gradient(180deg, var(--ph-top) 0%, var(--ph-mid) 55%, var(--ph-low) 78%), var(--surface); box-shadow: 0 4px 18px rgba(31, 60, 140, .07); }
+.ph-hero::before { content: ""; position: absolute; left: 6%; bottom: 14%; width: 74px; height: 74px; border-radius: 50%; background: radial-gradient(circle, var(--ph-glow) 0%, var(--ph-glow2) 55%, transparent 72%); }
+.ph-hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 38%; background: linear-gradient(180deg, transparent, var(--ph-hill)); clip-path: polygon(0 70%, 12% 45%, 22% 60%, 34% 30%, 48% 62%, 60% 40%, 74% 65%, 88% 35%, 100% 60%, 100% 100%, 0 100%); }
+.ph-text { position: relative; z-index: 1; }
+.ph-hero h1 { margin: 0; font-size: 46px; font-weight: 800; letter-spacing: -1px; }
+.ph-hero h1 i { color: var(--ph-accent); font-style: normal; margin: 0 6px; }
+.ph-hero p { margin: 6px 0 0; font-size: 24px; }
+.ph-art { position: absolute; inset-inline-end: 36px; bottom: 0; width: 170px; height: 125px; z-index: 1; }
+.ph-art svg { display: block; width: 100%; height: 100%; }
+
+/* Social: dusk, violet to peach */
+.ph-social { --ph-top: #c9c3f5; --ph-mid: #f3cfe6; --ph-low: #ffd2b0; --ph-hill: rgba(112, 82, 190, .5); --ph-glow: #fff0f7; --ph-glow2: #ffc2dc; --ph-accent: #7b4dff; }
+/* News: morning, sky blue to warm yellow */
+.ph-news { --ph-top: #aee3ee; --ph-mid: #d6efe0; --ph-low: #fff0b8; --ph-hill: rgba(30, 130, 150, .45); --ph-glow: #fffbe0; --ph-glow2: #ffe27a; --ph-accent: #0b8aa3; }
+
+@media (max-width: 760px) {
+  .ph-hero { padding: 24px 20px; min-height: 140px; }
+  .ph-hero h1 { font-size: 30px; }
+  .ph-hero p { font-size: 17px; }
+  .ph-art { display: none; }
+}
+
+/* ---- Same height for the three hero banners (Community / Social / News).
+   Keep this block identical in app/(site)/home.css and components/PageHero.css. ---- */
+.ch-banner, .ph-hero { box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 176px; min-height: 0; padding: 20px 40px; }
+.ch-banner > div:first-child, .ph-text { max-width: 100%; }
+@media (max-width: 800px) {
+  .ch-banner, .ph-hero { height: 168px; padding: 16px 20px; }
+}

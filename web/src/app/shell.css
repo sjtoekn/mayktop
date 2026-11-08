@@ -1,0 +1,156 @@
+/* PAGE FRAME (header + sidebar + right column). Used by components/shell/Shell.tsx.
+   Colours come only from the tokens in globals.css, so light and dark both work. */
+.ch-root { min-height: 100vh; padding: 18px; }
+.ch-root a { text-decoration: none; color: inherit; }
+:where(.ch-root) :where(button, input) { font: inherit; } /* zero specificity, so each class below keeps its own font-size */
+.ch-card, .ch-root .card { border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); }
+
+/* Header */
+.ch-header { display: grid; grid-template-columns: 280px 1fr; gap: 18px; margin-bottom: 18px; max-width: 1500px; margin-inline: auto; }
+.ch-logoBox { display: flex; align-items: center; gap: 12px; padding: 14px 24px; }
+.ch-logoIcon { width: 54px; height: 48px; border-radius: 18px 18px 18px 4px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.ch-logoText { font-size: 28px; font-weight: 800; letter-spacing: -0.8px; }
+.ch-logoText b { color: var(--brand); font-weight: 800; }
+.ch-topbar { display: flex; align-items: center; justify-content: space-between; padding: 12px 24px; gap: 16px; }
+.ch-search { display: flex; align-items: center; gap: 12px; background: var(--surface2); border-radius: 16px; padding: 0 18px; height: 52px; width: min(100%, 620px); color: var(--muted); border: 1px solid var(--line-strong); }
+.ch-search:focus-within { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ch-search input { flex: 1; border: 0; background: transparent; outline: 0; font: inherit; font-size: 17px; color: var(--ink); }
+.ch-topRight { display: flex; align-items: center; gap: 16px; }
+.ch-iconBtn { background: none; border: 0; color: var(--ink); cursor: pointer; display: grid; place-items: center; }
+.ch-avatarSm { width: 46px; height: 46px; border-radius: 50%; background: var(--brandsoft); display: grid; place-items: center; }
+
+/* 3-column layout */
+.ch-layout { display: grid; grid-template-columns: 280px minmax(0, 1fr) 330px; gap: 18px; max-width: 1500px; margin-inline: auto; align-items: start; }
+.ch-feed { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+
+/* Sidebar */
+.ch-sidebar { padding: 18px 16px; }
+.ch-navItem { display: flex; align-items: center; gap: 16px; padding: 13px 20px; border-radius: 18px; font-size: 18px; margin-bottom: 4px; transition: background .15s; }
+.ch-navItem:hover { background: var(--surface2); }
+.ch-navActive, .ch-navActive:hover { background: var(--brand); color: var(--onbrand); font-weight: 600; }
+.ch-badge { margin-inline-start: auto; background: var(--danger); color: var(--ondanger); font-size: 12px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; }
+.ch-hr { border: 0; border-top: 1px solid var(--line); margin: 14px 8px; }
+.ch-catTitle { margin: 0 0 10px 14px; font-size: 17px; color: var(--muted); font-weight: 600; }
+.ch-cats { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; padding-inline-start: 8px; }
+.ch-cat { display: inline-flex; align-items: center; gap: 10px; padding: 8px 20px 8px 16px; transition: filter .15s; border-radius: 999px; font-size: 16px; font-weight: 500; border: 2px solid transparent; }
+.ch-cat:hover { filter: brightness(0.96); }
+.ch-cat-1 { background: var(--brandsoft);   color: var(--brand); }
+.ch-cat-2 { background: var(--successsoft); color: var(--success); }
+.ch-cat-3 { background: var(--warningsoft); color: var(--warning); }
+.ch-cat-4 { background: var(--dangersoft);  color: var(--danger); }
+.ch-cat-5 { background: var(--surface2);    color: var(--ink); }
+.ch-cat-active { border-color: currentColor; font-weight: 700; }
+.ch-more { display: flex; align-items: center; gap: 12px; padding: 10px 16px; color: var(--muted); font-size: 15px; border-radius: 12px; }
+.ch-more:hover { background: var(--surface2); color: var(--ink); }
+
+/* Right column */
+.ch-right { display: flex; flex-direction: column; gap: 18px; }
+.ch-trending { padding: 22px 20px; }
+.ch-trending h3 { margin: 0 0 14px; font-size: 24px; font-weight: 800; display: flex; align-items: center; gap: 12px; }
+.ch-fire { font-size: 30px; }
+.ch-trendItem { display: grid; grid-template-columns: 24px 1fr 76px; align-items: center; gap: 10px; padding: 10px 0; }
+.ch-rank { font-size: 24px; font-weight: 800; color: var(--brand); }
+.ch-trendItem strong { display: block; font-size: 16px; font-weight: 700; line-height: 1.3; }
+.ch-trendItem small { color: var(--muted); font-size: 15px; }
+.ch-thumb { height: 72px; border-radius: 14px; display: grid; place-items: center; font-size: 34px; }
+.ch-join { padding: 24px 22px; text-align: center; }
+.ch-join h3 { margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 21px; font-weight: 800; }
+.ch-join h3 svg { color: var(--brand); }
+.ch-join p { margin: 12px 0 20px; font-size: 18px; color: var(--muted); }
+.ch-joinBtn { width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; background: var(--brand); color: var(--onbrand); border: 0; border-radius: 999px; height: 62px; font: inherit; font-size: 22px; font-weight: 600; cursor: pointer; }
+.ch-joinBtn:hover { background: var(--brandhover); }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .ch-layout { grid-template-columns: 240px minmax(0,1fr); }
+  .ch-right { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; }
+  .ch-header { grid-template-columns: 240px 1fr; }
+}
+@media (max-width: 800px) {
+  .ch-header, .ch-layout { grid-template-columns: 1fr; }
+  .ch-logoBox { justify-content: center; }
+  .ch-sidebar { display: none; }
+  .ch-right { grid-template-columns: 1fr; }
+}
+
+/* Small screens: let the header shrink instead of pushing the page wider */
+.ch-header > *, .ch-layout > * { min-width: 0; }
+.ch-search input { min-width: 0; width: 100%; }
+.ch-disabled { opacity: .55; cursor: not-allowed; }
+.ch-disabled:hover { background: transparent; }
+.ch-soon { margin-inline-start: auto; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: var(--surface2); color: var(--muted); }
+.ch-catTitle a { color: inherit; }
+.ch-catTitle a:hover { text-decoration: underline; }
+
+/* Phone navigation (TODO 22). Hidden on wide screens; shown where the sidebar is hidden. */
+.mn-bar { display: none; }
+@media (max-width: 800px) {
+  .ch-root { padding: 12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); }
+  .mn-bar { display: flex; position: fixed; inset-inline: 0; bottom: 0; z-index: 50; background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .mn-bar > *, .mn-more { flex: 1; min-width: 0; }
+  .mn-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 64px; padding: 6px 2px; font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer; text-align: center; }
+  .mn-item span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mn-item.mn-active { color: var(--brand); }
+  .mn-create { color: var(--ink); }
+  .mn-more > summary { list-style: none; }
+  .mn-more > summary::-webkit-details-marker { display: none; }
+  .mn-more[open] > summary { color: var(--brand); }
+  .mn-panel { position: fixed; inset-inline: 8px; bottom: calc(72px + env(safe-area-inset-bottom, 0px)); max-height: 70vh; overflow-y: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); padding: 12px; z-index: 51; }
+}
+/* Small phones (about 375px): tighter top bar so nothing is pushed sideways */
+@media (max-width: 520px) {
+  .ch-header { gap: 10px; margin-bottom: 12px; }
+  .ch-layout { gap: 12px; }
+  .ch-logoBox { padding: 10px 16px; }
+  .ch-logoText { font-size: 24px; }
+  .ch-topbar { padding: 8px 12px; gap: 10px; }
+  .ch-search { height: 44px; padding: 0 12px; gap: 8px; }
+  .ch-topRight { gap: 8px; }
+  .ch-topRight > svg { display: none; }
+  .ch-avatarSm { width: 40px; height: 40px; }
+  .ch-feed, .ch-right { gap: 12px; }
+}
+
+/* Accessibility (TODO 24) */
+.ch-root .skip-link { position: absolute; inset-inline-start: 12px; top: -80px; z-index: 100; background: var(--brand); color: var(--onbrand); padding: 12px 18px; border-radius: 12px; font-weight: 700; }
+.ch-root .skip-link:focus { top: 12px; }
+.ch-feed:focus { outline: none; }
+.pc-vote { display: inline-flex; align-items: center; justify-content: center; background: none; border: 0; color: inherit; padding: 4px; border-radius: 8px; cursor: pointer; }
+.pc-vote:hover { background: var(--surface2); }
+.pc-vote:disabled { opacity: .45; cursor: not-allowed; }
+.pc-vote[aria-pressed="true"] { color: var(--brand); background: var(--brandsoft); }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+
+/* ---- Phone top bar: one tidy row. Search takes the free space; theme, avatar and Log out stay compact, same height, never wrap ---- */
+@media (max-width: 520px) {
+  .ch-search { flex: 1 1 0; width: auto; min-width: 0; height: 40px; border-radius: 14px; }
+  .ch-search input { font-size: 15px; text-overflow: ellipsis; }
+  .ch-search > svg { flex: none; width: 18px; height: 18px; }
+  .ch-topRight { flex: none; gap: 6px; }
+  .ch-topRight .ch-iconBtn { width: 36px; height: 40px; }
+  .ch-topRight .ch-avatarSm { width: 40px; height: 40px; flex: none; }
+  .ch-topRight .pc-pill { height: 40px; padding: 0 12px; font-size: 14px; white-space: nowrap; flex: none; }
+}
+
+/* ---- Phone header layout: row 1 = name on the left + theme / avatar / Log out on the right; row 2 = search bar, full width ---- */
+@media (max-width: 520px) {
+  .ch-header { grid-template-columns: minmax(0, 1fr) auto; align-items: center; row-gap: 10px; column-gap: 8px; }
+  .ch-logoBox { grid-column: 1; grid-row: 1; justify-content: flex-start; gap: 8px; padding: 8px 12px; }
+  .ch-logoIcon { width: 44px; height: 40px; border-radius: 16px 16px 16px 4px; }
+  .ch-logoIcon svg { width: 26px; height: 26px; }
+  .ch-logoText { font-size: 22px; }
+  .ch-topbar { display: contents; }
+  .ch-topRight { grid-column: 2; grid-row: 1; gap: 6px; }
+  .ch-topRight .ch-iconBtn { width: 32px; }
+  .ch-topRight .ch-avatarSm { width: 36px; height: 36px; }
+  .ch-topRight .pc-pill { height: 36px; padding: 0 10px; font-size: 13px; }
+  .ch-search { grid-column: 1 / -1; grid-row: 2; flex: none; width: 100%; height: 48px; background: var(--surface); box-shadow: var(--shadow-sm); border-radius: var(--radius-xl); }
+}
+
+/* Phone header polish: the theme / avatar / Log out group is a card of its own, same height and look as the logo card */
+@media (max-width: 520px) {
+  .ch-topRight { align-self: stretch; align-items: center; gap: 4px; padding: 0 8px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-xl); box-shadow: var(--shadow-sm); }
+  .ch-topRight .ch-iconBtn { width: 30px; }
+  .ch-topRight .ch-avatarSm { width: 34px; height: 34px; }
+  .ch-topRight .pc-pill { height: 34px; padding: 0 9px; }
+}

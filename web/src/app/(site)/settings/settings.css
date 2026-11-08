@@ -1,0 +1,17 @@
+/* Settings hub and the account notice banner (TODO 36). */
+.st-list { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 12px; }
+.st-link { display: grid; gap: 4px; padding: 16px 18px; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--surface2); text-decoration: none; color: inherit; }
+.st-link:hover { border-color: var(--brand); }
+.st-link b { font-size: 18px; }
+.st-link span { color: var(--muted); font-size: 15px; }
+.st-facts { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 16px; }
+.st-status { margin: 0; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line-strong); background: var(--surface2); font-size: 16px; }
+.st-status-warn { border-color: var(--danger); }
+.st-status p { margin: 0; }
+.st-status p + p { margin-top: 6px; }
+.ab-banner { margin: 0 0 16px; padding: 12px 16px; border-radius: 14px; border: 1px solid var(--danger); background: var(--surface2); font-size: 16px; }
+.ab-banner a { font-weight: 700; text-decoration: underline; }
+.pc-btn-danger { background: var(--danger); color: var(--ondanger); }
+.pc-btn-danger:hover { background: var(--danger); filter: brightness(0.92); }
+.st-delete { display: grid; gap: 12px; max-width: 420px; }
+.st-delete-actions { display: flex; gap: 12px; flex-wrap: wrap; }

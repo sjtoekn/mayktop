@@ -1,0 +1,11 @@
+/* Admin Part 7: Communities & moderators. Tokens only (no hex), works in light and dark. */
+.cm-rule { margin: 0; }
+.cm-over ul { margin: 0.5rem 0 0; padding-inline-start: 1.25rem; }
+.cm-over p { margin: 0; }
+.cm-mods { display: flex; flex-direction: column; gap: 0.5rem; }
+.cm-modList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.cm-modRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--line); }
+.cm-modRow:last-child { border-bottom: 0; }
+.cm-modName { display: flex; flex-direction: column; gap: 0.1rem; color: var(--ink); text-decoration: none; }
+.cm-modName:hover b { text-decoration: underline; }
+.cm-name { overflow-wrap: anywhere; }

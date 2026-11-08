@@ -1,0 +1,8 @@
+/* Admin Part 8: Ads. Tokens only (no hex), works in light and dark. */
+.ads-section { display: flex; flex-direction: column; gap: 0.75rem; }
+.ads-preview { max-width: 22rem; padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.ads-preview p { margin: 0; }
+.ads-previewTitle { font-weight: 700; overflow-wrap: anywhere; }
+.ads-url { overflow-wrap: anywhere; }
+.ads-facts { display: flex; flex-direction: column; gap: 0.15rem; }
+.ads-facts p { margin: 0; }

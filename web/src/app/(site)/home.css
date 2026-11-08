@@ -1,0 +1,41 @@
+/* HOME PAGE CONTENT ONLY (banner, composer, feed). The page frame is in shell.css. */
+/* Banner */
+.ch-banner { position: relative; overflow: hidden; border-radius: 24px; padding: 34px 40px; text-align: center; min-height: 164px;
+  background: linear-gradient(180deg,#bcd2f7 0%,#f6d9b8 55%,#ffcf91 75%), var(--surface); box-shadow: 0 4px 18px rgba(31,60,140,.07); }
+.ch-banner::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 38%; background: linear-gradient(180deg, transparent, rgba(90,100,190,.55)); clip-path: polygon(0 70%,12% 45%,22% 60%,34% 30%,48% 62%,60% 40%,74% 65%,88% 35%,100% 60%,100% 100%,0 100%); }
+.ch-banner > div:first-child { position: relative; z-index: 1; }
+.ch-banner::before { content: ""; position: absolute; left: 6%; bottom: 14%; width: 74px; height: 74px; border-radius: 50%; background: radial-gradient(circle,#fff2b8 0%,#ffd27a 55%,rgba(255,210,122,0) 72%); }
+.ch-banner { color: #0f1b3d; } /* fixed: illustration is light in both modes */
+.ch-banner h1 { margin: 0; font-size: 46px; font-weight: 800; letter-spacing: -1px; }
+.ch-banner h1 i { color: var(--brand); font-style: normal; margin: 0 6px; }
+.ch-banner p { margin: 6px 0 0; font-size: 24px; }
+.ch-bannerArt { position: absolute; inset-inline-end: 36px; bottom: 0; width: 170px; height: 125px; z-index: 1; }
+.ch-bannerArt svg { display: block; width: 100%; height: 100%; }
+
+/* Composer */
+.ch-composer { display: flex; align-items: center; gap: 16px; padding: 16px 20px; }
+.ch-avatarMd { width: 70px; height: 70px; border-radius: 50%; background: linear-gradient(135deg,var(--brandsoft),var(--brandsoft)); display: grid; place-items: center; font-size: 28px; flex: none; }
+.ch-composer input { flex: 1; min-width: 0; height: 58px; border: 1px solid var(--line-strong); background: var(--surface2); border-radius: 16px; padding: 0 24px; font-size: 20px; outline: 0; color: var(--ink); }
+.ch-postBtn { display: flex; align-items: center; gap: 10px; background: var(--brand); color: var(--surface); border: 0; border-radius: 16px; height: 58px; padding: 0 30px; font-size: 20px; font-weight: 600; cursor: pointer; }
+
+@media (max-width: 800px) {
+  .ch-banner h1 { font-size: 30px; }
+  .ch-banner p { font-size: 17px; }
+  .ch-bannerArt { display: none; }
+  /* Phone: avatar | text box | send button, all in one tidy row (same as the Social composer) */
+  .ch-composer { flex-wrap: nowrap; gap: 10px; padding: 12px 14px; }
+  .ch-avatarMd { width: 44px; height: 44px; font-size: 20px; }
+  .ch-composer input { min-width: 0; height: 48px; font-size: 16px; padding: 0 16px; border-radius: 14px; }
+  .ch-postBtn { height: 48px; width: 48px; padding: 0; justify-content: center; border-radius: 14px; flex: none; }
+  .ch-postLabel { display: none; }
+}
+
+.ch-composer input:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+
+/* ---- Same height for the three hero banners (Community / Social / News).
+   Keep this block identical in app/(site)/home.css and components/PageHero.css. ---- */
+.ch-banner, .ph-hero { box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 176px; min-height: 0; padding: 20px 40px; }
+.ch-banner > div:first-child, .ph-text { max-width: 100%; }
+@media (max-width: 800px) {
+  .ch-banner, .ph-hero { height: 168px; padding: 16px 20px; }
+}

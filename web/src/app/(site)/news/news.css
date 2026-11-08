@@ -1,0 +1,19 @@
+.news-categories { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 4px; }
+.news-category { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 18px; color: var(--ink); font-size: 16px; font-weight: 600; text-decoration: none; }
+.news-category:hover { background: var(--brandsoft); }
+.news-category.is-active { background: var(--brand); border-color: var(--brand); color: var(--onbrand); }
+.news-feed { display: grid; gap: .85rem; }
+.news-feed { gap: 18px; }
+/* News cards use the community post card look (pc-post). Only the picture needs a little extra. */
+.news-source { color: var(--ink); font-weight: 700; }
+.news-thumb { overflow: hidden; text-decoration: none; }
+.news-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.news-catPill { cursor: default; background: var(--brandsoft); color: var(--brand); font-weight: 600; }
+.news-catPill:hover { background: var(--brandsoft); }
+.news-readPill { font-weight: 600; }
+
+/* Phone: neat category chips - a bit smaller, and every row stretches edge to edge */
+@media (max-width: 640px) {
+  .news-categories { gap: 8px; margin-bottom: 8px; }
+  .news-category { flex: 1 1 auto; text-align: center; padding: 8px 12px; font-size: 15px; }
+}
