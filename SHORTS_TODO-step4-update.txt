@@ -1,0 +1,9 @@
+In SHORTS_TODO.md replace the line
+  ## 4. Feed + vertical player   21-27  + ad between shorts ...   <- next
+with
+  ## 4. Feed + vertical player  (patch shorts-feed)
+  - [x] 21 /shorts feed, scroll-snap   - [x] 22 autoplay (visible only), pause/play, mute, progress bar, +-10 s
+  - [~] 23 action column: Share works; Like / Comment / Save are disabled until step 5
+  - [~] 24 creator + caption shown; Follow and "Add a comment" come with step 5
+  - [x] 25 keyboard (Up Down Space M, Left Right) and swipe   - [x] 26 phone / desktop frame
+  - [x] 27 fair order: newest first, no popularity   - [ ] ad between shorts   <- next (needs the ad files)

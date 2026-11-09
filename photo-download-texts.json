@@ -1,0 +1,11 @@
+{
+ "keys": ["photo.download.label","photo.download.title"],
+ "texts": {
+  "en": {"photo.download.label":"Download","photo.download.title":"Download the full-size photo"},
+  "es": {"photo.download.label":"Descargar","photo.download.title":"Descargar la foto en tamaño completo"},
+  "fr": {"photo.download.label":"Télécharger","photo.download.title":"Télécharger la photo en taille réelle"},
+  "hi": {"photo.download.label":"डाउनलोड करें","photo.download.title":"पूरे आकार की फ़ोटो डाउनलोड करें"},
+  "zh": {"photo.download.label":"下载","photo.download.title":"下载原尺寸照片"},
+  "ar": {"photo.download.label":"تنزيل","photo.download.title":"تنزيل الصورة بالحجم الكامل"}
+ }
+}

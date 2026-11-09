@@ -1,12 +1,13 @@
 import Link from "next/link";
 import Icon from "@/components/shell/Icon";
 
-type FeedType = "community" | "social" | "news";
+type FeedType = "community" | "social" | "news" | "shorts" | "photos";
 
-const tabs: { id: FeedType; label: string; href: string; icon: string }[] = [
+const tabs: { id: Exclude<FeedType, "news">; label: string; href: string; icon: string }[] = [
   { id: "community", label: "Community", href: "/", icon: "users" },
   { id: "social", label: "Social", href: "/social", icon: "message-circle" },
-  { id: "news", label: "News", href: "/news", icon: "newspaper" },
+  { id: "shorts", label: "Shorts", href: "/shorts", icon: "flame" },
+  { id: "photos", label: "Photos", href: "/photos", icon: "grid" },
 ];
 
 export default function FeedTypeTabs({ active }: { active: FeedType }) {

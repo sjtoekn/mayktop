@@ -14,6 +14,7 @@ const AUDIT_LABELS: Record<string, MessageKey> = {
   BAN_PROPOSED: "admin.audit.BAN_PROPOSED",
   BAN_REJECTED: "admin.audit.BAN_REJECTED",
   USER_RESTORED: "admin.audit.USER_RESTORED",
+  USER_EDITED: "admin.audit.USER_EDITED",
   ROLE_CHANGED: "admin.audit.ROLE_CHANGED",
   LEGAL_HOLD_SET: "admin.audit.LEGAL_HOLD_SET",
   LEGAL_HOLD_RELEASED: "admin.audit.LEGAL_HOLD_RELEASED",
@@ -22,7 +23,7 @@ const AUDIT_LABELS: Record<string, MessageKey> = {
   SAFETY_RECORD_SWEPT: "admin.audit.SAFETY_RECORD_SWEPT",
 };
 
-const ERROR_CODES = ["actor", "notfound", "target", "self", "rule", "reason", "days", "state", "ladder", "pending", "noproposal", "approver", "lastadmin", "superonly"] as const;
+const ERROR_CODES = ["actor", "notfound", "target", "self", "rule", "reason", "days", "state", "ladder", "pending", "noproposal", "approver", "lastadmin", "superonly", "name", "bio", "username", "usernametaken", "email", "emailtaken", "nochange", "confirm", "hold", "appeal", "nosecret"] as const;
 const ERROR_KEYS: Record<(typeof ERROR_CODES)[number], MessageKey> = {
   actor: "admin.err.actor",
   notfound: "admin.err.notfound",
@@ -38,6 +39,17 @@ const ERROR_KEYS: Record<(typeof ERROR_CODES)[number], MessageKey> = {
   approver: "admin.err.approver",
   lastadmin: "admin.err.lastadmin",
   superonly: "admin.err.superonly",
+  name: "admin.err.name",
+  bio: "admin.err.bio",
+  username: "admin.err.username",
+  usernametaken: "admin.err.usernametaken",
+  email: "admin.err.email",
+  emailtaken: "admin.err.emailtaken",
+  nochange: "admin.err.nochange",
+  confirm: "admin.err.confirm",
+  hold: "admin.err.hold",
+  appeal: "admin.err.appeal",
+  nosecret: "admin.err.nosecret",
 };
 
 function timeText(date: Date): string {
@@ -78,6 +90,8 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
   const text: PersonActionsText = {
     title: t("admin.act.title"),
     buttons: {
+      edit: t("admin.act.edit"),
+      erase: t("admin.act.erase"),
       suspend: t("admin.act.suspend"),
       lift: t("admin.act.lift"),
       makeAdmin: t("admin.act.makeAdmin"),
@@ -85,6 +99,8 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
       proposeBan: t("admin.act.proposeBan"),
     },
     notes: {
+      edit: t("admin.act.note.edit"),
+      erase: t("admin.act.note.erase"),
       suspend: t("admin.act.note.suspend"),
       lift: t("admin.act.note.lift"),
       makeAdmin: t("admin.act.note.makeAdmin"),
@@ -92,6 +108,8 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
       proposeBan: t("admin.act.note.proposeBan", { days: staffConfig.banProposalDays }),
     },
     sure: {
+      edit: t("admin.act.sure.edit", { name: "{name}" }),
+      erase: t("admin.act.sure.erase", { name: "{name}" }),
       suspend: t("admin.act.sure.suspend", { name: "{name}", days: "{days}" }),
       lift: t("admin.act.sure.lift", { name: "{name}" }),
       makeAdmin: t("admin.act.sure.makeAdmin", { name: "{name}" }),
@@ -101,6 +119,16 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
     rule: t("admin.act.rule"),
     days: t("admin.act.days", { max: "{max}" }),
     reason: t("admin.act.reason", { min: "{min}" }),
+    fields: {
+      displayName: t("admin.act.f.displayName"),
+      bio: t("admin.act.f.bio"),
+      username: t("admin.act.f.username"),
+      email: t("admin.act.f.email"),
+      confirm: t("admin.act.f.confirm", { username: "{username}" }),
+    },
+    erased: t("admin.act.erased"),
+    erasedNotes: t("admin.act.erasedNotes"),
+    erasedOpen: t("admin.act.erasedOpen"),
     continue: t("admin.act.continue"),
     back: t("admin.act.back"),
     cancel: t("admin.act.cancel"),
@@ -121,6 +149,7 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
           <div>
             <h1 className="pc-title pc-title-lg">{name}</h1>
             <p className="pc-meta">@{person.username} · {person.email}</p>
+            {person.bio && <p className="pc-meta">{person.bio}</p>}
           </div>
           <div className="ad-badges">
             <span className={`pc-badge ${statusBadge}`}>{statusText}</span>
@@ -154,7 +183,14 @@ export default async function AdminPersonPage({ params }: { params: Promise<{ us
           name={name}
           actions={actions}
           rules={rules}
-          limits={{ minReason: staffConfig.minReasonLength, maxReason: staffConfig.maxReasonLength, maxDays: staffConfig.maxSuspensionDays }}
+          limits={{
+            minReason: staffConfig.minReasonLength,
+            maxReason: staffConfig.maxReasonLength,
+            maxDays: staffConfig.maxSuspensionDays,
+            maxName: staffConfig.maxDisplayNameLength,
+            maxBio: staffConfig.maxBioLength,
+          }}
+          profile={{ displayName: person.displayName ?? "", bio: person.bio ?? "", username: person.username, email: person.email }}
           text={text}
         />
       ) : (

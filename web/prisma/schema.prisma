@@ -84,6 +84,8 @@ enum AuditAction {
   ROLE_CHANGED
   MODERATOR_ADDED
   MODERATOR_REMOVED
+  COMMUNITY_APPROVED // an admin approved a member's request to create a community
+  COMMUNITY_REJECTED // an admin rejected such a request (reason = the note shown to the requester)
   AD_APPROVED
   AD_REJECTED
   AD_PAUSED
@@ -91,6 +93,7 @@ enum AuditAction {
   AD_PAID // an admin marked an approved ad as paid (manual payment); the ad starts running
   AD_ENDED // the advertiser ended their own ad for good (ADS_PLAN 4b)
   AD_RESUBMITTED // the advertiser fixed a rejected ad and sent it again for review (ADS_PLAN 4b)
+  USER_EDITED // an admin edited a person's profile (display name / bio / username / email); the row names the fields, never the values
 }
 
 enum AuditTarget {
@@ -138,6 +141,12 @@ enum AdFormat {
 // ---------------------------------------------------------------- People
 
 model User {
+  photoBookmarks PhotoBookmark[]
+  photoCollections PhotoCollection[]
+  shorts         Short[]
+  shortLikes     ShortLike[]
+  shortBookmarks ShortBookmark[]
+  shortComments  ShortComment[]
   id          String     @id @default(cuid())
   username    String     @unique // saved in lower case by the app (/u/sjethan)
   email       String     @unique
@@ -166,6 +175,8 @@ model User {
   sessions           Session[]
   accounts           Account[]
   communitiesCreated Community[]
+  communityRequests  CommunityRequest[] @relation("CommunityRequester")
+  communityRequestsDecided CommunityRequest[] @relation("CommunityRequestDecider")
   memberships        Membership[]
   posts              Post[]
   comments           Comment[]
@@ -200,6 +211,9 @@ model User {
   notificationsReceived Notification[] @relation("NotificationRecipient")
   notificationsSent    Notification[] @relation("NotificationActor")
   notificationOptOuts  NotificationOptOut[]
+  photos               Photo[]
+  photoLikes           PhotoLike[]
+  places               Place[]
 }
 
 // ---------------------------------------------------------------- Sign-in (Better Auth)
@@ -276,6 +290,36 @@ model Community {
   posts       Post[]
   auditLogs   AuditLog[]
   ads         AdCampaign[]
+}
+
+// A member's request to create a community. Nothing exists (no Community row) until an admin approves it;
+// then the community, its rules and the requester's moderator membership are created in one step.
+enum CommunityRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model CommunityRequest {
+  id           Int                    @id @default(autoincrement())
+  requesterId  String
+  slug         String
+  name         String
+  description  String
+  rules        String // JSON text: [{ "title": "...", "text": "..." }] (3 to 5 rules)
+  status       CommunityRequestStatus @default(PENDING)
+  decidedById  String?
+  decisionNote String? // shown to the requester when rejected
+  communityId  Int? // set when approved
+  createdAt    DateTime               @default(now())
+  decidedAt    DateTime?
+
+  requester User  @relation("CommunityRequester", fields: [requesterId], references: [id], onDelete: Restrict)
+  decidedBy User? @relation("CommunityRequestDecider", fields: [decidedById], references: [id], onDelete: Restrict)
+
+  @@index([status, createdAt])
+  @@index([requesterId, createdAt])
+  @@index([slug])
 }
 
 // Each community has its own 3-5 short rules. A rule is archived, never deleted,
@@ -492,6 +536,7 @@ model Notification {
   type        String // FOLLOW, SOCIAL_POST_LIKE, SOCIAL_POST_REPOST, REPLY, etc.
   socialPostId Int?
   postId      Int?
+  communityRequestId Int? // COMMUNITY_APPROVED / COMMUNITY_REJECTED: the member's CommunityRequest
   readAt      DateTime?
   createdAt   DateTime @default(now())
 
@@ -824,6 +869,108 @@ model SocialPinnedPost {
   @@index([socialPostId])
 }
 
+// ---------------------------------------------------------------- Photos (PHOTO_TODO 2)
+// One row per photo. The picture itself is a rebuilt WebP on disk: `file` is the stored name ("<32 hex>.webp"), the
+// thumbnail is "<32 hex>-t.webp" (see src/lib/photo-file.ts). Anybody may see a photo whose status is VISIBLE and whose
+// owner is shown; hiding needs a site rule number and a written reason (same as Social, statusSiteRule / statusNote).
+model Photo {
+  bookmarks PhotoBookmark[]
+  collectionItems PhotoCollectionItem[]
+  id        Int       @id @default(autoincrement())
+  ownerId   String
+  file      String    @unique
+  width     Int
+  height    Int
+  title     String?
+  caption   String?
+  category  String    @default("other") // a key of photoCategories (src/config/site.ts), PHOTO_TODO 9
+  status    ContentStatus @default(VISIBLE)
+  statusSiteRule  String?
+  statusNote      String?
+  statusChangedAt DateTime?
+  viewCount Int       @default(0) // a bare running total, nothing about who looked is saved
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  editedAt  DateTime?
+  deletedAt DateTime?
+  placeId   Int? // the real-world place this photo was taken at (PLACES stage 3-4); optional, chosen by the owner, never read from Exif
+
+  owner User        @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  likes PhotoLike[]
+  tags  PhotoTag[]
+  place Place? @relation(fields: [placeId], references: [id], onDelete: Restrict)
+
+  @@index([createdAt, id])
+  @@index([placeId, createdAt])
+  @@index([ownerId, createdAt])
+  @@index([status, createdAt])
+  @@index([category, createdAt])
+}
+
+// Tags of a photo (PHOTO_TODO 4): lower case, NFC, same rules as Social hashtags (src/lib/social-tags.ts).
+model PhotoTag {
+  photoId   Int
+  tag       String
+  createdAt DateTime @default(now())
+
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Restrict)
+
+  @@id([photoId, tag])
+  @@index([tag, photoId])
+}
+
+model PhotoLike {
+  userId    String
+  photoId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Restrict)
+
+  @@id([userId, photoId])
+  @@index([photoId])
+}
+
+// ---------------------------------------------------------------- Places (Photos plan, stage 3)
+// A Place is a REAL location in the world (a temple, a hotel, a park, a university), not something about a person. Anybody
+// logged in may add one; photos can point to it (Photo.placeId, stage 4). Same rules as the rest of the design: nothing is
+// hard-deleted (status / deletedAt) and every link is onDelete: Restrict. Rules and limits: src/lib/place-input.ts and
+// placeTypes / placeFields / placeLimits in src/config/site.ts.
+//  - type: a key of placeTypes. Visible names are in src/lib/place-text.ts.
+//  - dupKey: name + city + country with capitals, spaces and punctuation removed, so "Ruwanwelisaya" in "Anuradhapura" cannot be
+//    added twice by typing it a little differently. It is UNIQUE: the database itself refuses a second copy.
+//  - latitude / longitude: both or none, rounded to 5 decimals (about 1 metre). Typed by the person, never taken from a photo.
+model Place {
+  id          Int           @id @default(autoincrement())
+  name        String
+  type        String        @default("other")
+  city        String?
+  region      String? // district / province / state
+  country     String
+  description String?
+  latitude    Float?
+  longitude   Float?
+  website     String?
+  dupKey      String        @unique
+  createdById String
+  status          ContentStatus @default(VISIBLE)
+  statusSiteRule  String?
+  statusNote      String?
+  statusChangedAt DateTime?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  editedAt    DateTime?
+  deletedAt   DateTime?
+
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  photos    Photo[]
+
+  @@index([status, id])
+  @@index([type, id])
+  @@index([country, city])
+  @@index([name])
+}
+
 // ---------------------------------------------------------------- News discovery (Mayktop News)
 model NewsSource {
   id             Int           @id @default(autoincrement())
@@ -895,4 +1042,140 @@ model SocialPostEdit {
   socialPost SocialPost @relation(fields: [socialPostId], references: [id], onDelete: Restrict)
 
   @@index([socialPostId, id])
+}
+
+model PhotoBookmark {
+  userId    String
+  photoId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  photo Photo @relation(fields: [photoId], references: [id], onDelete: Restrict)
+
+  @@id([userId, photoId])
+  @@index([userId, createdAt])
+  @@index([photoId])
+}
+
+// Photo collections: a person's own named groups of photos (private, like saved photos). Rules: src/lib/photo-collection.ts.
+model PhotoCollection {
+  id        Int      @id @default(autoincrement())
+  ownerId   String
+  name      String
+  createdAt DateTime @default(now())
+
+  owner User                  @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  items PhotoCollectionItem[]
+
+  @@unique([ownerId, name])
+}
+
+model PhotoCollectionItem {
+  collectionId Int
+  photoId      Int
+  createdAt    DateTime @default(now())
+
+  collection PhotoCollection @relation(fields: [collectionId], references: [id], onDelete: Restrict)
+  photo      Photo           @relation(fields: [photoId], references: [id], onDelete: Restrict)
+
+  @@id([collectionId, photoId])
+  @@index([photoId])
+}
+
+// ---------------------------------------------------------------- Shorts (SHORTS_TODO 7-10)
+// Short vertical videos (route /shorts). Limits live in src/config/short-config.ts. Files: src/lib/short-file.ts.
+enum ShortPrivacy {
+  PUBLIC
+  UNLISTED
+  PRIVATE
+}
+
+// Where the upload is: PROCESSING -> READY (or FAILED). Separate from `status` (moderation: VISIBLE / HIDDEN_PENDING_REVIEW / REMOVED).
+enum ShortProcessing {
+  PROCESSING
+  READY
+  FAILED
+}
+
+model Short {
+  id          Int             @id @default(autoincrement())
+  ownerId     String
+  file        String          @unique // "<32 hex>.mp4"; the thumbnail is "<32 hex>-t.webp"
+  title       String?
+  description String?
+  privacy     ShortPrivacy    @default(PUBLIC)
+  processing  ShortProcessing @default(PROCESSING)
+  processingNote String? // why it FAILED (shown to the owner)
+  durationMs  Int?
+  sizeBytes   Int
+  width       Int?
+  height      Int?
+  status      ContentStatus   @default(VISIBLE)
+  statusSiteRule  String?
+  statusNote      String?
+  statusChangedAt DateTime?
+  viewCount   Int             @default(0) // a bare running total, nothing about who looked is saved
+  sharedSocialPostId Int? // set when the owner shared it to the Social feed (SocialPost.id; a plain number, no relation)
+  readyAt     DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  editedAt    DateTime?
+  deletedAt   DateTime?
+
+  owner     User            @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  likes     ShortLike[]
+  bookmarks ShortBookmark[]
+  comments  ShortComment[]
+
+  @@index([createdAt, id])
+  @@index([ownerId, createdAt])
+  @@index([processing, privacy, status, createdAt])
+}
+
+model ShortLike {
+  userId    String
+  shortId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  short Short @relation(fields: [shortId], references: [id], onDelete: Restrict)
+
+  @@id([userId, shortId])
+  @@index([shortId])
+}
+
+model ShortBookmark {
+  userId    String
+  shortId   Int
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Restrict)
+  short Short @relation(fields: [shortId], references: [id], onDelete: Restrict)
+
+  @@id([userId, shortId])
+  @@index([shortId])
+}
+
+model ShortComment {
+  id        Int           @id @default(autoincrement())
+  shortId   Int
+  authorId  String
+  parentId  Int? // a reply to another comment (one level)
+  body      String
+  status    ContentStatus @default(VISIBLE)
+  statusSiteRule  String?
+  statusNote      String?
+  statusChangedAt DateTime?
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  deletedAt DateTime?
+
+  short   Short          @relation(fields: [shortId], references: [id], onDelete: Restrict)
+  author  User           @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  parent  ShortComment?  @relation("ShortCommentReplies", fields: [parentId], references: [id], onDelete: Restrict)
+  replies ShortComment[] @relation("ShortCommentReplies")
+
+  @@index([shortId, createdAt])
+  @@index([authorId, createdAt])
+  @@index([parentId])
 }

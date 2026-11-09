@@ -148,6 +148,18 @@ async function Content() {
       <section className="card sf-card">
         <ul className="st-list">
           <li>
+            <Link href="/settings/profile" className="st-link">
+              <b>{t("settings.profile.link")}</b>
+              <span>{t("settings.profile.link.desc")}</span>
+            </Link>
+          </li>
+          <li>
+            <Link href="/settings/security" className="st-link">
+              <b>{t("settings.security.link")}</b>
+              <span>{t("settings.security.link.desc")}</span>
+            </Link>
+          </li>
+          <li>
             <Link href="/settings/sessions" className="st-link">
               <b>{t("settings.devices")}</b>
               <span>{t("settings.devices.desc")}</span>

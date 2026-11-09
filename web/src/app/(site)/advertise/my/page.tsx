@@ -4,7 +4,8 @@ import Link from "next/link";
 import { adsConfig } from "@/config/site";
 import { formatNumber, getLocale, t } from "@/i18n";
 import { getSessionUser } from "@/lib/session";
-import { loadMyAds, type MyAd } from "@/lib/ad-mine";
+import { loadMyAdsPage, type MyAd } from "@/lib/ad-mine";
+import { MY_RANGES, MY_VIEWS, myLink, parseMyQuery, type MyQuery } from "@/lib/ad-mine-list-rules";
 import { AD_RULE_TEXT, isPolicyRule } from "@/lib/ad-review-rules";
 import AdMedia from "@/components/AdMedia";
 import MyAdActions, { type MyAdActionsText } from "@/components/MyAdActions";
@@ -13,7 +14,8 @@ import "./my.css";
 
 export const metadata: Metadata = { title: t("advertise.my.title") };
 
-// "My ads" (ADS_PLAN Sessions 4a + 4b + 4c): the advertiser's own ads, their status, the review result and the totals. Login required.
+// "My ads" (ADS_PLAN Sessions 4a + 4b + 4c, patch-ads-my-list): the advertiser's own ads, their status, the review result and the totals. Login required.
+// patch-ads-my-list: TABS (all / running / waiting / rejected / ended), 10 ads a page, and the numbers can be shown for the last 7 / 30 / 90 days or all time.
 // It reads the login cookie, so it runs per request (inside <Suspense>), like /advertise/new.
 // Totals are per ad per day; nothing about visitors exists (ADS_PLAN decision 3).
 
@@ -63,7 +65,10 @@ function hint(ad: MyAd): string | null {
   return null;
 }
 
-async function Content() {
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+async function Content({ searchParams }: { searchParams: SearchParams }) {
+  const query: MyQuery = parseMyQuery(await searchParams);
   const user = await getSessionUser();
   if (!user) {
     return (
@@ -79,7 +84,9 @@ async function Content() {
     );
   }
 
-  const ads = await loadMyAds(user.id);
+  const data = await loadMyAdsPage(user.id, query);
+  const ads = data.items;
+  const rangeDays = query.range === "all" ? null : Number.parseInt(query.range, 10);
   const text = actionsText();
   const price = (ad: MyAd) => new Intl.NumberFormat(getLocale(), { style: "currency", currency: ad.currency }).format(ad.priceCents / 100);
 
@@ -95,9 +102,50 @@ async function Content() {
         </div>
       </section>
 
-      {ads.length === 0 && (
+      {data.counts.all === 0 && (
         <p className="card adv-card" role="status">
           {t("advertise.my.empty")}
+        </p>
+      )}
+
+      {data.counts.all > 0 && (
+        <>
+          <nav className="my-tabs" aria-label={t("advertise.my.tabs")}>
+            {MY_VIEWS.map((view) => (
+              <Link
+                key={view}
+                href={myLink(query, { view, page: 1 })}
+                className={`my-tab${view === query.view ? " my-tab-on" : ""}`}
+                aria-current={view === query.view ? "page" : undefined}
+              >
+                {t(`advertise.my.tab.${view}`, { count: formatNumber(data.counts[view]) })}
+              </Link>
+            ))}
+          </nav>
+          <nav className="my-tabs my-ranges" aria-label={t("advertise.my.range.label")}>
+            <span className="pc-meta">{t("advertise.my.range.label")}</span>
+            {MY_RANGES.map((range) => (
+              <Link
+                key={range}
+                href={myLink(query, { range, page: 1 })}
+                className={`my-tab${range === query.range ? " my-tab-on" : ""}`}
+                aria-current={range === query.range ? "true" : undefined}
+              >
+                {t(`advertise.my.range.${range}`)}
+              </Link>
+            ))}
+          </nav>
+          {data.total > 0 && (
+            <p className="pc-meta" role="status">
+              {t("advertise.my.showing", { from: formatNumber(data.from), to: formatNumber(data.to), total: formatNumber(data.total) })}
+            </p>
+          )}
+        </>
+      )}
+
+      {data.counts.all > 0 && ads.length === 0 && (
+        <p className="card adv-card" role="status">
+          {t("advertise.my.empty.tab")}
         </p>
       )}
 
@@ -187,6 +235,18 @@ async function Content() {
                       })}
                     </p>
                   )}
+                  {ad.range && rangeDays !== null && (ad.impressions > 0 || ad.clicks > 0) && (
+                    <p className="my-total">
+                      {t("advertise.my.stats.range", {
+                        days: rangeDays,
+                        impressions: formatNumber(ad.range.impressions),
+                        clicks: formatNumber(ad.range.clicks),
+                        ctr: ad.range.ctr,
+                      })}
+                    </p>
+                  )}
+                  {query.range !== "7" && <p className="pc-meta">{t("advertise.my.stats.dayByDay")}</p>}
+                  {query.range === "7" && (
                   <div className="my-tableWrap">
                     <table className="my-table">
                       <caption className="pc-meta">{t("advertise.my.stats.days")}</caption>
@@ -208,22 +268,44 @@ async function Content() {
                       </tbody>
                     </table>
                   </div>
+                  )}
                 </div>
               )}
 
+              <div className="adv-actions">
+                <Link href={`/advertise/my/${ad.id}`} className="btn btn-ghost btn-sm">
+                  {t("ad.detail.link")}
+                </Link>
+              </div>
               <MyAdActions adId={ad.id} actions={ad.actions} text={text} />
             </article>
           );
         })}
       </div>
+
+      {data.pages > 1 && (
+        <nav className="my-pager" aria-label={t("advertise.my.page", { page: formatNumber(data.page), pages: formatNumber(data.pages) })}>
+          {data.page > 1 ? (
+            <Link href={myLink(query, { page: data.page - 1 })} className="btn btn-secondary btn-sm">{t("advertise.my.prev")}</Link>
+          ) : (
+            <span className="btn btn-secondary btn-sm" aria-disabled="true">{t("advertise.my.prev")}</span>
+          )}
+          <span className="pc-meta">{t("advertise.my.page", { page: formatNumber(data.page), pages: formatNumber(data.pages) })}</span>
+          {data.page < data.pages ? (
+            <Link href={myLink(query, { page: data.page + 1 })} className="btn btn-secondary btn-sm">{t("advertise.my.next")}</Link>
+          ) : (
+            <span className="btn btn-secondary btn-sm" aria-disabled="true">{t("advertise.my.next")}</span>
+          )}
+        </nav>
+      )}
     </div>
   );
 }
 
-export default function MyAdsPage() {
+export default function MyAdsPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <Suspense fallback={<section className="card adv-card" aria-busy="true" />}>
-      <Content />
+      <Content searchParams={searchParams} />
     </Suspense>
   );
 }

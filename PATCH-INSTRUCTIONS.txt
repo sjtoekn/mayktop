@@ -1,0 +1,20 @@
+MaykTop Photos Pinterest-style Masonry Gallery Patch
+
+Files included:
+- web/src/app/(site)/photos/page.tsx
+- web/src/app/(site)/photos/photos.css
+
+Changes:
+- Replaces justified equal-height photo rows with a Pinterest-style masonry layout.
+- Desktop: 3 columns.
+- Tablet and mobile: 2 columns.
+- Preserves each image's natural aspect ratio.
+- Adds subtle hover zoom and keyboard focus styling.
+- Keeps existing photo routes, pagination, tags, upload, collections, saved photos, and viewer behavior.
+- No News files, database schema, or media storage code are changed.
+
+Apply from the project root (the folder containing web/):
+  unzip -o "$HOME/Downloads/MaykTop-Photos-Masonry-Patch.zip" -d .
+
+Then run from web/:
+  npm run build

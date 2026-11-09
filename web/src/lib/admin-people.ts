@@ -74,6 +74,7 @@ export type PersonDetail = {
   id: string;
   username: string;
   displayName: string | null;
+  bio: string | null;
   email: string;
   role: Role;
   isSuperAdmin: boolean;
@@ -93,7 +94,7 @@ export async function getPerson(username: string): Promise<PersonDetail | null> 
   const user = await prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
     select: {
-      id: true, username: true, displayName: true, email: true, role: true, isSuperAdmin: true, status: true, suspensionKind: true,
+      id: true, username: true, displayName: true, bio: true, email: true, role: true, isSuperAdmin: true, status: true, suspensionKind: true,
       suspendedUntil: true, suspensionNote: true, eraseAt: true, createdAt: true,
     },
   });
@@ -112,6 +113,7 @@ export async function getPerson(username: string): Promise<PersonDetail | null> 
     id: user.id,
     username: user.username,
     displayName: user.displayName,
+    bio: user.bio,
     email: user.email,
     role: user.role,
     isSuperAdmin: user.isSuperAdmin,
@@ -140,11 +142,12 @@ export function proposalDaysLeft(createdAt: Date): number {
   return Math.max(0, Math.ceil(staffConfig.banProposalDays - spent));
 }
 
-export type PersonAction = "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan";
+export type PersonAction = "edit" | "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan" | "erase";
 
 /**
- * Which buttons to show. The rules themselves are enforced again in staff.ts when the button is used.
- * "Make admin" and "Remove admin" are shown ONLY to the super admin; a super admin can never be removed.
+ * Which buttons to show. The rules themselves are enforced again in staff.ts / admin-edit.ts when the button is used.
+ * "Make admin", "Remove admin" and "Erase now" are shown ONLY to the super admin; a super admin can never be removed or erased.
+ * "Edit" is for any admin, on a plain user who is not erased (never on staff, never on yourself).
  */
 export function actionsFor(
   person: Pick<PersonDetail, "role" | "status" | "banned" | "isSuperAdmin">,
@@ -154,11 +157,20 @@ export function actionsFor(
   if (isSelf) return [];
   if (person.role === Role.ADMIN) return viewerIsSuper && !person.isSuperAdmin ? ["removeAdmin"] : [];
   if (person.role !== Role.USER) return [];
-  if (person.status === UserStatus.ACTIVE) return viewerIsSuper ? ["suspend", "proposeBan", "makeAdmin"] : ["suspend", "proposeBan"];
-  // A ban can be proposed for an active person, one waiting for deletion, or one under a TEMPORARY suspension.
-  if (person.status === UserStatus.SUSPENDED) return person.banned ? ["lift"] : ["lift", "proposeBan"];
-  if (person.status === UserStatus.DELETION_PENDING) return ["proposeBan"];
-  return [];
+  if (person.status === UserStatus.DELETED) return [];
+  const out: PersonAction[] = ["edit"];
+  if (person.status === UserStatus.ACTIVE) {
+    out.push("suspend", "proposeBan");
+    if (viewerIsSuper) out.push("makeAdmin");
+  } else if (person.status === UserStatus.SUSPENDED) {
+    // A ban can be proposed for an active person, one waiting for deletion, or one under a TEMPORARY suspension.
+    out.push("lift");
+    if (!person.banned) out.push("proposeBan");
+  } else if (person.status === UserStatus.DELETION_PENDING) {
+    out.push("proposeBan");
+  }
+  if (viewerIsSuper) out.push("erase");
+  return out;
 }
 
 export type AdminRow = { username: string; displayName: string | null; isSuperAdmin: boolean; since: Date };

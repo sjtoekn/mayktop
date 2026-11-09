@@ -107,6 +107,8 @@ Follow is open: anybody who is logged in can follow anybody whose Social posts a
 | Delete / recover own account, export data, write an appeal | the person |
 | Temporary suspension, lift | one ADMIN (not on self / staff; lift not on self) |
 | Make / remove an admin | the SUPER ADMIN only (panel: /admin/team) |
+| Edit a person's profile (display name, bio, username, email) | one ADMIN (plain users only: not on self, not on staff, not on an erased account) |
+| Erase an account at once (no waiting time) | the SUPER ADMIN only (plain users only; refused under a legal hold or with an open appeal) |
 | Propose a ban | one ADMIN |
 | Approve a ban | a DIFFERENT ADMIN |
 | Reject / withdraw a ban proposal | any ADMIN |
@@ -145,6 +147,7 @@ npm run staff -- lift <admin> <person> "<reason>"
 - The email hash in a safety record is pseudonymised, NOT anonymous: the EDPB says pseudonymised data is still personal data. It is already covered by the record's own keep-until date and the legal-hold rule; the privacy policy must say so.
 - Lawyer review of every number and of the legal basis for the safety record (GDPR Art. 17(3)(b) and (e)); countries we serve.
 - Lawyer check of the 36e choices (PROJECT.md 8c-36e): warning times, 3 days after an appeal, ads ended, open reports do not delay erasure.
+- DECIDED 2026-11-08 (PROVISIONAL, lawyer to confirm): the super admin can erase an account at once (3.23), an exception to the warning in 3.7. The written reason the super admin types is stored in the audit row and can hold personal details (same question as the line above).
 - Banned people can sign up again with the same email (the safety record has the code, but sign-up does not check it yet).
 - If a person deletes a post that was reported, its text is gone before a moderator saw it; the report flow (Phase 3) should copy the text when the report is made.
 - A banned person who moderated a community leaves it without that moderator (Phase 3 hand-over).
@@ -254,3 +257,32 @@ npm run staff -- lift <admin> <person> "<reason>"
 - **Likes on replies.** A like is a quiet signal: no notification. Needs a visible reply on a visible post and no block either way with the reply's author or the post's author; taking a like back is always allowed. Same per-person limit as liking a post.
 - **Reposts in a feed.** Inside one feed page (Social feed, Following, Home) several PLAIN reposts of the same post become one line "<name> and N more reposted" (the newest repost stays). A quote repost is the person's own text and is never merged. Nothing is deleted; the merge is made when the page is built, per page (the same post can show again on the next page).
 - **Not done on purpose:** ranking the "Quotes" list (a quote has no like or other signal, so it stays newest first), ranking the feed itself (the feed stays newest first, 8j), a "Top" order that puts the post author's own replies first.
+
+### 3.23 An admin edits a profile; the super admin erases an account at once (patch-admin-edit-erase, decided 2026-11-08, PROVISIONAL)
+Both are buttons on `/admin/people/<username>`. The rules live in `web/src/lib/admin-edit.ts` (plain rules, no database: `admin-edit-rules.ts`, test `npm run test:admin-edit`).
+
+**Edit profile (any active ADMIN).**
+- Fields: display name (at most `staffConfig.maxDisplayNameLength` = 50 characters), bio (at most `maxBioLength` = 300), username (the sign-up rule, `web/src/lib/username.ts`, and unique), email (valid and unique, saved in lower case).
+- Only a plain USER who is not erased. Never yourself (use Settings), never staff. Reason: an admin who may change the email of another admin could take that account over with a password reset.
+- A written reason (same length as every staff action) is mandatory. One audit row `USER_EDITED`, saved in the SAME transaction as the change. The row lists the NAMES of the changed fields and the reason, NEVER the old or new values (audit rows are kept for good).
+- The person is emailed what changed and why (old address, and the new one too when the email changed). Nothing is silent.
+- Changing the EMAIL: the new address is not trusted yet. `emailVerified` becomes false, every login session of the person ends, the open email / reset codes of the old address are deleted, and the person must confirm the new address (trying to log in sends the link, `sendOnSignIn`) before logging in again.
+- An admin can only CHANGE or CLEAR these fields as text; hiding a post or restoring a suspension still needs a site rule (3.2).
+
+**Erase now (the SUPER ADMIN only; everyone else gets a 404).**
+- It is the SAME erasure as 3.7 (same transaction, same safety record for a ban / open report, same anonymous shell `deleted-<id>`), without the 7 days and without the warning email. The row is never removed: audit log, votes and other people's replies point to it.
+- Needs: a written reason, and the person's username typed as confirmation.
+- Refused: a plain-USER check fails (staff, super admin, yourself, already erased), a LEGAL HOLD is set (release the hold first), an appeal is OPEN (decide it first), or the secret for the safety record is missing.
+- The audit row `ACCOUNT_ERASED` names the super admin and keeps the reason they wrote, followed by the usual minimal text (kind, record number, days kept). Ads are ended at once; a paid ad stopped early and a community that lost a moderator are listed on screen right after, to take care of by hand.
+- The person gets a last email (`email.erasedByAdmin`) saying that an admin erased the account.
+- The scheduled erasure (3.7) is unchanged.
+
+**Open question for the lawyer:** 3.7 promises "no surprise erasure" (warning first). Erasing at once is a deliberate exception that only the super admin can use. If the lawyer wants the promise to stay absolute, hide the button; nothing else changes.
+
+### 3.23 Profile, password and email (patch-profile-security, decided 2026-11-08, PROVISIONAL)
+- **Profile.** Display name (optional, one line, up to 50 characters) and the text about you (optional, up to 300 characters, line breaks kept). Control and bidi-override characters are removed; the joiners Sinhala, Hindi and Arabic need stay. Empty = none (the username is shown). The username is NOT changeable. A display name that, ignoring capitals, spaces and punctuation, equals a reserved word (the same list as reserved usernames: admin, moderator, mayktop ...) is refused for ordinary people (site rule IMPERSONATION); staff may use it. At most 10 saves per hour. Code: `src/lib/profile-rules.ts`, `src/lib/profile.ts`, page `/settings/profile`.
+- **Password change.** Needs the current password (checked against the stored hash) and a new one of 8-128 characters that differs from the old. All OTHER devices are logged out; a notice goes to the account email. Every attempt counts (5 per 15 minutes), so a stolen login cannot guess the password.
+- **Email change.** Needs the current password. Link 1 goes to the CURRENT email (approve), link 2 to the NEW one (verify); the email changes only after both. 3 tries per hour. The answer is the same whether or not the new address is already used (no way to test which addresses exist).
+- **Limited accounts** (suspended, banned, deletion pending) cannot change any of these (they see why on /settings).
+- Erasure and export need nothing new: `displayName` and `bio` were already erased by the final erasure (purge.ts) and are in "Download my data".
+- **Not decided / next:** avatar upload (needs its own serving address, erasure and export); checking display names against other people's names; the email-change verify email still uses the sign-up wording.

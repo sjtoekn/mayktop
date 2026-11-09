@@ -1,0 +1,24 @@
+/* The FEED ad: same fixed height as a community post card (270px, desktop), so the feed has one even rhythm.
+   Left: "Ad" badge, big title (max 2 lines), short text (max 2 lines), host chip. Right: the picture / video fills
+   the whole right side of the card, edge to edge (cropped to fit). Bottom: "Why this ad?" (opens as an overlay
+   inside the card). Phones: normal height. Tokens only, so light and dark both work. */
+.ad-feed .ad-host { display: inline-flex; align-items: center; gap: 2px; width: fit-content; max-width: 100%; padding: 4px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--adline); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ad-feed .ad-link:hover .ad-host { background: var(--surface2); }
+.ad-feed .ad-media img, .ad-feed .ad-media video { object-fit: cover; transition: transform 0.4s ease; }
+.ad-feed .ad-link:hover .ad-media img, .ad-feed .ad-link:hover .ad-media video { transform: scale(1.04); }
+
+@media (min-width: 801px) {
+  .ad-feed { position: relative; height: 270px; min-height: 0; overflow: hidden; display: flex; flex-direction: column; padding: 20px 24px; transition: box-shadow 0.2s ease; }
+  .ad-feed:hover { box-shadow: var(--shadow-sm); }
+  .ad-feed:has(.ad-media) { padding-inline-end: 364px; }
+  .ad-feed > div:first-child { flex: none; }
+  .ad-feed > div:nth-child(2) { flex: 1; min-height: 0; display: flex; align-items: center; }
+  .ad-feed .ad-link { display: block; width: 100%; }
+  .ad-feed .ad-link > .mb-2 { position: absolute; top: 0; bottom: 0; inset-inline-end: 0; width: 340px; margin: 0; }
+  .ad-feed .ad-media { width: 100%; height: 100%; aspect-ratio: auto; border: 0; border-radius: 0; border-inline-start: 1px solid var(--adline); }
+  .ad-feed .ad-text { min-width: 0; overflow-wrap: anywhere; }
+  .ad-feed .ad-title { font-size: 26px; font-weight: 800; line-height: 1.35; letter-spacing: -0.01em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .ad-feed .ad-body { font-size: 15px; line-height: 1.5; margin-bottom: 4px; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+  .ad-feed > details { flex: none; margin-top: 0; }
+  .ad-feed > details[open] { position: absolute; inset: 0; z-index: 3; padding: 20px 24px; overflow: auto; background: var(--adbg); border-radius: inherit; }
+}

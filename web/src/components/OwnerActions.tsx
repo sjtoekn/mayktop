@@ -112,7 +112,7 @@ export default function OwnerActions({
                 id={`oa-title-${kind}-${id}`}
                 className="pc-field"
                 value={title}
-                maxLength={150}
+                maxLength={120}
                 onChange={(e) => setTitle(e.target.value)}
               />
             </>

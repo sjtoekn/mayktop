@@ -125,7 +125,7 @@ export default function SubmitForm({
           className="pc-field"
           value={title}
           disabled={loggedOut}
-          maxLength={150}
+          maxLength={120}
           placeholder={text.fieldTitlePlaceholder}
           onChange={(e) => setTitle(e.target.value)}
         />

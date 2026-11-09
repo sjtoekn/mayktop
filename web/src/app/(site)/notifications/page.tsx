@@ -73,8 +73,10 @@ export default async function NotificationsPage() {
             return (
               <li key={item.id}>
                 <Link href={item.href} className={`card nt-item${item.unread ? " is-unread" : ""}`}>
-                  <span className={`pc-avatar pc-a${tone}`} aria-hidden="true">{item.actor.charAt(0).toUpperCase()}</span>
-                  <span className="nt-text">{t(TEXT_KEYS[item.type] ?? "notifications.type.follow", { name: item.actorName })}</span>
+                  <span className={`pc-avatar pc-a${item.text ? 1 : tone}`} aria-hidden="true">
+                    {item.text ? <Icon name="users" size={22} /> : item.actor.charAt(0).toUpperCase()}
+                  </span>
+                  <span className="nt-text">{item.text ?? t(TEXT_KEYS[item.type] ?? "notifications.type.follow", { name: item.actorName })}</span>
                   {item.unread && <span className="nt-new">{t("notifications.new")}</span>}
                   <span className="nt-time">{item.time}</span>
                 </Link>

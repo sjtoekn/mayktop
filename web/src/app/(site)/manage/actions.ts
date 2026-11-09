@@ -16,7 +16,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { ContentStatus } from "../../../../generated/prisma/client";
 
-const MAX_TITLE = 150;
+const MAX_TITLE = 120;
 const MAX_POST_BODY = 10_000;
 const MAX_COMMENT = 5_000;
 const MAX_ID = 2_147_483_647;

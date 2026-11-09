@@ -68,7 +68,7 @@ export default function ProfileTabs({
       </div>
 
       <div className="pf-cols">
-        <div className="pf-colsInner">
+        <div className={`pf-colsInner${aside ? "" : " pf-noAside"}`}>
         <div className="pf-panels">
         {tabs.map((tab) => (
           <div

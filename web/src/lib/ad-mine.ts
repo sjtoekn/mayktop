@@ -1,12 +1,17 @@
-// "My ads" (ADS_PLAN Sessions 4a + 4c): reads the logged-in advertiser's own ads with their status, review result and totals.
-// It only READS (the rules for the buttons are in ad-own-rules.ts). Totals are per ad per day; nothing about visitors exists.
+// "My ads" (ADS_PLAN Sessions 4a + 4c, patch-ads-my-list): reads the logged-in advertiser's own ads with their status, review result
+// and totals. It only READS (the rules for the buttons are in ad-own-rules.ts). Totals are per ad per day; nothing about visitors exists.
+// patch-ads-my-list: the list is now TABS (all / running / waiting / rejected / ended), 10 ads a page, and the numbers of each ad can be
+// shown for the last 7 / 30 / 90 days or all time. Only the ads of the page being shown are read in full.
 import { prisma } from "@/lib/prisma";
 import { endExpiredAds } from "@/lib/ad-review";
 import { ctrText } from "@/lib/ad-review-rules";
 import { checkOwnEdit, ownActions, wasPausedByAdvertiser, type OwnAction } from "@/lib/ad-own-rules";
 import { loadAdAppealInfo, type AdAppealInfo } from "@/lib/appeals";
 import { utcMidnight } from "@/lib/ad-stats";
-import { AuditAction, AuditTarget } from "../../generated/prisma/client";
+import {
+  MY_PAGE_SIZE, countsByView, myPageInfo, rangeStartDay, statusesFor, type MyQuery, type MyView,
+} from "@/lib/ad-mine-list-rules";
+import { AuditAction, AuditTarget, type AdStatus, type Prisma } from "../../generated/prisma/client";
 
 export type MyAdDay = { date: Date; impressions: number; clicks: number };
 
@@ -17,7 +22,7 @@ export type MyAd = {
   slot: "SIDEBAR" | "FEED" | "SOCIAL_FEED" | "HEADER";
   title: string;
   body: string;
-  imageUrl: string | null; // the picture, or the poster of a video ad (our own address)
+  imageUrl: string | null; // the picture of an IMAGE ad (our own address)
   videoUrl: string | null;
   host: string; // address shown under the ad
   community: string | null; // null = any page
@@ -30,9 +35,10 @@ export type MyAd = {
   reviewRule: string | null; // ad policy rule key of a rejection
   reviewNote: string | null; // the written reason
   pausedBy: "you" | "staff" | null; // only for a PAUSED ad
-  impressions: number;
-  clicks: number;
+  impressions: number; // all time
+  clicks: number; // all time
   ctr: string;
+  range: { impressions: number; clicks: number; ctr: string } | null; // the chosen range (7 / 30 / 90 days); null = all time
   days: MyAdDay[]; // the last 7 UTC days, oldest first, zeros included
   actions: OwnAction[];
   canEdit: boolean; // a REJECTED ad can be fixed and sent again (Session 4b), unless an appeal of the rejection is open (4c)
@@ -49,30 +55,56 @@ function hostOf(url: string): string {
   }
 }
 
-export async function loadMyAds(userId: string): Promise<MyAd[]> {
+export type MyAdsPage = {
+  items: MyAd[];
+  total: number; // ads in this tab
+  counts: Record<MyView, number>; // ads per tab
+  pages: number;
+  page: number;
+  from: number;
+  to: number;
+};
+
+export async function loadMyAdsPage(userId: string, query: MyQuery): Promise<MyAdsPage> {
   await endExpiredAds(); // keep the statuses honest before showing them
+
+  const grouped = await prisma.adCampaign.groupBy({ by: ["status"], where: { advertiserId: userId }, _count: { _all: true } });
+  const counts = countsByView(grouped.map((g) => ({ status: g.status, count: g._count._all })));
+  const total = counts[query.view];
+  const info = myPageInfo(total, query.page);
+  const empty: MyAdsPage = { items: [], total, counts, pages: info.pages, page: info.page, from: info.from, to: info.to };
+  if (total === 0) return empty;
+
+  const statuses = statusesFor(query.view);
+  const where: Prisma.AdCampaignWhereInput = { advertiserId: userId };
+  if (statuses) where.status = { in: [...statuses] as AdStatus[] };
   const ads = await prisma.adCampaign.findMany({
-    where: { advertiserId: userId },
+    where,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    take: 100,
+    skip: info.skip,
+    take: MY_PAGE_SIZE,
     select: {
       id: true, status: true, format: true, slot: true, title: true, body: true, imageUrl: true, videoUrl: true, destinationUrl: true,
       submittedAt: true, startDate: true, endDate: true, priceCents: true, currency: true, paymentStatus: true,
       reviewRule: true, reviewNote: true, community: { select: { slug: true } },
     },
   });
-  if (ads.length === 0) return [];
+  if (ads.length === 0) return empty;
   const ids = ads.map((a) => a.id);
 
   const today = utcMidnight();
   const weekStart = new Date(today.getTime() - 6 * DAY_MS);
+  const rangeStart = rangeStartDay(query.range, today); // null = all time
   const pausedIds = ads.filter((a) => a.status === "PAUSED").map((a) => String(a.id));
-  const [totals, week, pauses] = await Promise.all([
+  const [totals, week, inRange, pauses] = await Promise.all([
     prisma.adDailyStat.groupBy({ by: ["adId"], where: { adId: { in: ids } }, _sum: { impressions: true, clicks: true } }),
     prisma.adDailyStat.findMany({
       where: { adId: { in: ids }, date: { gte: weekStart } },
       select: { adId: true, date: true, impressions: true, clicks: true },
     }),
+    rangeStart === null
+      ? Promise.resolve([] as { adId: number; _sum: { impressions: number | null; clicks: number | null } }[])
+      : prisma.adDailyStat.groupBy({ by: ["adId"], where: { adId: { in: ids }, date: { gte: rangeStart } }, _sum: { impressions: true, clicks: true } }),
     pausedIds.length === 0
       ? Promise.resolve([] as { targetId: string; actorId: string }[])
       : prisma.auditLog.findMany({
@@ -82,14 +114,15 @@ export async function loadMyAds(userId: string): Promise<MyAd[]> {
         }),
   ]);
   const appeals = await loadAdAppealInfo(userId, ads.map((a) => ({ id: a.id, status: a.status, advertiserId: userId })));
-  const total = new Map(totals.map((r) => [r.adId, r._sum]));
+  const total2 = new Map(totals.map((r) => [r.adId, r._sum]));
+  const ranged = new Map(inRange.map((r) => [r.adId, r._sum]));
   const lastPause = new Map<string, { actorId: string }>();
   for (const row of pauses) if (!lastPause.has(row.targetId)) lastPause.set(row.targetId, { actorId: row.actorId });
 
   const now = new Date();
-  return ads.map((a) => {
-    const impressions = total.get(a.id)?.impressions ?? 0;
-    const clicks = total.get(a.id)?.clicks ?? 0;
+  const items: MyAd[] = ads.map((a) => {
+    const impressions = total2.get(a.id)?.impressions ?? 0;
+    const clicks = total2.get(a.id)?.clicks ?? 0;
     const mine = week.filter((r) => r.adId === a.id);
     const days: MyAdDay[] = [];
     for (let i = 0; i < 7; i++) {
@@ -98,6 +131,9 @@ export async function loadMyAds(userId: string): Promise<MyAd[]> {
       days.push({ date, impressions: row?.impressions ?? 0, clicks: row?.clicks ?? 0 });
     }
     const pausedByYou = a.status === "PAUSED" && wasPausedByAdvertiser(lastPause.get(String(a.id)) ?? null, userId);
+    const r = ranged.get(a.id);
+    const rangeImpressions = r?.impressions ?? 0;
+    const rangeClicks = r?.clicks ?? 0;
     return {
       id: a.id,
       status: a.status,
@@ -121,10 +157,12 @@ export async function loadMyAds(userId: string): Promise<MyAd[]> {
       impressions,
       clicks,
       ctr: ctrText(impressions, clicks),
+      range: rangeStart === null ? null : { impressions: rangeImpressions, clicks: rangeClicks, ctr: ctrText(rangeImpressions, rangeClicks) },
       days,
       actions: ownActions({ status: a.status, advertiserId: userId, endDate: a.endDate }, userId, now, pausedByYou),
       canEdit: checkOwnEdit({ status: a.status, advertiserId: userId, endDate: a.endDate }, userId, appeals.get(a.id)?.state === "open") === null,
       appeal: appeals.get(a.id) ?? null,
     };
   });
+  return { items, total, counts, pages: info.pages, page: info.page, from: info.from, to: info.to };
 }

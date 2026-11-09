@@ -6,3 +6,57 @@
 .ads-url { overflow-wrap: anywhere; }
 .ads-facts { display: flex; flex-direction: column; gap: 0.15rem; }
 .ads-facts p { margin: 0; }
+
+/* patch-ads-list: tabs, and the compact History list. Tokens only (no hex). */
+.ads-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.ads-tab { padding: 0.4rem 0.9rem; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 0.9rem; }
+.ads-tab:hover { color: var(--ink); }
+.ads-tab:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.ads-tab-on { background: var(--brandsoft); color: var(--ink); border-color: var(--brand); font-weight: 700; }
+.ads-history { display: flex; flex-direction: column; gap: 0.35rem; }
+.ads-history .pc-title a { text-decoration: underline; }
+
+/* ---- tidy admin ad card (2026-11-09): a fixed 300 x 300 preview box on the left, the facts as neat rows on the right ---- */
+.ads-layout { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+.ads-layout > * { min-width: 0; }
+@media (max-width: 48rem) { .ads-layout { grid-template-columns: minmax(0, 1fr); } }
+
+.ads-preview { width: 100%; max-width: 300px; height: 300px; overflow: hidden; gap: 0.4rem; box-sizing: border-box; }
+.ads-preview .badge-ad { align-self: flex-start; flex: none; }
+.ads-preview .ad-media { flex: none; }
+.ads-preview .ads-previewTitle,
+.ads-preview .pc-text { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; }
+.ads-preview .ads-previewTitle { -webkit-line-clamp: 2; line-clamp: 2; }
+.ads-preview .pc-text { -webkit-line-clamp: 4; line-clamp: 4; }
+.ads-preview .pc-meta { margin-top: auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.ads-facts { gap: 0; align-self: stretch; }
+.ads-facts > p { padding: 0.5rem 0; border-bottom: 1px solid var(--line); line-height: 1.35; }
+.ads-facts > p:first-child { padding-top: 0; }
+.ads-facts > p:last-child { border-bottom: 0; }
+.ads-facts .ads-url { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; overflow-wrap: normal; }
+
+/* ---- compact admin ad card (2026-11-09, 2nd pass): small preview on the left; facts in ONE flowing line and ALL buttons in ONE row on the right ---- */
+.ads-section .ad-item { gap: 0.5rem; padding: 1rem 1.25rem; }
+.ads-layout { grid-template-columns: 240px minmax(0, 1fr); gap: 8px 24px; }
+@media (max-width: 48rem) { .ads-layout { grid-template-columns: minmax(0, 1fr); } }
+
+.ads-preview { position: relative; max-width: 240px; height: 200px; padding: 0.5rem 0.75rem; gap: 0.25rem; }
+.ads-preview .badge-ad { position: absolute; top: 0.9rem; inset-inline-start: 1.1rem; z-index: 2; }
+.ads-preview:not(:has(.ad-media)) { padding-top: 2.1rem; }
+.ads-preview .ad-media { aspect-ratio: 2 / 1; }
+.ads-preview .ads-previewTitle { font-size: 0.95rem; -webkit-line-clamp: 1; line-clamp: 1; }
+.ads-preview .pc-text { font-size: 0.85rem; line-height: 1.3; -webkit-line-clamp: 2; line-clamp: 2; }
+.ads-preview .pc-meta { display: none; }
+
+.ads-side { display: flex; flex-direction: column; justify-content: space-between; gap: 0.75rem; align-self: stretch; min-width: 0; }
+.ads-facts { flex-direction: row; flex-wrap: wrap; gap: 0.25rem 0; align-self: auto; }
+.ads-facts > p { padding: 0 1rem; border-bottom: 0; border-inline-start: 1px solid var(--line); font-size: 0.9rem; }
+.ads-facts > p:first-child { padding-inline-start: 0; border-inline-start: 0; }
+.ads-facts .ads-url { max-width: 24rem; }
+
+.ads-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.ads-actions > * { margin: 0; }
+.ads-actions > .notice { flex: 1 1 100%; }
+.ads-actions > .ad-form { flex: 0 1 auto; gap: 0; }
+.ads-actions > .ad-form:has(form, .ad-sure, .notice) { flex: 1 1 100%; }

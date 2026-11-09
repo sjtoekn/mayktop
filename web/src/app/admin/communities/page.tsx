@@ -4,6 +4,8 @@ import { staffConfig } from "@/config/site";
 import { requireAdmin } from "@/lib/admin";
 import { loadCommunities } from "@/lib/admin-communities";
 import ModeratorBox, { type ModeratorBoxText } from "@/components/admin/ModeratorBox";
+import { countPendingRequests } from "@/lib/community-request";
+import { crText } from "@/lib/community-request-text";
 import "./communities.css";
 
 function dateText(date: Date): string {
@@ -13,6 +15,7 @@ function dateText(date: Date): string {
 export default async function AdminCommunitiesPage() {
   await requireAdmin();
   const { communities, overLimit, threshold, max } = await loadCommunities();
+  const pendingRequests = await countPendingRequests();
 
   // Moderator error code -> text. "reason" and "actor" reuse the general admin texts.
   const errors: Record<string, string> = {
@@ -55,6 +58,7 @@ export default async function AdminCommunitiesPage() {
       <section className="ad-head">
         <h1 className="pc-title pc-title-lg">{t("admin.communities.title")}</h1>
         <p className="pc-text">{t("admin.communities.intro")}</p>
+        <p><Link href="/admin/communities/requests" className="underline">{crText.admin.link}{pendingRequests > 0 ? ` (${pendingRequests})` : ""}</Link></p>
         <p className="pc-meta cm-rule">{t("admin.communities.limit", { threshold: formatNumber(threshold), max })}</p>
       </section>
 

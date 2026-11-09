@@ -1,0 +1,37 @@
+/* Ad details (patch-ads-details). Tokens only (no hex), works in light and dark. Used by /advertise/my/[id] and /admin/ads/[id]. */
+.adt-wrap { display: grid; gap: 18px; }
+.adt-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: 12px; margin: 0; }
+.adt-card { padding: 14px 16px; display: grid; gap: 4px; align-content: start; }
+.adt-card dt { margin: 0; font-size: 0.8125rem; font-weight: 700; color: var(--muted); min-height: 2.4em; line-height: 1.2; } /* two lines reserved, so every number starts at the same height */
+.adt-card dd { margin: 0; font-size: 1.5rem; font-weight: 800; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.adt-card .adt-sub { font-size: 0.875rem; font-weight: 500; color: var(--muted); }
+.adt-block { padding: 18px 20px; display: grid; gap: 10px; }
+.adt-block h2 { margin: 0; }
+.adt-chartWrap { overflow-x: auto; max-width: 100%; }
+.adt-chart { display: flex; align-items: flex-end; gap: 3px; height: 8rem; min-width: 18rem; padding-top: 4px; border-bottom: 1px solid var(--line-strong); }
+.adt-col { flex: 1 1 0; min-width: 4px; height: 100%; display: flex; align-items: flex-end; }
+.adt-bar { width: 100%; border-radius: 3px 3px 0 0; background: var(--brand); }
+.adt-bar-clicks { background: var(--success); }
+.adt-axis { display: flex; justify-content: space-between; font-size: 0.8125rem; color: var(--muted); min-width: 18rem; }
+.adt-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.875rem; color: var(--muted); }
+.adt-dot { display: inline-block; width: 0.7rem; height: 0.7rem; border-radius: 2px; margin-inline-end: 6px; background: var(--brand); }
+.adt-dot-clicks { background: var(--success); }
+.adt-progress { height: 0.6rem; border-radius: 999px; background: var(--surface2); border: 1px solid var(--line); overflow: hidden; }
+.adt-progressFill { height: 100%; background: var(--brand); }
+.adt-tableWrap { overflow-x: auto; max-width: 100%; }
+.adt-table { border-collapse: collapse; font-size: 15px; min-width: 20rem; width: 100%; }
+.adt-table th, .adt-table td { padding: 6px 14px; text-align: start; border-bottom: 1px solid var(--line-strong); }
+.adt-table td:nth-child(n + 2), .adt-table th:nth-child(n + 2) { text-align: end; font-variant-numeric: tabular-nums; }
+.adt-table .adt-left { text-align: start !important; }
+.adt-table a { color: var(--ink); }
+.adt-note { margin: 0; color: var(--muted); font-size: 0.9375rem; }
+.adt-history { list-style: none; margin: 0; padding: 0; display: grid; }
+.adt-historyRow { padding: 8px 0; border-bottom: 1px solid var(--line); display: grid; gap: 2px; }
+.adt-historyRow:last-child { border-bottom: 0; }
+.adt-historyRow p { margin: 0; overflow-wrap: anywhere; }
+.adt-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: flex-start; }
+.adt-links { display: flex; gap: 8px; flex-wrap: wrap; }
+.adt-links .btn { border: 1px solid var(--line-strong); color: var(--ink); }
+.adt-summary { display: grid; grid-template-columns: minmax(0, 22rem) minmax(0, 1fr); gap: 20px 28px; align-items: start; }
+.adt-summary > * { min-width: 0; }
+@media (max-width: 48rem) { .adt-summary { grid-template-columns: minmax(0, 1fr); } }

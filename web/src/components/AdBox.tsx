@@ -10,9 +10,10 @@ import { getRememberState, pickAd, setRemember, subscribeRemember } from "@/lib/
 import AdMedia from "@/components/AdMedia";
 import "./ad-social.css";
 import "./ad-header.css";
+import "./ad-feed.css";
 
 // format / imageUrl / videoUrl: Session 3b. imageUrl is the picture of an IMAGE ad. A VIDEO ad has only a videoUrl (no poster).
-type Ad = {
+export type Ad = {
   id: number;
   title: string;
   body: string;
@@ -41,7 +42,7 @@ type Shown = { ad: Ad | null; key: number } | null; // null = still loading
 const POOL_TTL_MS = 30_000;
 const pools = new Map<string, { at: number; ads: Ad[] }>();
 
-async function loadPool(slot: string, community: string | null): Promise<Ad[]> {
+export async function loadPool(slot: string, community: string | null): Promise<Ad[]> {
   const cacheKey = `${slot}:${community ?? ""}`;
   const hit = pools.get(cacheKey);
   if (hit && Date.now() - hit.at < POOL_TTL_MS) return hit.ads;
@@ -62,7 +63,7 @@ function communityFromPath(pathname: string): string | null {
   return /^\/c\/([a-z0-9-]+)/.exec(pathname)?.[1] ?? null;
 }
 
-function sendImpression(id: number) {
+export function sendImpression(id: number) {
   const body = JSON.stringify({ id });
   if (typeof navigator.sendBeacon === "function") {
     navigator.sendBeacon("/api/ad/impression", new Blob([body], { type: "application/json" }));
@@ -154,9 +155,10 @@ export default function AdBox({
   // The social variant must look clearly different from a post (ADS_PLAN decision 11): own border + background (ad-social.css),
   // the "Ad" badge on top, the advertiser named as an advertiser; no avatar, no profile link, no like / repost / reply / share buttons.
   const social = variant === "social";
+  const feed = variant === "feed"; // same fixed size as a community post card (ad-feed.css)
 
   return (
-    <aside ref={boxRef} aria-label={labels.label} className={`card card-ad ${height}${social ? " ad-social" : ""}`}>
+    <aside ref={boxRef} aria-label={labels.label} className={`card card-ad ${height}${social ? " ad-social" : ""}${feed ? " ad-feed" : ""}`}>
       <div className={social ? "ad-social-head" : "mb-2"}>
         <span className="badge badge-ad">{labels.badge}</span>
         {social && ad?.host && labels.advertiser && (
@@ -172,7 +174,7 @@ export default function AdBox({
             href={`/api/ad/click/${ad.id}`}
             target="_blank"
             rel="sponsored nofollow noopener noreferrer"
-            className="block"
+            className="block ad-link"
           >
             {/* IMAGE and VIDEO: the picture or the silent, self-starting video is INSIDE the link, so a click anywhere on it opens the ad. */}
             {(ad.format === "IMAGE" || ad.format === "VIDEO") && (
@@ -180,9 +182,11 @@ export default function AdBox({
                 <AdMedia format={ad.format} imageUrl={ad.imageUrl ?? null} videoUrl={ad.videoUrl ?? null} title={ad.title} />
               </div>
             )}
-            <strong className="type-heading block">{ad.title}</strong>
-            <p className="type-small mt-1">{ad.body}</p>
-            {!social && ad.host && <span className="mt-2 block text-xs text-muted">{ad.host}</span>}
+            <div className="ad-text">
+              <strong className="type-heading block ad-title">{ad.title}</strong>
+              <p className="type-small mt-1 ad-body">{ad.body}</p>
+              {!social && ad.host && <span className="mt-2 block text-xs text-muted ad-host">{ad.host}<span aria-hidden="true"> ↗</span></span>}
+            </div>
           </a>
         </div>
       ) : shown ? (

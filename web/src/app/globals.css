@@ -236,7 +236,7 @@ body {
 /* Separate Community / Social / News feeds without changing the existing page design. */
 .feed-type-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   padding: 8px;
   margin: 14px 0;

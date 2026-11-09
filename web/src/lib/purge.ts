@@ -104,6 +104,8 @@ const dueSelect = {
   eraseAt: true,
   eraseWarnedAt: true,
   legalHold: true,
+  role: true,
+  isSuperAdmin: true,
 } as const;
 type DueUser = Prisma.UserGetPayload<{ select: typeof dueSelect }>;
 
@@ -115,7 +117,18 @@ function isErasable(u: { status: UserStatus; suspensionKind: SuspensionKind | nu
   );
 }
 
-class Skip extends Error {}
+/** Why one erasure did not happen. `code` is used only by the immediate erasure by an admin (eraseAccountNow). */
+class Skip extends Error {
+  constructor(
+    message: string,
+    public code: "state" | "hold" | "appeal" | "other" = "other",
+  ) {
+    super(message);
+  }
+}
+
+/** Set only when a SUPER ADMIN erases an account at once (admin panel): who did it, and the written reason. */
+type ErasedBy = { id: string; role: Role; reason: string };
 
 function settingsUrl(): string {
   return (process.env.BETTER_AUTH_URL ?? "http://localhost:3000") + "/settings";
@@ -219,19 +232,30 @@ async function warn(user: DueUser, now: Date, run: boolean, report: PurgeReport)
 
 type Erased = { email: string; name: string; reasons: SafetyReason[]; keepDays: number; kind: "deletion" | "ban"; notes: string[] };
 
-async function eraseAccount(userId: string, now: Date, secret: string): Promise<Erased> {
+async function eraseAccount(userId: string, now: Date, secret: string, by?: ErasedBy): Promise<Erased> {
   const adFiles: string[] = []; // picture / video files of the person's ads: deleted from disk AFTER the commit (Session 3b)
   const socialFiles: string[] = []; // picture files of the person's social posts: deleted from disk AFTER the commit (patch-social-images)
   const out = await prisma.$transaction(
     async (tx) => {
       const user = await tx.user.findUnique({ where: { id: userId }, select: dueSelect });
-      if (!user || !user.eraseAt || user.eraseAt > now || !isErasable(user)) {
+      if (by) {
+        // IMMEDIATE erasure by a super admin: no waiting time and no warning (the admin decided, with a written reason).
+        // What stays the same: only a plain USER account, never an erased one, never one under a legal hold.
+        if (!user || user.id === SYSTEM_ACTOR_ID || user.status === UserStatus.DELETED) throw new Skip("the account does not exist or is already erased", "state");
+        if (user.role !== Role.USER || user.isSuperAdmin) throw new Skip("staff accounts are not erased this way", "state");
+        if (user.legalHold) throw new Skip("a legal hold is set", "hold");
+      } else if (!user || !user.eraseAt || user.eraseAt > now || !isErasable(user)) {
         throw new Skip("the account changed meanwhile (recovered, lifted or already erased)");
       }
       const facts = await gather(tx, user);
-      if (facts.holdBack) throw new Skip(facts.holdBack);
-      if (!mayErase({ eraseAt: user.eraseAt, eraseWarnedAt: user.eraseWarnedAt, lastAppealDecidedAt: facts.lastAppealDecidedAt }, now, purgeConfig)) {
-        throw new Skip("not warned long enough yet");
+      if (by) {
+        // An open appeal means the person is still being heard: it must be decided first.
+        if (facts.appeals.some((a) => a.status === "OPEN")) throw new Skip("an appeal is open", "appeal");
+      } else {
+        if (facts.holdBack) throw new Skip(facts.holdBack);
+        if (!mayErase({ eraseAt: user.eraseAt, eraseWarnedAt: user.eraseWarnedAt, lastAppealDecidedAt: facts.lastAppealDecidedAt }, now, purgeConfig)) {
+          throw new Skip("not warned long enough yet");
+        }
       }
       const notes: string[] = [];
 
@@ -345,7 +369,7 @@ async function eraseAccount(userId: string, now: Date, secret: string): Promise<
 
       // ---- the account itself becomes an anonymous shell. The check and the change are ONE statement.
       const changed = await tx.user.updateMany({
-        where: { id: user.id, status: user.status, eraseAt: { lte: now } },
+        where: by ? { id: user.id, status: user.status } : { id: user.id, status: user.status, eraseAt: { lte: now } },
         data: {
           status: UserStatus.DELETED,
           deletedAt: now,
@@ -369,12 +393,24 @@ async function eraseAccount(userId: string, now: Date, secret: string): Promise<
       if (changed.count !== 1) throw new Skip("the account changed meanwhile");
 
       // ---- the audit row of the erasure itself, in the SAME transaction: no erasure without a record. No personal data in it.
-      await writeSystemAudit(
-        tx,
-        AuditAction.ACCOUNT_ERASED,
-        user.id,
-        erasureAuditReason({ kind: facts.banned ? "ban" : "deletion", reasons: facts.reasons, recordId, keepDays }),
-      );
+      const erasedReason = erasureAuditReason({ kind: facts.banned ? "ban" : "deletion", reasons: facts.reasons, recordId, keepDays });
+      if (by) {
+        // Done by a person, so the row names that person (and keeps the reason they wrote). The reason is theirs: it may
+        // hold personal details they typed (ACCOUNT_RULES.md, open questions for the lawyer).
+        await tx.auditLog.create({
+          data: {
+            actorId: by.id,
+            actorRole: by.role,
+            action: AuditAction.ACCOUNT_ERASED,
+            targetType: AuditTarget.USER,
+            targetId: user.id,
+            reason: `Erased at once by an admin: ${by.reason} | ${erasedReason}`,
+          },
+          select: { id: true },
+        });
+      } else {
+        await writeSystemAudit(tx, AuditAction.ACCOUNT_ERASED, user.id, erasedReason);
+      }
 
       return {
         email: user.email,
@@ -394,11 +430,35 @@ async function eraseAccount(userId: string, now: Date, secret: string): Promise<
 
   // After the commit. Never undoes the erasure; a failed email is only logged.
   const params = { site: siteConfig.name, name: out.name, days: out.keepDays };
-  const key = out.reasons.length > 0 ? "erasedRecord" : "erasedPlain";
+  const key = by ? "erasedByAdmin" : out.reasons.length > 0 ? "erasedRecord" : "erasedPlain";
   void sendEmail({ to: out.email, subject: t(`email.${key}.subject`, params), text: t(`email.${key}.body`, params) }).catch((error) =>
     console.error("sendEmail (erased notice) failed:", error),
   );
   return out;
+}
+
+// ------------------------------------------------------------------ erase ONE account at once (admin panel)
+
+export type EraseNowResult =
+  | { ok: true; notes: string[]; recordKept: boolean }
+  | { error: "state" | "hold" | "appeal" | "nosecret" };
+
+/**
+ * A SUPER ADMIN erases one account right now (admin panel, /admin/people/<name>). The rules about WHO may do it and the written
+ * reason are checked by the caller (admin-edit.ts); this function does the erasure itself, exactly like the scheduled one
+ * (same transaction, same safety record for a ban / open report, same anonymous shell), without the waiting time and warning.
+ * It refuses: an account under a legal hold, one with an open appeal, one already erased, any staff account.
+ */
+export async function eraseAccountNow(userId: string, by: ErasedBy): Promise<EraseNowResult> {
+  const secret = hashSecret();
+  if (!secret) return { error: "nosecret" };
+  try {
+    const out = await eraseAccount(userId, new Date(), secret, by);
+    return { ok: true, notes: out.notes, recordKept: out.reasons.length > 0 };
+  } catch (error) {
+    if (error instanceof Skip) return { error: error.code === "other" ? "state" : error.code };
+    throw error;
+  }
 }
 
 // ------------------------------------------------------------------ the whole run

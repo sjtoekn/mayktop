@@ -423,3 +423,23 @@ textarea.pc-field { resize: vertical; }
 .sp-replySort .pc-pill { text-decoration: none; }
 .sp-replySort .pc-pill.is-active { font-weight: 700; }
 .sp-replySortHow { font-size: 13px; opacity: 0.8; margin-inline-start: auto; }
+
+/* ---- Community post card, desktop: ONE fixed height for every card (FIXED_CARD) ----
+   Top: avatar + c/community · by · time. Middle: title (max 2 lines) + optional 1-line text.
+   Bottom: vote / comment / share / save row (always pinned to the bottom). Right: thumbnail. */
+@media (min-width: 801px) {
+  .pc-post.pc-fixed { height: 270px; padding: 20px 24px; overflow: hidden; }
+  .pc-fixed > .pc-body { display: flex; flex-direction: column; }
+  .pc-fixed > .pc-body > .pc-title {
+    line-height: 1.4;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
+  .pc-fixed > .pc-body > .pc-text {
+    margin-bottom: 0;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; line-clamp: 1;
+    overflow: hidden; overflow-wrap: anywhere;
+  }
+  .pc-fixed > .pc-body > .pc-actions { margin-top: auto; }
+  .pc-fixed > .pc-thumb { height: 170px; }
+}

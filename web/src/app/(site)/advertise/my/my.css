@@ -14,3 +14,12 @@
 .my-table { border-collapse: collapse; font-size: 15px; min-width: 18rem; }
 .my-table th, .my-table td { padding: 6px 14px; text-align: start; border-bottom: 1px solid var(--line-strong); }
 .my-table td:nth-child(n + 2), .my-table th:nth-child(n + 2) { text-align: end; font-variant-numeric: tabular-nums; }
+
+/* patch-ads-my-list: tabs, number range and pager. Tokens only (no hex). */
+.my-tabs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.my-tab { padding: 6px 14px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); text-decoration: none; font-size: 15px; }
+.my-tab:hover { color: var(--ink); }
+.my-tab:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.my-tab-on { background: var(--brandsoft); color: var(--ink); border-color: var(--brand); font-weight: 700; }
+.my-pager { display: flex; align-items: center; justify-content: center; gap: 16px; }
+.my-pager [aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }

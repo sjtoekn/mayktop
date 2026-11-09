@@ -290,16 +290,19 @@ function cleanWebp(b: Uint8Array): Cleaned | null {
 
 // ---------------------------------------------------------------- the one check the server action calls
 
-/** Checks one uploaded picture (`bytes` = the whole file) and returns the CLEANED copy to save. */
-export function checkSocialImage(input: Uint8Array | null | undefined): CheckedSocialImage {
+/** The three numbers the check uses. Social uses `socialMedia`; photos pass their own (`photoMedia`, PHOTO_TODO 3). */
+export type ImageLimits = { imageMaxBytes: number; maxSide: number; maxPixels: number };
+
+/** Checks one uploaded picture (`bytes` = the whole file) and returns the CLEANED copy to save. `limits` defaults to the Social limits. */
+export function checkSocialImage(input: Uint8Array | null | undefined, limits: ImageLimits = socialMedia): CheckedSocialImage {
   if (!input || input.length === 0) return { ok: false, error: "type" };
-  if (input.length > socialMedia.imageMaxBytes) return { ok: false, error: "size" };
+  if (input.length > limits.imageMaxBytes) return { ok: false, error: "size" };
   const real = sniffImage(input);
   if (real !== "jpg" && real !== "png" && real !== "webp") return { ok: false, error: "type" };
 
   const cleaned = real === "jpg" ? cleanJpeg(input) : real === "png" ? cleanPng(input) : cleanWebp(input);
   if (!cleaned) return { ok: false, error: "type" };
-  if (cleaned.width > socialMedia.maxSide || cleaned.height > socialMedia.maxSide || cleaned.width * cleaned.height > socialMedia.maxPixels) {
+  if (cleaned.width > limits.maxSide || cleaned.height > limits.maxSide || cleaned.width * cleaned.height > limits.maxPixels) {
     return { ok: false, error: "pixels" };
   }
   return { ok: true, ext: real, mime: MIME[real], bytes: cleaned.bytes, width: cleaned.width, height: cleaned.height };

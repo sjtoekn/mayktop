@@ -39,8 +39,8 @@ async function FormWithChoice({
 }) {
   const { c, title } = await searchParams;
   const initialSlug = choices.some((x) => x.slug === c) ? (c as string) : "";
-  // The title typed in the home page box (same 150 limit as the form field).
-  const initialTitle = typeof title === "string" ? title.slice(0, 150) : "";
+  // The title typed in the home page box (same 120 limit as the form field).
+  const initialTitle = typeof title === "string" ? title.slice(0, 120) : "";
   return (
     <SubmitForm communities={choices} initialSlug={initialSlug} initialTitle={initialTitle} text={text()} />
   );

@@ -1,0 +1,11 @@
+{
+ "keys": ["photo.views.one","photo.views.other","photo.views.title","photo.visibility.public"],
+ "texts": {
+  "en": {"photo.views.one":"{n} view","photo.views.other":"{n} views","photo.views.title":"How many times this photo was seen","photo.visibility.public":"Public photo"},
+  "es": {"photo.views.one":"{n} visualización","photo.views.other":"{n} visualizaciones","photo.views.title":"Cuántas veces se vio esta foto","photo.visibility.public":"Foto pública"},
+  "fr": {"photo.views.one":"{n} vue","photo.views.other":"{n} vues","photo.views.title":"Nombre de fois où cette photo a été vue","photo.visibility.public":"Photo publique"},
+  "hi": {"photo.views.one":"{n} बार देखा गया","photo.views.other":"{n} बार देखा गया","photo.views.title":"इस फ़ोटो को कितनी बार देखा गया","photo.visibility.public":"सार्वजनिक फ़ोटो"},
+  "zh": {"photo.views.other":"{n} 次浏览","photo.views.title":"这张照片被查看的次数","photo.visibility.public":"公开照片"},
+  "ar": {"photo.views.one":"{n} مشاهدة","photo.views.other":"{n} مشاهدات","photo.views.title":"عدد مرات مشاهدة هذه الصورة","photo.visibility.public":"صورة عامة"}
+ }
+}

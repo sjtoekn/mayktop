@@ -16,8 +16,10 @@ import { REPLY_NOTIFICATION } from "@/lib/social-reply";
 import { MENTION_NOTIFICATION } from "@/lib/social-tag-sync";
 import { ContentStatus } from "../../generated/prisma/client";
 import { enabledTypesFrom } from "@/lib/notification-settings-rules";
+import { COMMUNITY_NOTIFICATIONS } from "@/lib/community-request-rules";
+import { crNotificationText } from "@/lib/community-request-text";
 
-export const NOTIFICATION_TYPES = [FOLLOW_NOTIFICATION, "SOCIAL_POST_LIKE", "SOCIAL_POST_REPOST", REPLY_NOTIFICATION, MENTION_NOTIFICATION] as const;
+export const NOTIFICATION_TYPES = [FOLLOW_NOTIFICATION, "SOCIAL_POST_LIKE", "SOCIAL_POST_REPOST", REPLY_NOTIFICATION, MENTION_NOTIFICATION, ...COMMUNITY_NOTIFICATIONS] as const;
 export const NOTIFICATION_PAGE_SIZE = 50;
 const READ_AHEAD = 150; // rows read before the "not shown" ones are dropped
 
@@ -29,12 +31,14 @@ export type NotificationItem = {
   time: string;
   unread: boolean;
   href: string; // where it leads: the post, or the person for a follow
+  text?: string; // a ready-made sentence (community decisions); the other types use the translated text of their type
 };
 
 type Row = {
   id: number;
   type: string;
   socialPostId: number | null;
+  communityRequestId: number | null;
   readAt: Date | null;
   createdAt: Date;
   actor: { username: string; displayName: string | null; status: string; deletedAt: Date | null };
@@ -43,14 +47,15 @@ type Row = {
 async function shownRows(userId: string, unreadOnly: boolean): Promise<Row[]> {
   // Notification settings (SOCIAL_TODO B8): types the person switched off are not shown and not counted (the rows are kept).
   const off = await prisma.notificationOptOut.findMany({ where: { userId }, select: { type: true } });
-  const shownTypes = enabledTypesFrom(off.map((row) => row.type)).filter((type) => (NOTIFICATION_TYPES as readonly string[]).includes(type));
-  if (shownTypes.length === 0) return [];
+  const switchableTypes = enabledTypesFrom(off.map((row) => row.type)).filter((type) => (NOTIFICATION_TYPES as readonly string[]).includes(type));
+  // The decisions on the person's OWN community request have no switch: they are always shown.
+  const shownTypes: string[] = [...switchableTypes, ...COMMUNITY_NOTIFICATIONS];
   const rows: Row[] = await prisma.notification.findMany({
     where: { recipientId: userId, type: { in: shownTypes }, ...(unreadOnly ? { readAt: null } : {}) },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: READ_AHEAD,
     select: {
-      id: true, type: true, socialPostId: true, readAt: true, createdAt: true,
+      id: true, type: true, socialPostId: true, communityRequestId: true, readAt: true, createdAt: true,
       actor: { select: { username: true, displayName: true, status: true, deletedAt: true } },
     },
   });
@@ -68,25 +73,50 @@ async function shownRows(userId: string, unreadOnly: boolean): Promise<Row[]> {
     : new Set<number>();
   // Block and Mute (SOCIAL_TODO A7): nothing from a person the reader blocked, who blocked the reader, or whom the reader muted.
   const hidden = await loadHiddenAuthors(userId);
+  const isCommunityType = (type: string) => (COMMUNITY_NOTIFICATIONS as readonly string[]).includes(type);
   return rows.filter(
     (row) =>
-      isSocialAuthorShown(row.actor) &&
-      !hidden.all.has(row.actor.username) &&
-      (row.socialPostId === null || shownPosts.has(row.socialPostId)),
+      isCommunityType(row.type) || // an admin's decision on the person's own request: not hidden by blocks or mutes
+      (isSocialAuthorShown(row.actor) &&
+        !hidden.all.has(row.actor.username) &&
+        (row.socialPostId === null || shownPosts.has(row.socialPostId))),
   );
 }
 
 export async function loadNotifications(userId: string): Promise<NotificationItem[]> {
-  const rows = await shownRows(userId, false);
-  return rows.slice(0, NOTIFICATION_PAGE_SIZE).map((row) => ({
-    id: row.id,
-    type: row.type as NotificationItem["type"],
-    actor: row.actor.username,
-    actorName: row.actor.displayName?.trim() || row.actor.username,
-    time: timeAgo(row.createdAt),
-    unread: row.readAt === null,
-    href: row.socialPostId !== null ? `/social/${row.socialPostId}` : `/u/${row.actor.username}`,
-  }));
+  const rows = (await shownRows(userId, false)).slice(0, NOTIFICATION_PAGE_SIZE);
+  // Community decisions: the sentence is built from the request (name, address, note), read once for the whole page.
+  const requestIds = [...new Set(rows.flatMap((row) => (row.communityRequestId === null ? [] : [row.communityRequestId])))];
+  const requests = new Map(
+    (requestIds.length
+      ? await prisma.communityRequest.findMany({
+          where: { id: { in: requestIds } },
+          select: { id: true, name: true, slug: true, decisionNote: true },
+        })
+      : []
+    ).map((request) => [request.id, request]),
+  );
+  return rows.flatMap((row): NotificationItem[] => {
+    const base = {
+      id: row.id,
+      type: row.type as NotificationItem["type"],
+      actor: row.actor.username,
+      actorName: row.actor.displayName?.trim() || row.actor.username,
+      time: timeAgo(row.createdAt),
+      unread: row.readAt === null,
+    };
+    if ((COMMUNITY_NOTIFICATIONS as readonly string[]).includes(row.type)) {
+      const request = row.communityRequestId === null ? undefined : requests.get(row.communityRequestId);
+      if (!request) return [];
+      const approved = row.type === "COMMUNITY_APPROVED";
+      return [{
+        ...base,
+        text: crNotificationText(approved, request.name, request.slug, request.decisionNote),
+        href: approved ? `/c/${request.slug}` : "/communities/new",
+      }];
+    }
+    return [{ ...base, href: row.socialPostId !== null ? `/social/${row.socialPostId}` : `/u/${row.actor.username}` }];
+  });
 }
 
 /** Unread notifications that are shown (so the bell and the list always agree). Counts up to the read-ahead size. */

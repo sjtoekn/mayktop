@@ -17,7 +17,7 @@ export default function PostCard({
   const tone = ((post.author.charCodeAt(0) || 0) % 5) + 1;
   const art = communityArt[post.community] ?? defaultArt;
   return (
-    <article className="card pc-post pc-cp">
+    <article className={`card pc-post pc-cp${!full && !post.hidden && !post.deleted ? " pc-fixed" : ""}`}>
       <div className={`pc-avatar pc-a${tone}`} aria-hidden="true">
         {post.deleted ? "·" : post.author.charAt(0).toUpperCase()}
       </div>
@@ -66,7 +66,7 @@ export default function PostCard({
             <h2 className="pc-title">
               <Link href={`/post/${post.id}`}>{post.title}</Link>
             </h2>
-            <p className="pc-text line-clamp-3">{post.body}</p>
+            {post.body.trim() ? <p className="pc-text">{post.body}</p> : null}
           </>
         )}
 

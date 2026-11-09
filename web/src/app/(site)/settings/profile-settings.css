@@ -1,0 +1,5 @@
+/* The profile and security settings pages (patch-profile-security). */
+.ps-form { display: grid; gap: 10px; max-width: 560px; }
+.ps-form .pc-meta { margin: 0; }
+.ps-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
+.ps-section + .ps-section { margin-top: 8px; padding-top: 20px; border-top: 1px solid var(--line-strong); }

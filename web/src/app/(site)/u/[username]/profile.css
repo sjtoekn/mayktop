@@ -97,8 +97,8 @@
 }
 .pf-srOnly { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
-.pf-stats { display: grid; grid-template-columns: repeat(3, 1fr); max-width: 640px; margin: 0; border: 1px solid var(--line); border-radius: 18px; }
-.pf-stat { display: flex; flex-direction: column-reverse; padding: 12px 8px; text-align: center; }
+.pf-stats { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; max-width: 720px; margin: 0; border: 1px solid var(--line); border-radius: 18px; }
+.pf-stat { display: flex; flex-direction: column-reverse; padding: 8px 8px; text-align: center; }
 .pf-stat + .pf-stat { border-inline-start: 1px solid var(--line); }
 .pf-stat dd { margin: 0; font-size: 26px; font-weight: 700; line-height: 1.2; }
 .pf-stat dt { color: var(--muted); font-size: 16px; }
@@ -132,6 +132,7 @@
 .pf-aside { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
 @container (min-width: 820px) {
   .pf-colsInner { grid-template-columns: minmax(0, 1fr) 320px; }
+  .pf-colsInner.pf-noAside { grid-template-columns: minmax(0, 1fr); }
 }
 .pf-panel { display: flex; flex-direction: column; gap: 18px; }
 .pf-panel[hidden] { display: none; }
@@ -212,3 +213,4 @@
   .pf-post { padding: 18px; }
   .pf-postText { font-size: 18px; }
 }
+.pf-photos { padding: 16px; }

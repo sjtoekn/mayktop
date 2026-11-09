@@ -58,12 +58,12 @@ function isRule(value: string): value is SiteRuleKey {
   return staffConfig.siteRules.some((r) => r.key === value);
 }
 
-function cleanReason(reason: string): string | null {
+export function cleanReason(reason: string): string | null {
   const text = reason.trim();
   return text.length >= staffConfig.minReasonLength && text.length <= staffConfig.maxReasonLength ? text : null;
 }
 
-async function findActor(username: string) {
+export async function findActor(username: string) {
   const actor = await prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
     select: { id: true, role: true, status: true, isSuperAdmin: true },
@@ -71,7 +71,7 @@ async function findActor(username: string) {
   return actor && actor.role === Role.ADMIN && actor.status === UserStatus.ACTIVE ? actor : null;
 }
 
-async function findTarget(username: string) {
+export async function findTarget(username: string) {
   return prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
     select: { id: true, username: true, email: true, displayName: true, role: true, status: true, suspensionKind: true, isSuperAdmin: true },

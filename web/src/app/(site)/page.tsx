@@ -44,7 +44,7 @@ export default async function HomePage() {
         <form action="/submit" method="get" className="contents">
           <input
             name="title"
-            maxLength={150}
+            maxLength={120}
             placeholder={t("home.composer.placeholder")}
             aria-label={t("home.composer.placeholder")}
           />

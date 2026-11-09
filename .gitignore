@@ -10,3 +10,9 @@ backups/
 *.bak
 *.bak*
 .DS_Store
+.env
+*.db
+*.db.backup
+node_modules
+.next
+web/generated

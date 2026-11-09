@@ -17,3 +17,10 @@ export function positionsAreValid(list: readonly number[]): boolean {
   if (list.length > 2) return false;
   return list.every((n, i) => Number.isInteger(n) && n >= 1 && (i === 0 || n - list[i - 1] >= 3));
 }
+
+// The Photos grid (PHOTO_TODO 16): an ad tile AFTER the photo at these 0-based indexes (never first, at most 2 per page).
+export const PHOTO_AD_AFTER = [5, 15] as const;
+
+export function isPhotoAdPosition(index: number): boolean {
+  return (PHOTO_AD_AFTER as readonly number[]).includes(index);
+}

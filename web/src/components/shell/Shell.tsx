@@ -31,6 +31,7 @@ export default async function Shell({ children }: { children: ReactNode }) {
   const more: NavItem[] = [
     { icon: "shield", label: t("nav.modlog"), href: "/modlog" },
     { icon: "scale", label: t("nav.fairness"), href: "/fairness" },
+    { icon: "users", label: "Create community", href: "/communities/new" }, // TODO: move this label into the i18n files (see community-request-text.ts)
     { icon: "megaphone", label: t("nav.advertise"), href: "/advertise" },
   ];
 

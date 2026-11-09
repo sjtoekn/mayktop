@@ -9,7 +9,7 @@ import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 
-const MAX_TITLE = 150; // same limit as the form field
+const MAX_TITLE = 120; // same limit as the form field
 const MAX_BODY = 10_000;
 
 export type CreatePostResult = { error: true; login?: true } | undefined; // login: true = not logged in

@@ -104,6 +104,7 @@ The **Social** section (short posts, likes, reposts, follows, notifications) has
   - [x] Delete my own account, password asked again, 7 days to recover by logging in (36c; manual check pending)
   - [x] Staff suspend (1 admin) and permanent ban (2 admins), site rules + written reason, audit log, email, appeal box (36d, 36d2; manual check pending)
   - [x] Final erasure after the waiting time (`npm run purge`), safety record, email notices (36e; code done, manual check pending)
+- [x] Profile text (display name, bio), change password, change email (patch-profile-security, rules in ACCOUNT_RULES.md 3.23; build + lint + manual check pending). Avatar upload and community creation are separate, not done.
 - [ ] Language switcher: make `getLocale()` read the user's choice (cookie, later saved on the account); this makes it async, so every `t()` caller and `metadata` must be updated. Decided 2026-11-07 (TODO 25).
 
 ### Phase 3 — Fairness engine

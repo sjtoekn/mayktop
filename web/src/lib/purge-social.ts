@@ -13,6 +13,8 @@ import { ContentStatus } from "../../generated/prisma/client";
 import { eraseSocialTags } from "./social-tag-sync";
 import { eraseSocialBlocks } from "./social-block";
 import { eraseSocialBookmarks } from "./social-bookmark";
+import { erasePhotoBookmarks } from "./photo-bookmark";
+import { erasePhotoCollections } from "./photo-collection";
 import { eraseSocialPins } from "./social-pin";
 import { eraseNotificationSettings } from "./notification-settings";
 
@@ -50,6 +52,8 @@ export async function eraseSocial(db: Db, userId: string, now: Date): Promise<So
   await eraseSocialTags(db, userId); // hashtags and mentions (SOCIAL_TODO 6)
   await eraseSocialBlocks(db, userId); // blocks and mutes made or received (SOCIAL_TODO A7)
   await eraseSocialBookmarks(db, userId); // bookmarks made, and bookmarks of the person's posts (SOCIAL_TODO B2)
+  await erasePhotoBookmarks(db, userId); // saved photos made, and saves of the person's photos (patch-photo-save)
+  await erasePhotoCollections(db, userId); // photo collections made, and places where a collection holds the person's photos
   await eraseSocialPins(db, userId); // the pinned post (SOCIAL_TODO B6)
   await eraseNotificationSettings(db, userId); // the switched-off notification types (SOCIAL_TODO B8)
   return { posts: posts.count, replies: replies.count, reposts: reposts.count, follows: follows.count, notifications: notifications.count };

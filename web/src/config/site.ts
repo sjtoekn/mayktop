@@ -97,6 +97,18 @@ export const accountConfig = {
   deletePasswordWindowMinutes: 15,
 };
 
+// Profile and sign-in security settings (patch-profile-security, PROVISIONAL numbers: change them here only).
+//  - displayName / bio: the limits are counted in characters a person sees (an emoji is one).
+//  - profileEdit: how often one person may save the profile; passwordChange / emailChange: how often one person may try
+//    (every attempt counts, right or wrong, so a stolen login cannot guess the password).
+export const profileConfig = {
+  displayNameMax: 50,
+  bioMax: 300,
+  profileEdit: [{ max: 10, windowSeconds: 60 * 60 }],
+  passwordChange: [{ max: 5, windowSeconds: 15 * 60 }],
+  emailChange: [{ max: 3, windowSeconds: 60 * 60 }],
+};
+
 // Limits on Social actions (SOCIAL_TODO 10, PROVISIONAL: change the numbers here only).
 //  posts: every rule must have room. Counted from the person's earlier posts in the database
 //         (hidden and deleted posts count too). Example: at most 5 posts in 10 minutes AND at most 30 in 24 hours.
@@ -200,6 +212,103 @@ export const socialMedia = {
   checks: { max: 20, windowMinutes: 10 },
 };
 
+// Photos (PHOTO_TODO 2-3). Owner decision 2026-11-08 (PHOTO_TODO 1b): up to 50 MB a photo (raised from 20 MB, 2026-11-08). The pixel limit is PROVISIONAL:
+// 100 million pixels (the same as the ad pictures) so a 50-60 megapixel camera photo is not refused; the server action body
+// limit in next.config.ts (60 MB) is already above 50 MB.
+// Anybody may SEE a photo that may be shown, a login is needed to upload / like / report (decided 2026-11-08).
+// Every stored photo is a REBUILT WebP copy (no Exif / location): a full copy (longest side at most fullSide) and a small thumbnail.
+export const photoMedia = {
+  imageMaxBytes: 50 * 1024 * 1024,
+  maxSide: 20_000,
+  maxPixels: 100_000_000,
+  fullSide: 2560,
+  fullQuality: 82,
+  thumbSide: 480,
+  thumbQuality: 72,
+  pageSize: 30,
+  // How many pictures one person may send to be checked per window. One check = one photo, so this must be well above
+  // `batchMax` or a second batch inside the window would be refused (raised from 20 for multiple upload, 2026-11-09).
+  checks: { max: 40, windowMinutes: 10 },
+  // How many photos one upload form takes at once (multiple upload, stage 1). The photos are sent ONE BY ONE, so a bad
+  // photo never spoils the others and the 60 MB server action limit is per photo. Change this number to change the limit.
+  batchMax: 10,
+};
+
+// What a person types when uploading a photo (PHOTO_TODO 4). PROVISIONAL numbers. The TITLE is required (it is also the
+// picture's text description, "alt"); the caption and the tags are optional. Tags follow the Social hashtag rules.
+export const photoText = {
+  titleMax: 100,
+  captionMax: 2000,
+  maxTags: 10,
+};
+
+// Photo categories (PHOTO_TODO 9). Owner decision 2026-11-08: a short list with only the necessary categories, chosen by
+// Claude; one category per photo, chosen when uploading (required; "other" exists so no photo is stuck). The keys are stored
+// in Photo.category; the visible names are `photo.category.<key>` in src/i18n/messages/. To add or remove one later: change
+// this list, the 6 language files and the tests (a stored key that is no longer here is simply shown as "other").
+export const photoCategories = [
+  "nature",
+  "people",
+  "animals",
+  "food",
+  "travel",
+  "buildings",
+  "vehicles",
+  "art",
+  "sports",
+  "other",
+] as const;
+export type PhotoCategory = (typeof photoCategories)[number];
+
+// How many photos one person may upload (PHOTO_TODO 4). PROVISIONAL. Counted from the person's earlier photos in the
+// database (deleted ones count too), and stricter while the account is new (limitsFor, newAccountLimits).
+export const photoLimits = {
+  // Raised for multiple upload (was 5 per 10 minutes and 30 per day): one batch of photoMedia.batchMax photos must fit.
+  // A new account gets half of these (newAccountLimits), so 10 per 10 minutes and 50 per day.
+  uploads: [
+    { max: 20, windowMinutes: 10 },
+    { max: 100, windowMinutes: 24 * 60 },
+  ],
+};
+
+// Places (Photos plan, stage 3): real-world places that photos can be linked to. PROVISIONAL numbers.
+// `placeTypes` are the stored keys (Place.type); the visible names are in src/lib/place-text.ts. A stored key that is no longer
+// here is shown as "other". Name, city, region and country are one line each; the description may have several lines.
+export const placeTypes = [
+  "heritage",
+  "attraction",
+  "nature",
+  "beach",
+  "park",
+  "hotel",
+  "restaurant",
+  "shop",
+  "museum",
+  "education",
+  "transport",
+  "other",
+] as const;
+export type PlaceType = (typeof placeTypes)[number];
+
+export const placeFields = {
+  nameMax: 120,
+  cityMax: 80,
+  regionMax: 80,
+  countryMax: 80,
+  descriptionMax: 2000,
+  websiteMax: 300,
+  pageSize: 30,
+};
+
+// How many places one person may add. Counted from the person's earlier places in the database (removed ones count too) and
+// stricter while the account is new (limitsFor, newAccountLimits).
+export const placeLimits = {
+  creates: [
+    { max: 5, windowMinutes: 10 },
+    { max: 30, windowMinutes: 24 * 60 },
+  ],
+};
+
 // Staff actions on a person's account (TODO 36d, PROJECT.md 8d). PROVISIONAL: confirm with a lawyer.
 // Site-wide rules: short and plain, like community rules. Every suspension or ban must name one of
 // these keys AND give a written reason. `serious: true` = a ban is allowed for a first offence;
@@ -221,6 +330,8 @@ export const staffConfig = {
   repeatWindowDays: 365, // "earlier suspension" for the ban ladder means within this many days
   minReasonLength: 20, // a written reason must be at least this long (no one-word decisions)
   maxReasonLength: 1000,
+  maxDisplayNameLength: 50, // an admin can edit a person's display name (admin-edit.ts): at most this many characters
+  maxBioLength: 300, // ... and bio
   minAppealLength: 20,
   maxAppealLength: 2000,
 };

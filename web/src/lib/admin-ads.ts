@@ -1,21 +1,27 @@
 // Admin Part 8 (Ads): the data for the screen. No rule lives here: what an admin may do is decided in ad-review-rules.ts and
 // checked again in ad-review.ts. This file only READS, adds the totals, and says which buttons to show.
+// patch-ads-list: the screen is now PAGED and SEARCHABLE (loadAdsPage), with a History tab (rejected + ended ads). The old
+// loadAds (all four working sections at once) stays for any caller that still wants it, but the screen no longer uses it.
 import { prisma } from "@/lib/prisma";
 import { endExpiredAds } from "@/lib/ad-review";
 import { sendEndingSoonNotices } from "@/lib/ad-notices";
 import { ctrText } from "@/lib/ad-review-rules";
-import { AdStatus } from "../../generated/prisma/client";
+import {
+  ADS_VIEWS, ADS_VIEW_STATUSES, adNumberFromSearch, pageInfo, ADS_PAGE_SIZE, type AdsQuery, type AdsView,
+} from "@/lib/admin-ads-list-rules";
+import { AdStatus, type AdFormat, type AdSlotType, type Prisma } from "../../generated/prisma/client";
 
 export type AdAction = "approve" | "reject" | "paid" | "pause" | "restore";
-export type AdSection = "queue" | "waiting" | "active" | "paused";
+export type AdSection = AdsView; // "queue" | "waiting" | "active" | "paused" | "history"
 
 export type AdItem = {
   id: number;
   section: AdSection;
+  status: "SUBMITTED" | "APPROVED" | "ACTIVE" | "PAUSED" | "REJECTED" | "ENDED" | "DRAFT";
   title: string;
   body: string;
   format: "TEXT" | "IMAGE" | "VIDEO";
-  imageUrl: string | null; // the picture, or the poster of a video ad (our own address)
+  imageUrl: string | null; // the picture of an IMAGE ad (our own address)
   videoUrl: string | null;
   destinationUrl: string;
   host: string; // the address shown under the ad, as in the real box
@@ -29,6 +35,8 @@ export type AdItem = {
   priceCents: number;
   currency: string;
   paid: boolean;
+  reviewRule: string | null; // History tab: the rule of a rejection
+  reviewNote: string | null; // History tab: the written reason of a rejection
   impressions: number;
   clicks: number;
   weekImpressions: number;
@@ -42,6 +50,8 @@ const SECTION_BY_STATUS: Partial<Record<AdStatus, AdSection>> = {
   [AdStatus.APPROVED]: "waiting",
   [AdStatus.ACTIVE]: "active",
   [AdStatus.PAUSED]: "paused",
+  [AdStatus.REJECTED]: "history",
+  [AdStatus.ENDED]: "history",
 };
 
 function hostOf(url: string): string {
@@ -52,18 +62,17 @@ function hostOf(url: string): string {
   }
 }
 
-export async function loadAds(meId: string): Promise<Record<AdSection, AdItem[]>> {
-  await endExpiredAds(); // keep the statuses honest before showing them
-  await sendEndingSoonNotices().catch((error) => console.error("ending-soon notices failed:", error)); // once per ad (Session 4c)
-  const ads = await prisma.adCampaign.findMany({
-    where: { status: { in: [AdStatus.SUBMITTED, AdStatus.APPROVED, AdStatus.ACTIVE, AdStatus.PAUSED] } },
-    orderBy: [{ submittedAt: "asc" }, { id: "asc" }], // oldest first
-    select: {
-      id: true, status: true, title: true, body: true, format: true, imageUrl: true, videoUrl: true, destinationUrl: true, slot: true, contactEmail: true,
-      submittedAt: true, startDate: true, endDate: true, priceCents: true, currency: true, paymentStatus: true,
-      advertiserId: true, advertiser: { select: { username: true } }, community: { select: { slug: true } },
-    },
-  });
+const SELECT = {
+  id: true, status: true, title: true, body: true, format: true, imageUrl: true, videoUrl: true, destinationUrl: true, slot: true, contactEmail: true,
+  submittedAt: true, startDate: true, endDate: true, priceCents: true, currency: true, paymentStatus: true, reviewRule: true, reviewNote: true,
+  advertiserId: true, advertiser: { select: { username: true } }, community: { select: { slug: true } },
+} satisfies Prisma.AdCampaignSelect;
+
+type Row = Prisma.AdCampaignGetPayload<{ select: typeof SELECT }>;
+
+/** Adds the totals to the rows and says which buttons this admin may press. Reads only the ids it is given. */
+async function toItems(ads: Row[], meId: string): Promise<AdItem[]> {
+  if (ads.length === 0) return [];
   const ids = ads.map((a) => a.id);
   const weekStart = new Date();
   weekStart.setUTCHours(0, 0, 0, 0);
@@ -75,7 +84,7 @@ export async function loadAds(meId: string): Promise<Record<AdSection, AdItem[]>
   const total = new Map(totals.map((r) => [r.adId, r._sum]));
   const weekly = new Map(week.map((r) => [r.adId, r._sum.impressions ?? 0]));
 
-  const out: Record<AdSection, AdItem[]> = { queue: [], waiting: [], active: [], paused: [] };
+  const out: AdItem[] = [];
   for (const a of ads) {
     const section = SECTION_BY_STATUS[a.status];
     if (!section) continue;
@@ -86,10 +95,12 @@ export async function loadAds(meId: string): Promise<Record<AdSection, AdItem[]>
       section === "queue" ? (own ? [] : ["approve", "reject"])
       : section === "waiting" ? (own ? [] : ["paid"])
       : section === "active" ? ["pause"]
-      : own ? [] : ["restore"];
-    out[section].push({
+      : section === "paused" ? (own ? [] : ["restore"])
+      : []; // history: nothing to press (an appeal is decided in /admin/appeals)
+    out.push({
       id: a.id,
       section,
+      status: a.status,
       title: a.title,
       body: a.body,
       format: a.format,
@@ -107,13 +118,91 @@ export async function loadAds(meId: string): Promise<Record<AdSection, AdItem[]>
       priceCents: a.priceCents,
       currency: a.currency,
       paid: a.paymentStatus === "PAID",
+      reviewRule: a.reviewRule,
+      reviewNote: a.reviewNote,
       impressions,
       clicks,
       weekImpressions: weekly.get(a.id) ?? 0,
       ctr: ctrText(impressions, clicks),
       actions,
-      blockedSelf: own && actions.length === 0,
+      blockedSelf: own && actions.length === 0 && section !== "history",
     });
   }
   return out;
+}
+
+/** The old screen's data: the four working sections, everything at once. Not used by the screen any more. */
+export async function loadAds(meId: string): Promise<Record<"queue" | "waiting" | "active" | "paused", AdItem[]>> {
+  await endExpiredAds(); // keep the statuses honest before showing them
+  await sendEndingSoonNotices().catch((error) => console.error("ending-soon notices failed:", error)); // once per ad (Session 4c)
+  const ads = await prisma.adCampaign.findMany({
+    where: { status: { in: [AdStatus.SUBMITTED, AdStatus.APPROVED, AdStatus.ACTIVE, AdStatus.PAUSED] } },
+    orderBy: [{ submittedAt: "asc" }, { id: "asc" }], // oldest first
+    select: SELECT,
+  });
+  const out: Record<"queue" | "waiting" | "active" | "paused", AdItem[]> = { queue: [], waiting: [], active: [], paused: [] };
+  for (const item of await toItems(ads, meId)) if (item.section !== "history") out[item.section].push(item);
+  return out;
+}
+
+export type AdsPage = {
+  items: AdItem[];
+  total: number; // matches in this tab
+  counts: Record<AdsView, number>; // matches per tab (the search and filters apply to every tab)
+  pages: number;
+  page: number;
+  from: number;
+  to: number;
+};
+
+const ORDER: Record<AdsView, Prisma.AdCampaignOrderByWithRelationInput[]> = {
+  queue: [{ submittedAt: "asc" }, { id: "asc" }], // oldest waiting first
+  waiting: [{ submittedAt: "asc" }, { id: "asc" }],
+  active: [{ endDate: "asc" }, { id: "asc" }], // the one that ends soonest first
+  paused: [{ updatedAt: "desc" }, { id: "desc" }],
+  history: [{ updatedAt: "desc" }, { id: "desc" }], // the newest decision / ending first
+};
+
+/** One page of one tab, with the search and filters applied. Only the ads of that page are read in full. */
+export async function loadAdsPage(meId: string, query: AdsQuery): Promise<AdsPage> {
+  await endExpiredAds(); // keep the statuses honest before showing them
+  await sendEndingSoonNotices().catch((error) => console.error("ending-soon notices failed:", error)); // once per ad (Session 4c)
+
+  // The search and the filters, WITHOUT the status: the same for every tab, so the tab counts show matches.
+  const filter: Prisma.AdCampaignWhereInput = {};
+  if (query.slot) filter.slot = query.slot as AdSlotType;
+  if (query.format) filter.format = query.format as AdFormat;
+  if (query.q) {
+    const number = adNumberFromSearch(query.q);
+    filter.OR =
+      number !== null
+        ? [{ id: number }, { title: { contains: query.q } }]
+        : [
+            { title: { contains: query.q } },
+            { body: { contains: query.q } },
+            { contactEmail: { contains: query.q } },
+            { advertiser: { username: { contains: query.q } } },
+          ];
+  }
+
+  const grouped = await prisma.adCampaign.groupBy({ by: ["status"], where: filter, _count: { _all: true } });
+  const counts = Object.fromEntries(ADS_VIEWS.map((v) => [v, 0])) as Record<AdsView, number>;
+  for (const row of grouped) {
+    const view = SECTION_BY_STATUS[row.status];
+    if (view) counts[view] += row._count._all;
+  }
+
+  const total = counts[query.view];
+  const info = pageInfo(total, query.page, ADS_PAGE_SIZE);
+  const rows =
+    total === 0
+      ? []
+      : await prisma.adCampaign.findMany({
+          where: { ...filter, status: { in: [...ADS_VIEW_STATUSES[query.view]] as AdStatus[] } },
+          orderBy: ORDER[query.view],
+          skip: info.skip,
+          take: ADS_PAGE_SIZE,
+          select: SELECT,
+        });
+  return { items: await toItems(rows, meId), total, counts, pages: info.pages, page: info.page, from: info.from, to: info.to };
 }
