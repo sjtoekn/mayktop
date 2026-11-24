@@ -16,3 +16,9 @@ backups/
 node_modules
 .next
 web/generated
+/src/
+/prisma/
+/package.json
+/package-lock.json
+/README.new.md
+/scripts/test-creator-payouts.ts
