@@ -17,6 +17,7 @@ import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
+import { mayWriteText } from "@/lib/reputation";
 import { socialDuplicate, socialLimits, socialMedia } from "@/config/site";
 import { cleanSocialBody } from "@/lib/social-input";
 import { checkRules, type RateRule } from "@/lib/social-limits";
@@ -40,6 +41,7 @@ export type CreateSocialPostResult =
       error: true;
       login?: true; // not logged in
       invalid?: true; // empty, only invisible characters, or too long
+      link?: true; // the text has a web link and the person has not earned the "link" privilege yet (reputationConfig.privileges.link)
       imageError?: SocialImageError; // the picture was refused: too big, not a real JPG / PNG / WebP, or too many pixels
       tooMany?: true; // rate limit reached
       duplicate?: true; // the same text was already sent by this person recently (SOCIAL_TODO C2)
@@ -60,6 +62,8 @@ export async function createSocialPost(form: FormData): Promise<CreateSocialPost
 
   const author = await getSessionUser();
   if (!author) return { error: true, login: true };
+  // A web link needs some reputation (same rule as the forum); staff may always. Checked before the picture is read.
+  if (!(await mayWriteText(author.id, cleaned.body))) return { error: true, link: true };
 
   // ---- the picture (optional). Checked and cleaned BEFORE anything is saved.
   let picture: Extract<ReturnType<typeof checkSocialImage>, { ok: true }> | null = null;

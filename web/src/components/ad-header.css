@@ -2,8 +2,8 @@
    (same max-width as .ch-header / .ch-layout in shell.css). Tokens only: works in light and dark.
    A FIXED shape (8:1) is set by aspect-ratio on a full-width box, so the page does not jump when the picture loads.
    (No max-height on purpose: a max-height would shrink the WIDTH too, because of the aspect-ratio.) */
-.ad-header { max-width: 1500px; margin: 0 auto 18px; }
+.ad-header { max-width: var(--site-max, 1500px); margin: 18px auto 18px; }
 .ad-header-link { position: relative; display: block; width: 100%; aspect-ratio: 8 / 1; min-height: 72px; overflow: hidden; border-radius: var(--radius-xl); border: 1px solid var(--adline); background: var(--surface2); box-shadow: var(--shadow-sm); }
 .ad-header-img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .ad-header-badge { position: absolute; top: 10px; inset-inline-start: 12px; padding: 0.15rem 0.55rem; border-radius: var(--radius-md); background: rgba(0, 0, 0, 0.62); color: #fff; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
-@media (max-width: 640px) { .ad-header { margin-bottom: 12px; } .ad-header-link { aspect-ratio: 4 / 1; min-height: 72px; } }
+@media (max-width: 640px) { .ad-header { margin-top: 0; margin-bottom: 12px; } .ad-header-link { aspect-ratio: 4 / 1; min-height: 72px; } }

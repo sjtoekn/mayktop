@@ -27,6 +27,7 @@ import { makeShortFiles, sniffShortVideo, type ShortFailure } from "@/lib/short-
 import { deleteShortFiles, newShortName, publishShortFiles, saveShortUpload, shortTempDir } from "@/lib/short-storage";
 import { takeActionDb } from "@/lib/rate-limit-db";
 import { limitsFor } from "@/lib/account-limits";
+import { mayWriteText } from "@/lib/reputation";
 import { checkRules, type RateRule } from "@/lib/social-limits";
 import { ShortProcessing } from "../../../../../generated/prisma/enums";
 
@@ -41,6 +42,7 @@ export type UploadShortResult =
       reason:
         | "error"
         | "login"
+        | "link"
         | "title"
         | "invalid"
         | "privacy"
@@ -83,6 +85,8 @@ export async function uploadShort(form: FormData): Promise<UploadShortResult> {
 
   const owner = await getSessionUser();
   if (!owner) return { ok: false, reason: "login" };
+  // A web link in the title or description needs the "link" privilege (reputationConfig.privileges.link); staff may always.
+  if (!(await mayWriteText(owner.id, title.title, description.description ?? ""))) return { ok: false, reason: "link" };
 
   const turn = await takeActionDb(`short-video:${owner.id}`, checkRulesForVideos);
   if (!turn.ok) return { ok: false, reason: "tooMany", waitMinutes: Math.max(1, Math.ceil(turn.retryAfterMs / 60_000)) };

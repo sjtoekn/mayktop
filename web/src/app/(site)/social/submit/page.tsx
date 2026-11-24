@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import SocialPostForm from "@/components/social/SocialPostForm";
-import { socialMedia } from "@/config/site";
+import { reputationConfig, socialMedia } from "@/config/site";
 import { t } from "@/i18n";
 
 export const metadata: Metadata = {
@@ -25,6 +25,7 @@ export default async function SocialSubmitPage({ searchParams }: { searchParams:
         saving: t("social.form.saving"),
         error: t("social.form.error"),
         invalid: t("social.form.invalid"),
+        link: t("submit.error.link", { need: reputationConfig.privileges.link }),
         tooMany: t("social.form.toomany"),
         duplicate: t("social.form.duplicate"),
         login: t("auth.required"),

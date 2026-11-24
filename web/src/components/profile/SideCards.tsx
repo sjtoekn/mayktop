@@ -19,7 +19,7 @@ export function AboutCard({ profile }: { profile: Profile }) {
         {profile.website && (
           <li>
             <Icon name="link" size={22} />
-            <a href={`https://${profile.website}`} target="_blank" rel="noopener noreferrer">
+            <a href={`https://${profile.website}`} target="_blank" rel="noopener noreferrer nofollow ugc">
               {profile.website}
             </a>
           </li>

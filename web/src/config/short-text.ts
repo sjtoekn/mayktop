@@ -28,6 +28,7 @@ export const shortText = {
   error: "Something went wrong. Please try again.",
   titleRequired: "Please write a title.",
   invalid: "The title or description is not valid. Please check it and try again.",
+  linkError: "A web link in the title or description needs {need} reputation points. Please remove the link.",
   tooMany: "You have uploaded a lot of shorts recently. Please try again in about {minutes} minute(s).",
   busy: "The server is busy preparing other videos. Please try again in a minute.",
   noFfmpeg: "The server cannot check videos right now. Please try again later.",

@@ -18,8 +18,10 @@ import { ContentStatus } from "../../generated/prisma/client";
 import { enabledTypesFrom } from "@/lib/notification-settings-rules";
 import { COMMUNITY_NOTIFICATIONS } from "@/lib/community-request-rules";
 import { crNotificationText } from "@/lib/community-request-text";
+import { ANSWER_ACCEPTED_NOTIFICATION } from "@/lib/reputation-rules";
+import { formatNumber, t } from "@/i18n";
 
-export const NOTIFICATION_TYPES = [FOLLOW_NOTIFICATION, "SOCIAL_POST_LIKE", "SOCIAL_POST_REPOST", REPLY_NOTIFICATION, MENTION_NOTIFICATION, ...COMMUNITY_NOTIFICATIONS] as const;
+export const NOTIFICATION_TYPES = [FOLLOW_NOTIFICATION, "SOCIAL_POST_LIKE", "SOCIAL_POST_REPOST", REPLY_NOTIFICATION, MENTION_NOTIFICATION, ...COMMUNITY_NOTIFICATIONS, ANSWER_ACCEPTED_NOTIFICATION] as const;
 export const NOTIFICATION_PAGE_SIZE = 50;
 const READ_AHEAD = 150; // rows read before the "not shown" ones are dropped
 
@@ -38,6 +40,7 @@ type Row = {
   id: number;
   type: string;
   socialPostId: number | null;
+  postId: number | null;
   communityRequestId: number | null;
   readAt: Date | null;
   createdAt: Date;
@@ -48,14 +51,14 @@ async function shownRows(userId: string, unreadOnly: boolean): Promise<Row[]> {
   // Notification settings (SOCIAL_TODO B8): types the person switched off are not shown and not counted (the rows are kept).
   const off = await prisma.notificationOptOut.findMany({ where: { userId }, select: { type: true } });
   const switchableTypes = enabledTypesFrom(off.map((row) => row.type)).filter((type) => (NOTIFICATION_TYPES as readonly string[]).includes(type));
-  // The decisions on the person's OWN community request have no switch: they are always shown.
-  const shownTypes: string[] = [...switchableTypes, ...COMMUNITY_NOTIFICATIONS];
+  // The decisions on the person's OWN community request, and "your answer was accepted", have no switch: they are always shown.
+  const shownTypes: string[] = [...switchableTypes, ...COMMUNITY_NOTIFICATIONS, ANSWER_ACCEPTED_NOTIFICATION];
   const rows: Row[] = await prisma.notification.findMany({
     where: { recipientId: userId, type: { in: shownTypes }, ...(unreadOnly ? { readAt: null } : {}) },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     take: READ_AHEAD,
     select: {
-      id: true, type: true, socialPostId: true, communityRequestId: true, readAt: true, createdAt: true,
+      id: true, type: true, socialPostId: true, postId: true, communityRequestId: true, readAt: true, createdAt: true,
       actor: { select: { username: true, displayName: true, status: true, deletedAt: true } },
     },
   });
@@ -73,10 +76,10 @@ async function shownRows(userId: string, unreadOnly: boolean): Promise<Row[]> {
     : new Set<number>();
   // Block and Mute (SOCIAL_TODO A7): nothing from a person the reader blocked, who blocked the reader, or whom the reader muted.
   const hidden = await loadHiddenAuthors(userId);
-  const isCommunityType = (type: string) => (COMMUNITY_NOTIFICATIONS as readonly string[]).includes(type);
+  const isCommunityType = (type: string) => (COMMUNITY_NOTIFICATIONS as readonly string[]).includes(type) || type === ANSWER_ACCEPTED_NOTIFICATION;
   return rows.filter(
     (row) =>
-      isCommunityType(row.type) || // an admin's decision on the person's own request: not hidden by blocks or mutes
+      isCommunityType(row.type) || // an admin's decision on the person's own request, or the acceptance of their own answer: not hidden by blocks or mutes
       (isSocialAuthorShown(row.actor) &&
         !hidden.all.has(row.actor.username) &&
         (row.socialPostId === null || shownPosts.has(row.socialPostId))),
@@ -96,6 +99,14 @@ export async function loadNotifications(userId: string): Promise<NotificationIte
       : []
     ).map((request) => [request.id, request]),
   );
+  // "Your answer was accepted": if a bounty was paid for it, the sentence says how much. Read once for the whole page.
+  const answerPostIds = [...new Set(rows.flatMap((row) => (row.type === ANSWER_ACCEPTED_NOTIFICATION && row.postId !== null ? [row.postId] : [])))];
+  const paid = new Map(
+    (answerPostIds.length
+      ? await prisma.bounty.findMany({ where: { postId: { in: answerPostIds }, status: "AWARDED", awardedToId: userId }, select: { postId: true, amount: true } })
+      : []
+    ).map((bounty) => [bounty.postId, bounty.amount]),
+  );
   return rows.flatMap((row): NotificationItem[] => {
     const base = {
       id: row.id,
@@ -113,6 +124,17 @@ export async function loadNotifications(userId: string): Promise<NotificationIte
         ...base,
         text: crNotificationText(approved, request.name, request.slug, request.decisionNote),
         href: approved ? `/c/${request.slug}` : "/communities/new",
+      }];
+    }
+    if (row.type === ANSWER_ACCEPTED_NOTIFICATION) {
+      if (row.postId === null) return [];
+      const amount = paid.get(row.postId);
+      return [{
+        ...base,
+        text: amount !== undefined
+          ? t("notifications.type.bountyAwarded", { name: base.actorName, amount: formatNumber(amount) })
+          : t("notifications.type.answerAccepted", { name: base.actorName }),
+        href: `/post/${row.postId}`,
       }];
     }
     return [{ ...base, href: row.socialPostId !== null ? `/social/${row.socialPostId}` : `/u/${row.actor.username}` }];

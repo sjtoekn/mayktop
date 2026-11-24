@@ -40,6 +40,7 @@ export type PhotoUploadFormText = {
   error: string;
   titleRequired: string;
   invalid: string;
+  linkError: string; // a web link in the title or caption needs reputation
   tagsInvalid: string;
   tooMany: string; // contains {minutes}
   done: string;
@@ -63,7 +64,7 @@ export type PhotoUploadFormText = {
   ownTitle: string; // placeholder of the small title box under each photo
 };
 
-type Reason = "error" | "login" | "title" | "invalid" | "category" | "tags" | "noImage" | "tooMany" | "imageType" | "imageSize" | "imagePixels";
+type Reason = "error" | "login" | "link" | "title" | "invalid" | "category" | "tags" | "noImage" | "tooMany" | "imageType" | "imageSize" | "imagePixels";
 type Status = "ready" | "sending" | "done" | "failed";
 type Item = { id: string; file: File; preview: string; status: Status; reason?: Reason; stored?: string; ownTitle: string };
 
@@ -457,6 +458,8 @@ export default function PhotoUploadForm({
               text.categoryRequired
             ) : failed === "tags" ? (
               text.tagsInvalid
+            ) : failed === "link" ? (
+              text.linkError
             ) : failed === "invalid" ? (
               text.invalid
             ) : (

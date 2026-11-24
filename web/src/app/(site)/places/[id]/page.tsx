@@ -5,13 +5,26 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { parsePlaceId } from "@/lib/place-input";
 import { placeTexts, placeTypeNames } from "@/lib/place-text";
+import { siteConfig } from "@/config/site";
 import { loadPlace, placeWhere } from "@/lib/place-view";
+import { getPlaceSeo } from "@/lib/seo-meta";
+import { noIndexMetadata, pageMetadata } from "@/lib/seo-text";
 import "../../photos/photos.css";
 import "../places.css";
 
-export const metadata: Metadata = {
-  title: placeTexts.detailTitle,
-};
+// The page header for search engines and share cards (SEO stage 2): the place's name, where it is and its description.
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const id = parsePlaceId((await params).id);
+  const place = id === null ? null : await getPlaceSeo(id);
+  if (id === null || !place) return { title: placeTexts.detailTitle, ...noIndexMetadata };
+  const where = placeWhere(place);
+  return pageMetadata({
+    path: `/places/${id}`,
+    title: place.city && !place.name.includes(place.city) ? `${place.name}, ${place.city}` : place.name,
+    siteName: siteConfig.name,
+    description: place.description || `${placeTypeNames[place.type]} · ${where}`,
+  });
+}
 
 // One place (Photos plan, stage 3). Anybody may open a place that may be shown (VISIBLE, not deleted); an invalid, missing, hidden
 // or deleted one gets "not found". The placeholder id only lets Next.js prepare the page shell at build time (like /photos/[id]).

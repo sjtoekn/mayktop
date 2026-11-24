@@ -4,6 +4,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createCommunityRequest } from "@/app/(site)/communities/new/actions";
+import { communityCategories } from "@/config/site";
 import { checkRequestInput, cleanSlugInput, crLimits, slugify } from "@/lib/community-request-rules";
 import type { crText as CrText } from "@/lib/community-request-text";
 
@@ -16,6 +17,7 @@ export default function CommunityRequestForm({ text }: { text: typeof CrText }) 
   const [slug, setSlug] = useState("");
   const [slugEdited, setSlugEdited] = useState(false);
   const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("");
   const [rules, setRules] = useState<Rule[]>(() => Array.from({ length: crLimits.rulesMin }, () => ({ title: "", text: "" })));
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -33,7 +35,7 @@ export default function CommunityRequestForm({ text }: { text: typeof CrText }) 
 
   function submit() {
     setError(null);
-    const input = { name, slug, description, rules };
+    const input = { name, slug, description, category, rules };
     const local = checkRequestInput(input); // same rules as the server: tells the person at once, nothing is sent
     if ("error" in local) {
       showError(text.errors[local.error] ?? text.errors.other);
@@ -80,6 +82,14 @@ export default function CommunityRequestForm({ text }: { text: typeof CrText }) 
           id="cr-desc" className="pc-field" rows={3} value={description} maxLength={crLimits.descMax}
           placeholder={text.fieldDescriptionPlaceholder} onChange={(e) => setDescription(e.target.value)}
         />
+
+        <label className="sf-label" htmlFor="cr-category">{text.fieldCategory}</label>
+        <select id="cr-category" className="pc-field" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">{text.fieldCategoryPlaceholder}</option>
+          {communityCategories.map((key) => (
+            <option key={key} value={key}>{text.categories[key] ?? key}</option>
+          ))}
+        </select>
       </section>
 
       <section className="card sf-card">

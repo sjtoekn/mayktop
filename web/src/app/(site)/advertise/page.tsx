@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Icon from "@/components/shell/Icon";
-import { adsConfig, siteConfig } from "@/config/site";
+import { adsConfig, creatorsConfig, siteConfig } from "@/config/site";
 import { getLocale, t } from "@/i18n";
 import "./advertise.css";
 import "./advertise-landing.css";
@@ -83,6 +83,12 @@ export default function AdvertisePage() {
           <span className="adl-icon"><Icon name="shield" size={24} /></span>
           <h2 className="sf-h2">{t("advertise.privacy.title")}</h2>
           <p>{t("advertise.privacy.text")}</p>
+        </section>
+        <section className="card adl-promise">
+          <span className="adl-icon"><Icon name="shield" size={24} /></span>
+          <h2 className="sf-h2">{t("advertise.creators.title")}</h2>
+          <p>{t("advertise.creators.text", { share: creatorsConfig.sharePercent })}</p>
+          <Link href="/creator-program" className="fa-link">{t("creatorProgram.link")}</Link>
         </section>
       </div>
 

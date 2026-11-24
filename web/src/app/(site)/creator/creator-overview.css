@@ -1,0 +1,12 @@
+/* Creator Overview (TODO 12, S5). Tokens only; shares the card / chart / table classes of ad-detail.css (adt-*). */
+.cro-wrap { display: grid; gap: 18px; max-width: 64rem; margin-inline: auto; padding: 0 16px 32px; }
+.cro-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.cro-top h1 { margin: 0; }
+.cro-links { display: flex; gap: 8px; flex-wrap: wrap; }
+.cro-cards { grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr)); }
+.cro-estimate dd { color: var(--muted); }
+.cro-facts { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.cro-next { margin: 0; font-weight: 600; }
+.cro-title { display: block; max-width: 28rem; overflow-wrap: anywhere; }
+.cro-empty { display: grid; gap: 12px; justify-items: start; padding: 24px; }
+.cro-empty p { margin: 0; }

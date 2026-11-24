@@ -6,11 +6,10 @@ import { connection } from "next/server";
 import Icon from "@/components/shell/Icon";
 import PageHero from "@/components/PageHero";
 import { t } from "@/i18n";
-import FeedTypeTabs from "@/components/feed/FeedTypeTabs";
 import { prisma } from "@/lib/prisma";
 
 export const metadata: Metadata = {
-  title: "News | Mayktop",
+  title: "News | Falvenco",
   description: "Latest headlines from approved publishers.",
 };
 
@@ -59,7 +58,6 @@ function NewsLoading() {
   return (
     <>
       <PageHero variant="news" parts={[t("news.hero.a"), t("news.hero.b"), t("news.hero.c")]} sub={t("news.hero.sub")} />
-      <FeedTypeTabs active="news" />
       <section className="card pg-empty">
         <span className="pc-avatar pc-a4" aria-hidden="true">
           <Icon name="newspaper" size={26} />
@@ -106,8 +104,6 @@ async function NewsContent({
     <>
       <PageHero variant="news" parts={[t("news.hero.a"), t("news.hero.b"), t("news.hero.c")]} sub={t("news.hero.sub")} />
 
-      <FeedTypeTabs active="news" />
-
       <nav className="news-categories" aria-label="News categories">
         {CATEGORIES.map((item) => (
           <Link
@@ -135,7 +131,7 @@ async function NewsContent({
               : "No stories in this category yet"}
           </h2>
           <p>
-            Mayktop will show headlines from approved RSS publishers here.
+            Falvenco will show headlines from approved RSS publishers here.
             New stories appear after the news collector runs.
           </p>
         </section>

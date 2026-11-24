@@ -1,4 +1,4 @@
-// MaykTop database design (TODO 28). Plain-language guide: DATABASE.md in the project root.
+// Falvenco database design (TODO 28). Plain-language guide: DATABASE.md in the project root.
 //
 // Rules this design follows (PROJECT.md, section 8b):
 //  - Nothing is ever hard-deleted. Content has a status; accounts, rules and communities are
@@ -23,6 +23,12 @@ enum Role {
   USER
   MODERATOR
   ADMIN
+}
+
+// How a profile got its "verified" badge (SITE_PLAN C7).
+enum VerifyMethod {
+  ADMIN // an admin checked the person (audited)
+  EMAIL_DOMAIN // the person proved a work e-mail on their own website's domain (planned)
 }
 
 enum UserStatus {
@@ -82,6 +88,8 @@ enum AuditAction {
   SAFETY_RECORD_SWEPT // the purge job deleted a safety record whose keep-until date had passed and that had no legal hold (system actor)
   USER_RESTORED
   ROLE_CHANGED
+  USER_VERIFIED // an admin gave a profile the verified badge
+  USER_UNVERIFIED // an admin took the verified badge away (reason required)
   MODERATOR_ADDED
   MODERATOR_REMOVED
   COMMUNITY_APPROVED // an admin approved a member's request to create a community
@@ -94,6 +102,12 @@ enum AuditAction {
   AD_ENDED // the advertiser ended their own ad for good (ADS_PLAN 4b)
   AD_RESUBMITTED // the advertiser fixed a rejected ad and sent it again for review (ADS_PLAN 4b)
   USER_EDITED // an admin edited a person's profile (display name / bio / username / email); the row names the fields, never the values
+  PAYOUT_MARKED_PAID // an admin marked a creator payout as paid (CREATOR_EARNINGS_PLAN S8)
+  EARNING_REVERSED // an admin took earnings back (bad traffic, removed content); written together with the REVERSAL ledger row
+  CREATOR_HOLD_SET // an admin froze a creator's earnings (no payout until released)
+  CREATOR_HOLD_RELEASED // the freeze above was lifted
+  PAYOUT_BATCH_CREATED // an admin made a payout round (targetId = the PayoutBatch id; reason says how many payouts)
+  PAYOUT_FAILED // a payout could not be paid: the money went back to the creator's open balance (reason required)
 }
 
 enum AuditTarget {
@@ -106,6 +120,8 @@ enum AuditTarget {
   AD
   SOCIAL_POST // a Social post (SOCIAL_TODO 27)
   SOCIAL_REPLY // a Social reply (patch-social-report-more)
+  PAYOUT // a creator payout (targetId = the Payout id)
+  CREATOR // a creator's earnings account (targetId = the user id)
 }
 
 // ---- Ads (TODO 44). Flat monthly fee, no per-click / per-impression price.
@@ -152,6 +168,14 @@ model User {
   email       String     @unique
   displayName String? // Better Auth's "name" field is saved here (see src/lib/auth.ts)
   bio         String?
+  // Professional profile (SITE_PLAN C7/C8). Cleaned by src/lib/profile-rules.ts before every save.
+  profession     String? // e.g. "Civil engineer", one line
+  qualifications String? // free text, line breaks kept
+  website        String? // normalised https:// address
+  profileVideo   String? // a YouTube address, normalised by cleanProfileVideo() (profile-rules.ts); needs the "video" privilege to add or change
+  socialLinks    String? // JSON text: [{"kind":"linkedin","url":"https://..."}]; read it only with parseSocialLinks()
+  verifiedAt     DateTime? // set = the "verified" badge is shown; null = not verified
+  verifiedMethod VerifyMethod? // how it was verified: by an admin, or by a work e-mail on the person's own domain (not built yet)
   role        Role       @default(USER) // platform level: USER, MODERATOR or ADMIN
   isSuperAdmin Boolean   @default(false) // a SUPER admin (also role ADMIN) is the only one who can make or remove other admins
   status      UserStatus @default(ACTIVE) // suspend / delete = change this, never remove the row
@@ -182,6 +206,8 @@ model User {
   comments           Comment[]
   postVotes          PostVote[]
   commentVotes       CommentVote[]
+  bountiesOffered    Bounty[]      @relation("BountyOfferer")
+  bountiesWon        Bounty[]      @relation("BountyWinner")
   reportsMade        Report[]      @relation("ReportReporter")
   reportsResolved    Report[]      @relation("ReportResolver")
   reportsAgainst     Report[]      @relation("ReportTarget")
@@ -214,6 +240,11 @@ model User {
   photos               Photo[]
   photoLikes           PhotoLike[]
   places               Place[]
+  creatorProfile       CreatorProfile?
+  earningEntries       EarningEntry[]
+  payoutsReceived      Payout[]       @relation("PayoutRecipient")
+  payoutsMarkedPaid    Payout[]       @relation("PayoutPaidBy")
+  payoutBatchesMade    PayoutBatch[]
 }
 
 // ---------------------------------------------------------------- Sign-in (Better Auth)
@@ -283,6 +314,8 @@ model Community {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   archivedAt  DateTime?
+  // The topic (a key of communityCategories, src/config/site.ts). A key that is no longer in the list is shown as "other".
+  category    String    @default("other")
 
   createdBy   User         @relation(fields: [createdById], references: [id], onDelete: Restrict)
   rules       Rule[]
@@ -311,6 +344,7 @@ model CommunityRequest {
   decidedById  String?
   decisionNote String? // shown to the requester when rejected
   communityId  Int? // set when approved
+  category     String                 @default("other") // a key of communityCategories (src/config/site.ts)
   createdAt    DateTime               @default(now())
   decidedAt    DateTime?
 
@@ -365,6 +399,10 @@ model Post {
   authorId        String
   title           String
   body            String
+  // The kind (a key of postKinds, src/config/site.ts): question | article | video. A key that is no longer in the list is shown as "question".
+  kind            String        @default("question")
+  // Only for kind "video": the address of the video (YouTube or Vimeo, checked in src/lib/post-input-rules.ts).
+  videoUrl        String?
   status          ContentStatus @default(VISIBLE)
   // Why the status is not VISIBLE (shown on the page). The full history is in AuditLog.
   statusRuleId    Int?
@@ -383,8 +421,10 @@ model Post {
   comments   Comment[]
   votes      PostVote[]
   reports    Report[]
+  bounty     Bounty?
 
   @@index([communityId, createdAt])
+  @@index([communityId, kind, createdAt])
   @@index([createdAt, id]) // Home feed across communities (patch-social-perf-index)
   @@index([authorId])
   @@index([status])
@@ -406,6 +446,8 @@ model Comment {
   // The author erased it (patch-40): title/body are emptied for good, the row stays so that
   // threads, vote totals and the audit log keep their shape. Never shown, never searched.
   deletedAt       DateTime?
+  // Set when the asker marked this answer as THE accepted answer (SITE_PLAN B4). At most one comment of a post has it.
+  acceptedAt      DateTime?
 
   post       Post          @relation(fields: [postId], references: [id], onDelete: Restrict)
   author     User          @relation(fields: [authorId], references: [id], onDelete: Restrict)
@@ -418,6 +460,30 @@ model Comment {
   @@index([postId, createdAt])
   @@index([authorId])
   @@index([parentId])
+  @@index([authorId, acceptedAt]) // reputation: the accepted answers of one person
+}
+
+// A bounty on a question (SITE_PLAN B6): reputation points the asker holds back for the accepted answer. One per question.
+// OPEN until the asker accepts an answer (then AWARDED, and the points go to its writer). An OPEN bounty past expiresAt simply
+// stops counting: the points are free again, no job has to run (see src/lib/reputation-rules.ts).
+model Bounty {
+  id               Int      @id @default(autoincrement())
+  postId           Int      @unique
+  offeredById      String
+  amount           Int
+  status           String   @default("OPEN") // OPEN | AWARDED
+  expiresAt        DateTime
+  awardedToId      String?
+  awardedCommentId Int?
+  createdAt        DateTime @default(now())
+  awardedAt        DateTime?
+
+  post      Post  @relation(fields: [postId], references: [id], onDelete: Restrict)
+  offeredBy User  @relation("BountyOfferer", fields: [offeredById], references: [id], onDelete: Restrict)
+  awardedTo User? @relation("BountyWinner", fields: [awardedToId], references: [id], onDelete: Restrict)
+
+  @@index([offeredById, status])
+  @@index([awardedToId, status])
 }
 
 // One vote per person per post / comment. value is +1 or -1 (the app checks this).
@@ -449,7 +515,7 @@ model CommentVote {
   @@index([commentId])
 }
 
-// ---------------------------------------------------------------- Social layer (MaykTop's micro-posting features)
+// ---------------------------------------------------------------- Social layer (Falvenco's micro-posting features)
 // Kept separate from Community Posts so the existing discussion system and its
 // moderation/audit history remain unchanged. A SocialPost does not need a community.
 
@@ -678,6 +744,7 @@ model AdCampaign {
   reviewRule     String? // key of the ad policy rule (siteConfig.ads.policyRules). Required by the app on REJECTED.
   reviewNote     String? // the written reason. Required by the app on REJECTED.
   endingSoonNoticeAt DateTime? // when the "your ad ends soon" email was sent (once per ad; ADS_PLAN Session 4c). null = not sent yet.
+  creatorSettledAt   DateTime? // when the creators' share of this ad was settled into the ledger (CREATOR_EARNINGS_PLAN S4). Set once; an ad is never settled twice.
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
@@ -685,6 +752,9 @@ model AdCampaign {
   reviewedBy User?       @relation("AdReviewer", fields: [reviewedById], references: [id], onDelete: Restrict)
   community  Community?  @relation(fields: [communityId], references: [id], onDelete: Restrict)
   stats      AdDailyStat[]
+  contentStats    ContentAdStat[]
+  earningEntries  EarningEntry[] @relation("EarningSourceAd")
+  creditSpends    EarningEntry[] @relation("EarningSpendAd")
 
   @@index([status, slot])
   @@index([advertiserId, createdAt])
@@ -701,6 +771,114 @@ model AdDailyStat {
   ad AdCampaign @relation(fields: [adId], references: [id], onDelete: Restrict)
 
   @@id([adId, date])
+}
+
+// ---------------------------------------------------------------- Creator earnings (CREATOR_EARNINGS_PLAN.md, TODO 12, S2)
+// Same privacy design as the ads above: NOTHING about the people who see an ad is stored. Only totals.
+// Money is a whole number of micro-USD (1 USD = 1_000_000). Nothing is hard-deleted; the ledger is append-only
+// (a mistake is fixed by a REVERSAL row, never by editing or deleting a row).
+
+// Totals only: how many times ONE ad was shown on ONE page on one UTC day. No user id, no IP, no cookie.
+// The creator is NOT stored here: it is worked out from the page's authors when earnings are settled (src/lib/creator-rules.ts).
+model ContentAdStat {
+  date        DateTime // UTC midnight of that day
+  contentType String   @default("POST") // only POST (a question page) for now; Shorts / Photos / Social later
+  contentId   Int // id of that page's row (no database link, because the type can differ)
+  adId        Int
+  impressions Int      @default(0)
+
+  ad AdCampaign @relation(fields: [adId], references: [id], onDelete: Restrict)
+
+  @@id([date, contentType, contentId, adId])
+  @@index([adId, date]) // settlement: all pages of one ad in a period
+  @@index([contentType, contentId]) // dashboard: one page's totals
+}
+
+// A person who joined the creator program (accepted the terms) + where and how to pay them.
+model CreatorProfile {
+  userId        String   @id
+  joinedAt      DateTime @default(now()) // earnings count from this day (decision D4)
+  termsVersion  String // which version of the program terms was accepted
+  payoutCountry String? // ISO code ("LK", "IN"...). Payouts are open only for siteConfig creatorsConfig.payoutCountries.
+  payoutMethod  String? // PAYPAL | BANK_LK
+  payoutDetails String? // PayPal e-mail / bank details, saved ENCRYPTED by the app (never plain text, never in logs)
+  payoutDetailsChangedAt DateTime? // a change starts a new waiting time before the next payout (S6)
+  earningsHold     Boolean  @default(false) // staff froze the earnings (suspected bad traffic); no payout until released
+  earningsHoldNote String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+}
+
+// The ledger. One row = one money movement of one creator. Amount is signed (REVERSAL / CREDIT_SPEND are negative).
+// Balance = the sum of ACTIVE rows that are not in a payout yet. "Held / waiting / payable" is NOT saved: it is worked
+// out when needed from the creator's country and the row's createdAt (earningState in creator-rules.ts), so a country
+// change or the end of the waiting time never needs a data fix.
+model EarningEntry {
+  id             Int      @id @default(autoincrement())
+  userId         String
+  kind           String // SHARE (earned from an ad) | REVERSAL (taken back) | CREDIT_SPEND (used to pay for the creator's own ad)
+  status         String   @default("ACTIVE") // ACTIVE | VOID (ignored; kept for history)
+  amountMicroUsd Int // signed
+  adId           Int? // SHARE: the ad that paid for it
+  contentType    String? // SHARE: which page earned it
+  contentId      Int?
+  periodStart    DateTime? // SHARE: the settled period (UTC dates, end exclusive)
+  periodEnd      DateTime?
+  spendAdId      Int? // CREDIT_SPEND: the creator's own ad that was paid with this money
+  dedupeKey      String?  @unique // makes settlement safe to run twice: "share:<adId>:<periodStart>:<contentType>:<contentId>:<userId>"
+  payoutId       Int? // set when this row was paid out
+  note           String?
+  createdAt      DateTime @default(now())
+
+  user     User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  ad       AdCampaign?  @relation("EarningSourceAd", fields: [adId], references: [id], onDelete: Restrict)
+  spendAd  AdCampaign?  @relation("EarningSpendAd", fields: [spendAdId], references: [id], onDelete: Restrict)
+  payout   Payout?      @relation(fields: [payoutId], references: [id], onDelete: Restrict)
+
+  @@index([userId, status, payoutId]) // a creator's open balance
+  @@index([userId, createdAt])
+  @@index([adId])
+  @@index([contentType, contentId])
+}
+
+// One admin session of paying creators (S8): the batch groups the payouts that were exported together.
+model PayoutBatch {
+  id          Int      @id @default(autoincrement())
+  createdById String
+  status      String   @default("OPEN") // OPEN | DONE
+  note        String?
+  createdAt   DateTime @default(now())
+  doneAt      DateTime?
+
+  createdBy User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  payouts   Payout[]
+
+  @@index([status, createdAt])
+}
+
+// What one creator is paid in one batch. The rows it pays are EarningEntry.payoutId.
+model Payout {
+  id             Int       @id @default(autoincrement())
+  batchId        Int
+  userId         String
+  amountMicroUsd Int // the sum of its EarningEntry rows; at least creatorsConfig.minPayoutMicroUsd
+  country        String // copied when the payout is made (the creator can change it later)
+  method         String // PAYPAL | BANK_LK (copied the same way)
+  status         String    @default("PENDING") // PENDING | PAID | FAILED
+  reference      String? // the PayPal / bank transaction reference an admin writes down
+  paidAt         DateTime?
+  paidById       String?
+  createdAt      DateTime  @default(now())
+
+  batch   PayoutBatch    @relation(fields: [batchId], references: [id], onDelete: Restrict)
+  user    User           @relation("PayoutRecipient", fields: [userId], references: [id], onDelete: Restrict)
+  paidBy  User?          @relation("PayoutPaidBy", fields: [paidById], references: [id], onDelete: Restrict)
+  entries EarningEntry[]
+
+  @@index([batchId])
+  @@index([userId, status])
 }
 
 // ---------------------------------------------------------------- Ban approval (TODO 36d, patch-36d2)
@@ -971,7 +1149,7 @@ model Place {
   @@index([name])
 }
 
-// ---------------------------------------------------------------- News discovery (Mayktop News)
+// ---------------------------------------------------------------- News discovery (Falvenco News)
 model NewsSource {
   id             Int           @id @default(autoincrement())
   name           String

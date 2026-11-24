@@ -1,0 +1,11 @@
+/* The creator program page (TODO 12, S6). */
+.cr-form { display: grid; gap: 14px; max-width: 520px; }
+.cr-field { display: grid; gap: 6px; font-size: 16px; }
+.cr-field > span { font-weight: 600; }
+.cr-field input, .cr-field select { padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface2); color: inherit; font: inherit; }
+.cr-check { display: flex; gap: 10px; align-items: flex-start; font-size: 16px; cursor: pointer; }
+.cr-check input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--brand); flex: none; }
+.cr-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cr-note { margin: 0; }
+.cr-facts { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.cr-points { margin: 0; padding-left: 20px; display: grid; gap: 6px; }

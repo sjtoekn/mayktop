@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 420" preserveAspectRatio="xMidYMax slice">
+  <defs>
+    <linearGradient id="m1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".30"/><stop offset="1" stop-color="#ffffff" stop-opacity=".05"/></linearGradient>
+    <linearGradient id="m2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b2a6b" stop-opacity=".55"/><stop offset="1" stop-color="#1b2a6b" stop-opacity=".15"/></linearGradient>
+    <linearGradient id="m3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1442" stop-opacity=".75"/><stop offset="1" stop-color="#0b1442" stop-opacity=".35"/></linearGradient>
+    <linearGradient id="lake" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff" stop-opacity=".22"/><stop offset="1" stop-color="#0b1442" stop-opacity=".45"/></linearGradient>
+    <radialGradient id="sun" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff2b8" stop-opacity=".95"/><stop offset=".45" stop-color="#ffd37a" stop-opacity=".35"/><stop offset="1" stop-color="#ffd37a" stop-opacity="0"/></radialGradient>
+  </defs>
+  <circle cx="1180" cy="190" r="170" fill="url(#sun)"/>
+  <path d="M0 300 L120 210 L210 270 L340 150 L470 280 L560 220 L700 300 L820 190 L960 290 L1080 200 L1220 300 L1360 170 L1480 270 L1600 210 L1600 420 L0 420Z" fill="url(#m1)"/>
+  <path d="M0 340 L110 270 L230 330 L380 230 L520 335 L650 275 L790 340 L930 250 L1070 335 L1210 265 L1350 340 L1480 285 L1600 330 L1600 420 L0 420Z" fill="url(#m2)"/>
+  <path d="M0 380 L90 340 L200 385 L330 325 L470 388 L600 350 L740 392 L880 340 L1020 390 L1160 345 L1300 392 L1440 350 L1600 385 L1600 420 L0 420Z" fill="url(#m3)"/>
+  <g fill="#081036" fill-opacity=".7">
+    <path d="M70 392l14-42 14 42zM96 392l11-34 11 34zM140 392l12-38 12 38z"/>
+    <path d="M1380 392l14-44 14 44zM1410 392l11-34 11 34zM1450 392l13-40 13 40zM1500 392l11-32 11 32z"/>
+  </g>
+  <rect x="0" y="392" width="1600" height="28" fill="url(#lake)"/>
+</svg>

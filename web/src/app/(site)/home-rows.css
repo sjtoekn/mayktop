@@ -1,0 +1,151 @@
+/* HOME rows: one row per part of the site (Community, Shorts, Photos, Social, News, Places). Tokens only: light and dark both work.
+   The row headers and the cards reuse the .hd-* look from home-discover.css. */
+.hm-home { display: flex; flex-direction: column; gap: 26px; min-width: 0; }
+.hm-block { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+/* row header: the title gets a one-line hint under it */
+.hm-headText h2 { margin: 0; }
+.hm-headText p { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+.ch-root .hm-sec .hd-all { padding: 7px 14px; border-radius: 999px; background: var(--brandsoft); }
+.ch-root .hm-sec .hd-all:hover { text-decoration: none; background: var(--brand); color: var(--onbrand); }
+/* each part has its own colour, the same as its cards */
+.hm-sec-community .hd-headIcon { background: linear-gradient(135deg, #2f6bff, #6aa0ff); box-shadow: 0 4px 12px rgba(47,107,255,.35); }
+.hm-sec-shorts .hd-headIcon { background: linear-gradient(135deg, #ec4899, #fb7185); box-shadow: 0 4px 12px rgba(236,72,153,.35); }
+.hm-sec-photos .hd-headIcon { background: linear-gradient(135deg, #f97316, #fbbf24); box-shadow: 0 4px 12px rgba(249,115,22,.35); }
+.hm-sec-social .hd-headIcon { background: linear-gradient(135deg, #8b5cf6, #c084fc); box-shadow: 0 4px 12px rgba(139,92,246,.35); }
+.hm-sec-news .hd-headIcon { background: linear-gradient(135deg, #f59e0b, #fcd34d); box-shadow: 0 4px 12px rgba(245,158,11,.35); }
+.hm-sec-places .hd-headIcon { background: linear-gradient(135deg, #0f9d8a, #34d399); box-shadow: 0 4px 12px rgba(15,157,138,.35); }
+
+/* community chips + create */
+.hm-chips { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-xl); background: var(--surface); box-shadow: var(--shadow-sm); }
+.hm-chips ul { display: flex; gap: 10px; margin: 0; padding: 0 0 2px; list-style: none; overflow-x: auto; scrollbar-width: thin; min-width: 0; }
+.ch-root .hm-chip { display: inline-flex; align-items: center; gap: 8px; flex: none; height: 42px; padding: 0 18px; border-radius: 999px; font-size: 15px; white-space: nowrap; }
+.hm-chip svg { color: var(--cc); }
+.hm-chip:hover { filter: brightness(.97); }
+.ch-root .hm-create { display: inline-flex; align-items: center; gap: 8px; flex: none; height: 42px; padding: 0 20px; border-radius: 999px; background: linear-gradient(90deg, #2f6bff, #8b5cf6); color: #fff; font-size: 15px; font-weight: 700; box-shadow: 0 6px 16px rgba(106,61,240,.3); }
+.ch-root .hm-create:hover { background: linear-gradient(90deg, #1448d6, #6a3df0); color: #fff; }
+
+/* cards rows (Community, Social, News, Places): up to 5 cards. Wide: as many columns as fit (the cards stretch to fill the row, so
+   there is never an empty gap on the right). Medium: 4 across. Narrow: 2, then 1. The 5th card only shows when the row is wide. */
+.hm-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; align-items: start; }
+.hm-cards > li { margin: 0; }
+@container (max-width: 1299px) { .hm-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); } .hm-cards > li:nth-child(n+5):not(.hd-card-ad) { display: none; } .hm-cards > li:has(+ .hd-card-ad):nth-child(4) { display: none; } } /* narrow rows: the ad card is never hidden, the 4th post makes room for it */
+@container (max-width: 900px) { .hm-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (max-width: 520px) { .hm-cards { grid-template-columns: minmax(0, 1fr); } }
+.hm-cards .hd-media-news { aspect-ratio: 16 / 9; }
+
+/* Shorts: a sideways row of tall cards, the title sits on the picture */
+.hm-shorts { list-style: none; margin: 0; padding: 4px 4px 12px; display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.hm-short { flex: 0 0 clamp(160px, 14%, 240px); scroll-snap-align: start; margin: 0; }
+.ch-root .hm-short a { display: block; color: #fff; }
+.hm-shortMedia { position: relative; display: block; aspect-ratio: 9 / 14; overflow: hidden; border-radius: 22px; background: linear-gradient(160deg, #3b1d6e, #8a1f5c); box-shadow: 0 6px 18px rgba(30,20,70,.22); transition: transform .18s, box-shadow .18s; }
+.hm-shortMedia img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .35s; }
+.hm-shortMedia::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8,6,30,.32) 0%, rgba(8,6,30,0) 26%, rgba(8,6,30,0) 48%, rgba(8,6,30,.86) 100%); pointer-events: none; }
+.hm-short a:hover .hm-shortMedia { transform: translateY(-4px); box-shadow: 0 14px 32px rgba(236,72,153,.38); }
+.hm-short a:hover .hm-shortMedia img { transform: scale(1.05); }
+.hm-shortMedia .hd-flag, .hm-shortMedia .hd-duration { z-index: 2; backdrop-filter: blur(6px); }
+.hm-shortMedia .hd-flag { background: linear-gradient(90deg, #ec4899, #fb7185); }
+.hm-shortPlay { position: absolute; top: 40%; inset-inline-start: 50%; z-index: 2; display: grid; place-items: center; width: 54px; height: 54px; margin: -27px 0 0 -27px; border-radius: 50%; background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.55); backdrop-filter: blur(8px); opacity: 0; transform: scale(.85); transition: opacity .18s, transform .18s; }
+.hm-short a:hover .hm-shortPlay, .hm-short a:focus-visible .hm-shortPlay { opacity: 1; transform: scale(1); }
+.hm-shortInfo { position: absolute; inset: auto 0 0 0; z-index: 2; display: flex; flex-direction: column; gap: 8px; padding: 14px 14px 14px; }
+.hm-shortTitle { font-size: 15px; font-weight: 800; line-height: 1.25; text-shadow: 0 1px 6px rgba(0,0,0,.45); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hm-shortBy { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.9); min-width: 0; }
+.hm-shortAvatar { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #fbbf24); color: #fff; font-size: 12px; font-weight: 800; }
+.ch-root .hm-short a:focus-visible .hm-shortMedia { outline: 3px solid #ec4899; outline-offset: 3px; }
+@container (max-width: 700px) { .hm-short { flex-basis: 160px; } }
+
+/* Community cards: a picture (the post's own video picture, or its community's emoji tile) on top of the card */
+.hd-card-community .hd-link { padding-top: 0; }
+.hd-card-community::before { z-index: 3; } /* the coloured strip stays on top of the picture */
+/* picture height: ONE number for the community card and the ad card (2 : 1 = 360 x 180 on a 360 px card; was 16 : 9). Change --hm-media-ratio to resize both. */
+.hd-card-community, .hd-card-ad { --hm-media-ratio: 2 / 1; }
+.hd-card-community .hd-media-community, .hd-card-ad .hd-media-ad { aspect-ratio: var(--hm-media-ratio); margin: 0 -14px 4px; border-radius: 0; }
+.hd-card-community .hd-media-community img { transition: transform .35s; }
+.hd-card-community:hover .hd-media-community img { transform: scale(1.05); }
+.hd-media-community .hd-flag { z-index: 2; background: rgba(15,27,61,.72); backdrop-filter: blur(6px); }
+.hm-art { position: absolute; inset: 0; display: grid; place-items: center; overflow: hidden; }
+.hm-art::before, .hm-art::after { content: ""; position: absolute; border-radius: 50%; background: rgba(255,255,255,.18); }
+.hm-art::before { width: 170px; height: 170px; inset-inline-end: -40px; top: -60px; }
+.hm-art::after { width: 110px; height: 110px; inset-inline-start: -30px; bottom: -50px; background: rgba(255,255,255,.12); }
+.hm-artEmoji { position: relative; z-index: 1; font-size: 58px; line-height: 1; filter: drop-shadow(0 6px 10px rgba(0,0,0,.28)); transition: transform .25s; }
+.hd-card-community:hover .hm-artEmoji { transform: scale(1.12) rotate(-4deg); }
+.hm-playDot { position: absolute; inset-inline-start: 50%; top: 50%; z-index: 2; display: grid; place-items: center; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(255,255,255,.9); color: #2f6bff; box-shadow: 0 6px 18px rgba(0,0,0,.3); }
+
+/* Home is wider than the other pages: the header, the hero and the rows all use almost the whole screen (like MaykTop). */
+.ch-root:has(.ch-homeFlag) { --site-max: 2200px; }
+
+/* Photos: six squares */
+.hm-photos { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
+.hm-photo { position: relative; aspect-ratio: 1 / 1; margin: 0; overflow: hidden; border-radius: 18px; background: linear-gradient(135deg, color-mix(in srgb, #f97316 22%, var(--surface)), color-mix(in srgb, #fbbf24 22%, var(--surface2))); box-shadow: var(--shadow-sm); transition: transform .15s, box-shadow .15s; }
+.hm-photo:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(249,115,22,.28); }
+.hm-photo a { position: absolute; inset: 0; display: grid; place-items: center; color: #f97316; }
+@container (max-width: 900px) { .hm-photos { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@container (max-width: 520px) { .hm-photos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.hm-mediaIcon { display: grid; place-items: center; }
+
+/* the ad after Photos: kept to a sensible width, centred */
+.hm-ad { width: 100%; max-width: 860px; margin-inline: auto; }
+
+/* Best of the community + Communities to explore, side by side */
+.hm-band { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+@media (max-width: 900px) { .hm-band { grid-template-columns: minmax(0, 1fr); } }
+
+/* promise strip */
+.hm-promise { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; padding: 16px 22px; border: 1px solid color-mix(in srgb, #8b5cf6 24%, var(--line)); border-radius: var(--radius-xl); background: linear-gradient(90deg, color-mix(in srgb, #8b5cf6 10%, var(--surface)), var(--surface)); }
+.hm-promise strong { font-size: 17px; color: color-mix(in srgb, #8b5cf6 70%, var(--ink)); }
+.hm-promise ul { display: flex; flex-wrap: wrap; gap: 10px 26px; margin: 0; padding: 0; list-style: none; }
+.hm-promise li { position: relative; padding-inline-start: 26px; font-size: 15px; }
+.hm-promise li::before { content: "✓"; position: absolute; inset-inline-start: 0; top: 1px; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #8b5cf6, #ec4899); color: #fff; font-size: 11px; font-weight: 800; }
+
+@media (max-width: 800px) {
+  .hm-home { gap: 18px; }
+  .hm-chips { flex-direction: column; align-items: stretch; }
+  .ch-root .hm-create { justify-content: center; }
+}
+
+/* ---- Hero: a real photo behind the banner (public/home/hero-1.jpg, hero-2.jpg, hero-3.jpg). The dark fade for the text sits ABOVE the photo
+   (in home-discover.css it sat below it, which hides it). With no photo file the drawn mountain scene shows, as before. ---- */
+.hm-home .hh-slide1, .hm-home .hh-slide2, .hm-home .hh-slide3 { background-size: auto, cover, cover, auto, auto; background-position: center, center, center bottom, center, center; background-repeat: no-repeat; }
+.hm-home .hh-slide1 { background-image: linear-gradient(90deg, rgba(8,14,56,.58) 0%, rgba(8,14,56,.22) 48%, rgba(8,14,56,0) 100%), url(/home/hero-1.jpg), url(/home/hero-scene.svg), radial-gradient(circle at 80% 12%, rgba(255,183,77,.45) 0, rgba(255,183,77,0) 40%), linear-gradient(160deg, #0d2260 0%, #3a2fa3 50%, #c24f93 115%); }
+.hm-home .hh-slide2 { background-image: linear-gradient(90deg, rgba(4,34,56,.58) 0%, rgba(4,34,56,.22) 48%, rgba(4,34,56,0) 100%), url(/home/hero-2.jpg), url(/home/hero-scene.svg), radial-gradient(circle at 80% 12%, rgba(190,255,150,.4) 0, rgba(190,255,150,0) 40%), linear-gradient(160deg, #04485f 0%, #0a7fa8 50%, #5a54d8 115%); }
+.hm-home .hh-slide3 { background-image: linear-gradient(90deg, rgba(56,8,48,.58) 0%, rgba(56,8,48,.22) 48%, rgba(56,8,48,0) 100%), url(/home/hero-3.jpg), url(/home/hero-scene.svg), radial-gradient(circle at 80% 12%, rgba(255,226,102,.5) 0, rgba(255,226,102,0) 40%), linear-gradient(160deg, #5b1450 0%, #d6406f 52%, #ff9a3c 115%); }
+.hm-home .hh-hero { min-height: 340px; }
+
+/* the photos are 16:9 but the banner is a wide strip, so each photo is slid up/down to keep its horizon and the interesting part in view */
+.hm-home .hh-slide1 { background-position: center, center 62%, center bottom, center, center; }
+.hm-home .hh-slide2 { background-position: center, center 40%, center bottom, center, center; }
+.hm-home .hh-slide3 { background-position: center, center 62%, center bottom, center, center; }
+
+/* Ad card (the 5th card of the Community row): same frame as a post card, amber colours, clearly marked "Ad" */
+.hd-card-ad { --hd-accent: #d97706; --hd-accent2: #fbbf24; }
+.hd-card-ad .hd-link { padding-top: 0; }
+.hd-card-ad::before { z-index: 3; }
+.hd-card-ad .hd-media-ad { background: linear-gradient(135deg, var(--adbg), color-mix(in srgb, var(--hd-accent2) 30%, var(--surface))); }
+.hd-card-ad .hd-media-ad img, .hd-card-ad .hd-media-ad video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.hd-card-ad .hd-flag { z-index: 2; background: var(--adbg); color: var(--warning); border: 1px solid var(--adline); }
+.hm-adHost { padding: 0 16px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 22px; font-weight: 800; color: var(--warning); }
+
+/* ---- Bottom band tidy-up: "Best of the community" + "Communities to explore" + the promise strip ---- */
+/* both boxes the same height (no empty gap under the shorter one), the explore rows spread evenly with soft dividers */
+.hm-band { align-items: stretch; gap: 22px; }
+.hm-band > .ce { display: flex; flex-direction: column; padding: 26px 24px 18px; }
+.hm-band .ce-head { margin-bottom: 10px; padding-bottom: 12px; border-bottom: 1px solid color-mix(in srgb, #0f9d8a 20%, var(--line)); }
+.hm-band .ce-head h3 { font-size: 22px; gap: 10px; }
+.hm-band .ce-head h3 svg { width: 24px; height: 24px; }
+.ch-root .hm-band .ce-all { padding: 7px 14px; border-radius: 999px; background: color-mix(in srgb, #0f9d8a 12%, var(--surface)); font-size: 14px; }
+.ch-root .hm-band .ce-all:hover { background: #0f9d8a; color: #fff; text-decoration: none; }
+.hm-band .ce-row { flex: 1; padding: 8px 12px; margin-inline: -12px; border-radius: 16px; transition: background .15s; }
+.hm-band .ce-row + .ce-row { border-top: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-top-left-radius: 0; border-top-right-radius: 0; }
+.hm-band .ce-row:hover { background: color-mix(in srgb, #0f9d8a 8%, var(--surface)); }
+.hm-band .ce-name strong { font-size: 17px; }
+.hm-band .ce-ico { width: 50px; height: 50px; }
+.hm-band .ch-bestof { padding: 26px 24px 20px; }
+@media (max-width: 900px) { .hm-band > .ce { padding: 22px 18px 14px; } .hm-band .ce-row { flex: none; } }
+
+/* promise strip: the title on the left, the three promises spread evenly across the rest, each with its tick */
+.hm-promise { padding: 18px 26px; gap: 12px 36px; justify-content: space-between; box-shadow: var(--shadow-sm); }
+.hm-promise strong { flex: none; font-size: 18px; white-space: nowrap; }
+.hm-promise ul { flex: 1; justify-content: space-around; gap: 10px 28px; }
+.hm-promise li { padding-inline-start: 30px; font-size: 15px; line-height: 1.4; }
+.hm-promise li::before { width: 22px; height: 22px; top: -1px; font-size: 12px; box-shadow: 0 2px 6px rgba(139,92,246,.35); }
+@media (max-width: 800px) { .hm-promise { padding: 16px 18px; } .hm-promise ul { justify-content: flex-start; } }

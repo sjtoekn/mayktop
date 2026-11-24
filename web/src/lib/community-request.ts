@@ -45,6 +45,7 @@ export async function submitCommunityRequest(user: { id: string }, raw: unknown)
       slug: input.slug,
       name: input.name,
       description: input.description,
+      category: input.category,
       rules: JSON.stringify(input.rules),
     },
   });
@@ -73,6 +74,7 @@ export async function approveCommunityRequest(admin: { id: string }, requestId: 
           slug: req.slug,
           name: req.name,
           description: req.description,
+          category: req.category,
           createdById: req.requesterId,
           rules: { create: rules.map((r, i) => ({ position: i + 1, sortOrder: i, title: r.title, text: r.text })) },
           memberships: { create: { userId: req.requesterId, role: MemberRole.MODERATOR } },
@@ -127,21 +129,21 @@ export async function rejectCommunityRequest(admin: { id: string }, requestId: n
 }
 
 export type RequestRow = {
-  id: number; slug: string; name: string; description: string; rules: CommunityRule[];
+  id: number; slug: string; name: string; description: string; category: string; rules: CommunityRule[];
   status: CommunityRequestStatus; note: string | null; createdAt: Date; requester: string;
 };
 
 function toRow(r: {
-  id: number; slug: string; name: string; description: string; rules: string; status: CommunityRequestStatus;
+  id: number; slug: string; name: string; description: string; category: string; rules: string; status: CommunityRequestStatus;
   decisionNote: string | null; createdAt: Date; requester: { username: string };
 }): RequestRow {
   let rules: CommunityRule[] = [];
   try { rules = JSON.parse(r.rules) as CommunityRule[]; } catch { rules = []; }
-  return { id: r.id, slug: r.slug, name: r.name, description: r.description, rules, status: r.status, note: r.decisionNote, createdAt: r.createdAt, requester: r.requester.username };
+  return { id: r.id, slug: r.slug, name: r.name, description: r.description, category: r.category, rules, status: r.status, note: r.decisionNote, createdAt: r.createdAt, requester: r.requester.username };
 }
 
 const select = {
-  id: true, slug: true, name: true, description: true, rules: true, status: true, decisionNote: true, createdAt: true,
+  id: true, slug: true, name: true, description: true, category: true, rules: true, status: true, decisionNote: true, createdAt: true,
   requester: { select: { username: true } },
 } as const;
 

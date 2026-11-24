@@ -3,12 +3,12 @@
 .ch-banner { position: relative; overflow: hidden; border-radius: 24px; padding: 34px 40px; text-align: center; min-height: 164px;
   background: linear-gradient(180deg,#bcd2f7 0%,#f6d9b8 55%,#ffcf91 75%), var(--surface); box-shadow: 0 4px 18px rgba(31,60,140,.07); }
 .ch-banner::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 38%; background: linear-gradient(180deg, transparent, rgba(90,100,190,.55)); clip-path: polygon(0 70%,12% 45%,22% 60%,34% 30%,48% 62%,60% 40%,74% 65%,88% 35%,100% 60%,100% 100%,0 100%); }
-.ch-banner > div:first-child { position: relative; z-index: 1; }
+.ch-banner > div:first-child { position: relative; z-index: 1; box-sizing: border-box; padding-inline-end: 150px; } /* keeps the text clear of the picture on the right */
 .ch-banner::before { content: ""; position: absolute; left: 6%; bottom: 14%; width: 74px; height: 74px; border-radius: 50%; background: radial-gradient(circle,#fff2b8 0%,#ffd27a 55%,rgba(255,210,122,0) 72%); }
 .ch-banner { color: #0f1b3d; } /* fixed: illustration is light in both modes */
-.ch-banner h1 { margin: 0; font-size: 46px; font-weight: 800; letter-spacing: -1px; }
+.ch-banner h1 { margin: 0; font-size: 32px; font-weight: 800; letter-spacing: -.5px; line-height: 1.2; text-wrap: balance; }
 .ch-banner h1 i { color: var(--brand); font-style: normal; margin: 0 6px; }
-.ch-banner p { margin: 6px 0 0; font-size: 24px; }
+.ch-banner p { margin: 8px 0 0; font-size: 18px; line-height: 1.3; }
 .ch-bannerArt { position: absolute; inset-inline-end: 36px; bottom: 0; width: 170px; height: 125px; z-index: 1; }
 .ch-bannerArt svg { display: block; width: 100%; height: 100%; }
 
@@ -19,8 +19,9 @@
 .ch-postBtn { display: flex; align-items: center; gap: 10px; background: var(--brand); color: var(--surface); border: 0; border-radius: 16px; height: 58px; padding: 0 30px; font-size: 20px; font-weight: 600; cursor: pointer; }
 
 @media (max-width: 800px) {
-  .ch-banner h1 { font-size: 30px; }
-  .ch-banner p { font-size: 17px; }
+  .ch-banner h1 { font-size: 22px; }
+  .ch-banner p { font-size: 15px; }
+  .ch-banner > div:first-child { padding-inline-end: 0; }
   .ch-bannerArt { display: none; }
   /* Phone: avatar | text box | send button, all in one tidy row (same as the Social composer) */
   .ch-composer { flex-wrap: nowrap; gap: 10px; padding: 12px 14px; }
@@ -38,4 +39,41 @@
 .ch-banner > div:first-child, .ph-text { max-width: 100%; }
 @media (max-width: 800px) {
   .ch-banner, .ph-hero { height: 168px; padding: 16px 20px; }
+}
+
+
+/* Unified discovery shortcuts: bring the site's main destinations together on Home. */
+.ch-discovery { display: flex; flex-direction: column; gap: 12px; }
+.ch-discoveryHead { display: flex; align-items: end; justify-content: space-between; gap: 16px; padding: 2px 2px 0; }
+.ch-discoveryHead h2 { margin: 0; color: var(--ink); font-size: 22px; line-height: 1.2; font-weight: 800; letter-spacing: -.35px; }
+.ch-discoveryHead p { margin: 5px 0 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.ch-discoveryAll { display: inline-flex; align-items: center; gap: 5px; flex: none; color: var(--brand) !important; font-size: 14px; font-weight: 700; }
+.ch-discoveryAll:hover { text-decoration: underline !important; }
+.ch-discoveryGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.ch-discoveryCard { display: grid; grid-template-columns: 42px minmax(0, 1fr) 18px; align-items: center; gap: 11px; min-width: 0; padding: 13px 14px; border: 1px solid var(--line); transition: border-color .15s, transform .15s, box-shadow .15s; }
+.ch-discoveryCard:hover { border-color: var(--brand); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.ch-discoveryCard > span:nth-child(2) { min-width: 0; }
+.ch-discoveryCard strong { display: block; color: var(--ink); font-size: 14px; line-height: 1.25; font-weight: 800; }
+.ch-discoveryCard small { display: block; overflow: hidden; margin-top: 3px; color: var(--muted); font-size: 11px; line-height: 1.35; text-overflow: ellipsis; white-space: nowrap; }
+.ch-discoveryCard > svg { color: var(--muted); }
+.ch-discoveryIcon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 13px; background: var(--brandsoft); color: var(--brand); }
+.ch-discoverySocial .ch-discoveryIcon, .ch-discoveryPhotos .ch-discoveryIcon { background: var(--successsoft); color: var(--success); }
+.ch-discoveryNews .ch-discoveryIcon, .ch-discoveryPopular .ch-discoveryIcon { background: var(--warningsoft); color: var(--warning); }
+.ch-discoveryShorts .ch-discoveryIcon { background: var(--dangersoft); color: var(--danger); }
+.ch-discoveryPlaces .ch-discoveryIcon, .ch-discoveryTop .ch-discoveryIcon { background: var(--surface2); color: var(--ink); }
+@media (min-width: 1201px) {
+  .ch-discoveryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .ch-discoveryHead { align-items: flex-start; }
+  .ch-discoveryHead h2 { font-size: 20px; }
+  .ch-discoveryHead p { font-size: 12px; }
+  .ch-discoveryAll { font-size: 12px; }
+  .ch-discoveryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .ch-discoveryCard { grid-template-columns: 34px minmax(0, 1fr); gap: 8px; padding: 10px; }
+  .ch-discoveryIcon { width: 34px; height: 34px; border-radius: 11px; }
+  .ch-discoveryIcon svg { width: 18px; height: 18px; }
+  .ch-discoveryCard > svg { display: none; }
+  .ch-discoveryCard strong { font-size: 12px; }
+  .ch-discoveryCard small { font-size: 10px; white-space: normal; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 }

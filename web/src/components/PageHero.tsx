@@ -5,7 +5,7 @@ import "./PageHero.css";
  * `parts` = the three words of the title ("Chat", "Connect", "Share"), shown with dots between them. The only <h1> of the page.
  * The illustration is decoration only (aria-hidden). Server component.
  */
-export default function PageHero({ variant, parts, sub }: { variant: "social" | "news"; parts: [string, string, string]; sub: string }) {
+export default function PageHero({ variant, parts, sub }: { variant: "social" | "news" | "photos" | "shorts"; parts: [string, string, string]; sub: string }) {
   return (
     <section className={`ph-hero ph-${variant}`}>
       <div className="ph-text">
@@ -15,7 +15,41 @@ export default function PageHero({ variant, parts, sub }: { variant: "social" | 
         <p>{sub}</p>
       </div>
       <div className="ph-art" aria-hidden="true">
-        {variant === "social" ? (
+        {variant === "photos" ? (
+          <svg viewBox="0 -14 150 124" xmlns="http://www.w3.org/2000/svg">
+            <g fill="#ffffff" opacity=".9">
+              <path d="M126 -6l2.4 6.2 6.2 2.4-6.2 2.4L126 11l-2.4-6.2-6.2-2.4 6.2-2.4z" />
+              <path d="M14 8l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z" />
+            </g>
+            <g transform="rotate(-8 44 70)">
+              <rect x="10" y="26" width="64" height="78" rx="8" fill="#ffffff" />
+              <rect x="17" y="33" width="50" height="50" rx="5" fill="#9fe0c8" />
+              <circle cx="31" cy="47" r="6" fill="#ffd54a" />
+              <path d="M17 83l17-23 12 14 9-10 12 19z" fill="#12997a" />
+            </g>
+            <g transform="rotate(7 104 66)">
+              <rect x="76" y="14" width="60" height="76" rx="8" fill="#ffffff" />
+              <rect x="83" y="21" width="46" height="48" rx="5" fill="#8fd3ff" />
+              <circle cx="116" cy="34" r="6" fill="#fff0a0" />
+              <path d="M83 69l14-20 10 12 8-9 14 17z" fill="#0b6e8a" />
+            </g>
+          </svg>
+        ) : variant === "shorts" ? (
+          <svg viewBox="0 -14 150 124" xmlns="http://www.w3.org/2000/svg">
+            <g fill="#ffffff" opacity=".9">
+              <path d="M24 -2l2.4 6.2 6.2 2.4-6.2 2.4L24 15l-2.4-6.2-6.2-2.4 6.2-2.4z" />
+              <path d="M132 30l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z" />
+            </g>
+            <rect x="46" y="2" width="58" height="106" rx="14" fill="#e0245e" />
+            <rect x="52" y="10" width="46" height="90" rx="9" fill="#ffe4ec" />
+            <circle cx="75" cy="55" r="15" fill="#e0245e" />
+            <path d="M70 47l14 8-14 8z" fill="#ffffff" />
+            <rect x="60" y="82" width="30" height="5" rx="2.5" fill="#e0245e" opacity=".5" />
+            <path d="M122 70c-10-6-15-10-15-15 0-4 3-7 6-7 3 0 5 2 9 5 4-3 6-5 9-5 3 0 6 3 6 7 0 5-5 9-15 15z" fill="#ffffff" transform="translate(-2 6) scale(.9)" />
+            <circle cx="22" cy="74" r="9" fill="#ffc233" />
+            <circle cx="22" cy="74" r="4" fill="#ffffff" />
+          </svg>
+        ) : variant === "social" ? (
           <svg viewBox="0 -14 150 124" xmlns="http://www.w3.org/2000/svg">
             <g fill="#ffffff" opacity=".9">
               <path d="M70 -6l2.4 6.2 6.2 2.4-6.2 2.4L70 11l-2.4-6.2-6.2-2.4 6.2-2.4z" />

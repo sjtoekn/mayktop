@@ -3,6 +3,7 @@ import type { CommentNode } from "@/lib/queries";
 import ReplyBox from "@/components/ReplyBox";
 import VoteButtons from "@/components/VoteButtons";
 import OwnerActions from "@/components/OwnerActions";
+import AcceptAnswerButton from "@/components/AcceptAnswerButton";
 import { ownerText } from "@/lib/manage-text";
 import { getLocale, t } from "@/i18n";
 
@@ -15,16 +16,19 @@ export default function CommentItem({
   comment,
   postId,
   depth = 0,
+  qa,
 }: {
   comment: CommentNode;
   postId: number;
   depth?: number;
+  // Only given for a QUESTION: who asked it, and whether a bounty was already paid for its answer (then the choice is final).
+  qa?: { postAuthor: string; locked: boolean };
 }) {
   const tone = ((comment.author.charCodeAt(0) || 0) % 5) + 1;
   const size = depth === 0 ? "pc-avatar-sm" : "pc-avatar-xs";
   const flat = depth >= MAX_INDENT;
   return (
-    <div className="pc-comment">
+    <div className={`pc-comment${comment.accepted ? " pc-comment-accepted" : ""}`}>
       <div className={`pc-avatar ${size} pc-a${tone}`} aria-hidden="true">
         {comment.deleted ? "·" : comment.author.charAt(0).toUpperCase()}
       </div>
@@ -32,6 +36,7 @@ export default function CommentItem({
         <div className="pc-comment-meta">
           <b>{comment.deleted ? t("deleted.author") : comment.author}</b> · {comment.time}
           {comment.edited ? ` · ${t("manage.edited")}` : ""}
+          {comment.accepted ? <> · <span className="pc-answered">✓ {t("answer.accepted")}</span></> : null}
         </div>
         {comment.deleted ? (
           <p className="type-small">{t("comment.deleted")}</p>
@@ -65,6 +70,7 @@ export default function CommentItem({
                 submit: t("comment.submit"),
                 saving: t("submit.saving"),
                 error: t("comment.error"),
+                errorLink: t("comment.error.link"),
                 cancel: t("submit.cancel"),
                 login: t("auth.required"),
                 loginLink: t("topbar.login"),
@@ -82,6 +88,17 @@ export default function CommentItem({
                 small
               />
             </ReplyBox>
+            {qa && depth === 0 && !qa.locked ? (
+              <div className="pc-actions">
+                <AcceptAnswerButton
+                  commentId={comment.id}
+                  postAuthor={qa.postAuthor}
+                  commentAuthor={comment.author}
+                  accepted={!!comment.accepted}
+                  text={{ accept: t("answer.accept"), unaccept: t("answer.unaccept"), error: t("answer.error") }}
+                />
+              </div>
+            ) : null}
             <OwnerActions
               kind="comment"
               id={comment.id}

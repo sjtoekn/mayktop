@@ -13,7 +13,7 @@ type Text = ShortText & { login: string; loginLink: string };
 
 type Failure =
   | false
-  | "error" | "login" | "title" | "invalid" | "privacy" | "noVideo" | "tooMany" | "busy"
+  | "error" | "login" | "link" | "title" | "invalid" | "privacy" | "noVideo" | "tooMany" | "busy"
   | "videoType" | "videoSize" | "tooShort" | "tooLong" | "noFfmpeg" | "processing";
 
 const PRIVACY: { value: "PUBLIC" | "UNLISTED" | "PRIVATE"; label: keyof Text; help: keyof Text }[] = [
@@ -148,6 +148,7 @@ export default function ShortUploadForm({
     error: text.error,
     title: text.titleRequired,
     invalid: text.invalid,
+    link: text.linkError,
     privacy: text.invalid,
     noVideo: text.noVideo,
     busy: text.busy,

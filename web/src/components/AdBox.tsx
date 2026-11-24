@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { postIdFromPath } from "@/lib/creator-collect-rules";
 import { getRememberState, pickAd, setRemember, subscribeRemember } from "@/lib/ad-memory";
 import AdMedia from "@/components/AdMedia";
 import "./ad-social.css";
@@ -63,8 +64,9 @@ function communityFromPath(pathname: string): string | null {
   return /^\/c\/([a-z0-9-]+)/.exec(pathname)?.[1] ?? null;
 }
 
-export function sendImpression(id: number) {
-  const body = JSON.stringify({ id });
+/** `post` = the question page the ad is shown on (creators are paid from it). Only the page is sent, never anything about the visitor. */
+export function sendImpression(id: number, post: number | null = null) {
+  const body = JSON.stringify(post === null ? { id } : { id, post });
   if (typeof navigator.sendBeacon === "function") {
     navigator.sendBeacon("/api/ad/impression", new Blob([body], { type: "application/json" }));
   } else {
@@ -124,7 +126,7 @@ export default function AdBox({
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((e) => e.isIntersecting)) {
-          sendImpression(adId);
+          sendImpression(adId, postIdFromPath(pathname));
           observer.disconnect();
         }
       },
@@ -132,7 +134,7 @@ export default function AdBox({
     );
     observer.observe(box);
     return () => observer.disconnect();
-  }, [adId, viewKey]);
+  }, [adId, viewKey, pathname]);
 
   const ad = shown?.ad ?? null;
 

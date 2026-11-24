@@ -1,8 +1,9 @@
 // The plain rules of "a member asks for a new community". No database here, so they are easy to read and to test.
 // src/lib/community-request.ts does the work (saving, approving, rejecting).
+import { communityCategories, type CommunityCategory } from "@/config/site";
 
 export type CommunityRule = { title: string; text: string };
-export type CommunityRequestInput = { name: string; slug: string; description: string; rules: CommunityRule[] };
+export type CommunityRequestInput = { name: string; slug: string; description: string; category: CommunityCategory; rules: CommunityRule[] };
 
 export const crLimits = {
   nameMin: 3, nameMax: 40,
@@ -30,7 +31,7 @@ export const COMMUNITY_REJECTED_NOTIFICATION = "COMMUNITY_REJECTED";
 export const COMMUNITY_NOTIFICATIONS = [COMMUNITY_APPROVED_NOTIFICATION, COMMUNITY_REJECTED_NOTIFICATION] as const;
 
 export type CrError =
-  | "login" | "name" | "slug" | "reserved" | "taken" | "description" | "rules"
+  | "login" | "name" | "slug" | "reserved" | "taken" | "description" | "category" | "rules"
   | "pending" | "limit" | "notfound" | "decided" | "note" | "other";
 
 /** "Easy Healthy Food!" -> "easy-healthy-food" (lower case a-z, digits and single hyphens). */
@@ -69,6 +70,8 @@ export function checkRequestInput(raw: unknown): { ok: true; value: CommunityReq
   if (!isValidSlug(slug)) return { error: "slug" };
   if (RESERVED.has(slug)) return { error: "reserved" };
   if (description.length < crLimits.descMin || description.length > crLimits.descMax) return { error: "description" };
+  if (typeof r.category !== "string" || !(communityCategories as readonly string[]).includes(r.category)) return { error: "category" };
+  const category = r.category as CommunityCategory;
   if (r.rules.length < crLimits.rulesMin || r.rules.length > crLimits.rulesMax) return { error: "rules" };
   const rules: CommunityRule[] = [];
   for (const item of r.rules as unknown[]) {
@@ -80,5 +83,5 @@ export function checkRequestInput(raw: unknown): { ok: true; value: CommunityReq
     if (text.length < crLimits.ruleTextMin || text.length > crLimits.ruleTextMax) return { error: "rules" };
     rules.push({ title, text });
   }
-  return { ok: true, value: { name, slug, description, rules } };
+  return { ok: true, value: { name, slug, description, category, rules } };
 }

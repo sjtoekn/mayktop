@@ -171,6 +171,12 @@ async function Content() {
               <span>{t("settings.notif.link.desc")}</span>
             </Link>
           </li>
+          <li>
+            <Link href="/settings/creator" className="st-link">
+              <b>{t("creator.link")}</b>
+              <span>{t("creator.link.desc")}</span>
+            </Link>
+          </li>
         </ul>
       </section>
 

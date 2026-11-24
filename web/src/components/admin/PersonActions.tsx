@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { personAction } from "@/app/admin/people/[username]/actions";
 
-type Kind = "edit" | "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan" | "erase";
+type Kind = "edit" | "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan" | "erase" | "verify" | "unverify";
 
 export type PersonActionsText = {
   title: string;
@@ -42,7 +42,9 @@ function fill(template: string, params: Record<string, string | number>): string
   return template.replace(/\{(\w+)\}/g, (whole, key: string) => (key in params ? String(params[key]) : whole));
 }
 
-const DESTRUCTIVE: Kind[] = ["suspend", "removeAdmin", "proposeBan", "erase"];
+const DESTRUCTIVE: Kind[] = ["suspend", "removeAdmin", "proposeBan", "erase", "unverify"];
+// These two have nothing to fill in: the button goes straight to the "are you sure" step.
+const CONFIRM_ONLY: Kind[] = ["makeAdmin", "verify"];
 
 export default function PersonActions({ username, name, actions, rules, limits, profile, text }: Props) {
   const router = useRouter();
@@ -60,7 +62,7 @@ export default function PersonActions({ username, name, actions, rules, limits, 
 
   function start(kind: Kind) {
     setOpen(kind);
-    setStep(kind === "makeAdmin" ? "confirm" : "form");
+    setStep(CONFIRM_ONLY.includes(kind) ? "confirm" : "form");
     setRule("");
     setDays("7");
     setReason("");
@@ -77,7 +79,7 @@ export default function PersonActions({ username, name, actions, rules, limits, 
     setError(null);
   }
 
-  const needsReason = open === "edit" || open === "suspend" || open === "lift" || open === "removeAdmin" || open === "proposeBan" || open === "erase";
+  const needsReason = open === "edit" || open === "suspend" || open === "lift" || open === "removeAdmin" || open === "unverify" || open === "proposeBan" || open === "erase";
   const errorParams = { min: limits.minReason, max: limits.maxReason, days: limits.maxDays, nameMax: limits.maxName, bioMax: limits.maxBio };
 
   function next(e: React.FormEvent) {
@@ -124,7 +126,7 @@ export default function PersonActions({ username, name, actions, rules, limits, 
       });
       if ("error" in result) {
         setError(fill(text.errors[result.error] ?? text.errors.other, errorParams));
-        setStep(kind === "makeAdmin" ? "confirm" : "form");
+        setStep(CONFIRM_ONLY.includes(kind) ? "confirm" : "form");
         return;
       }
       if (kind === "erase") {
@@ -228,14 +230,14 @@ export default function PersonActions({ username, name, actions, rules, limits, 
       {open && step === "confirm" && (
         <div className="ad-form">
           <p className="ad-sure">{fill(text.sure[open], { name, days: Number(days) || 0 })}</p>
-          {open !== "makeAdmin" && <p className="pc-meta">{text.notes[open]}</p>}
+          {!CONFIRM_ONLY.includes(open) && <p className="pc-meta">{text.notes[open]}</p>}
           {error && <div className="notice notice-danger" role="alert">{error}</div>}
           <div className="ad-actionRow">
             <button type="button" className={`btn ${DESTRUCTIVE.includes(open) ? "btn-danger" : "btn-primary"}`} onClick={confirm} disabled={pending}>
               {pending ? text.working : text.buttons[open]}
             </button>
-            <button type="button" className="btn btn-ghost" onClick={open === "makeAdmin" ? close : () => setStep("form")} disabled={pending}>
-              {open === "makeAdmin" ? text.cancel : text.back}
+            <button type="button" className="btn btn-ghost" onClick={CONFIRM_ONLY.includes(open) ? close : () => setStep("form")} disabled={pending}>
+              {CONFIRM_ONLY.includes(open) ? text.cancel : text.back}
             </button>
           </div>
         </div>

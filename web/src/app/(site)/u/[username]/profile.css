@@ -62,6 +62,10 @@
 .pf-nameRow { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .pf-name { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1.15; }
 .pf-handle { margin: 2px 0 0; color: var(--muted); font-size: 20px; }
+.pf-profession { margin: 6px 0 0; font-size: 19px; font-weight: 600; }
+.pf-vbadge { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--brand); color: #fff; }
+.pf-subtitle { margin: 18px 0 8px; font-size: 18px; font-weight: 700; }
+.pf-qualifications { white-space: pre-line; }
 .pf-tagline { margin: 14px 0 18px; font-size: 19px; }
 
 .pf-btns { position: relative; display: flex; gap: 12px; }

@@ -10,13 +10,17 @@ import { CoverArt } from "@/components/profile/Art";
 import ProfileTabs, { type TabItem } from "@/components/profile/ProfileTabs";
 import ShareButton from "@/components/profile/ShareButton";
 import SocialFollowButton from "@/components/social/SocialFollowButton";
+import SocialYouTube from "@/components/social/SocialYouTube";
+import { parseYouTube } from "@/lib/social-links";
 import { getProfile } from "@/data/profiles";
 import { PHOTO_ROW_HEIGHT, photoTileStyle } from "@/lib/photo-feed-rules";
 import { photoThumbUrl } from "@/lib/photo-file";
 import { getProfileImage, getProfilePhotos } from "@/lib/profile-view";
 import { getMyFollowing, getSocialProfile } from "@/lib/queries";
 import { getSessionUser } from "@/lib/session";
+import { getReputation } from "@/lib/reputation";
 import { parseProfileUsername, profileHref } from "@/lib/social-profile";
+import type { MessageKey } from "@/i18n/messages/en";
 import { formatCompact, formatMonthYear, t, tn } from "@/i18n";
 import SampleProfile from "./SampleProfile";
 
@@ -59,15 +63,20 @@ async function ProfileContent({ params }: { params: Params }) {
 
   const viewer = await getSessionUser();
   const isOwn = viewer !== null && viewer.id === profile.id;
-  const [photos, image, followingList] = await Promise.all([
+  const [photos, image, followingList, reputation] = await Promise.all([
     getProfilePhotos(profile.id),
     getProfileImage(profile.id),
     viewer && !isOwn ? getMyFollowing(viewer.id, [profile.username]) : Promise.resolve([] as string[]),
+    getReputation(profile.id), // SITE_PLAN B5
   ]);
   const following = followingList.includes(profile.username);
 
   const name = profile.displayName?.trim() || profile.username;
   const bio = profile.bio?.trim() ?? "";
+  const profession = profile.profession?.trim() ?? "";
+  const qualifications = profile.qualifications?.trim() ?? "";
+  // The stored address is checked again before anything is played: only a real YouTube video id gets through.
+  const video = profile.profileVideo ? parseYouTube(profile.profileVideo) : null;
   const tone = ((profile.username.charCodeAt(0) || 0) % 5) + 1;
   const initial = Array.from(name)[0]?.toUpperCase() ?? "?";
   const avatarLabel = t("profile.avatar.alt", { name });
@@ -107,8 +116,10 @@ async function ProfileContent({ params }: { params: Params }) {
   const aboutRows = [
     { label: t("profile.detail.name"), value: name },
     { label: t("profile.detail.username"), value: `@${profile.username}` },
+    { label: t("profile.detail.reputation"), value: formatCompact(reputation) },
     { label: t("profile.detail.joined"), value: formatMonthYear(profile.joinedIso) },
   ];
+  if (profession) aboutRows.splice(2, 0, { label: t("profile.detail.profession"), value: profession });
   const aboutPanel = (
     <section className="card pf-aboutPanel">
       <h2>{t("profile.about.title")}</h2>
@@ -120,7 +131,41 @@ async function ProfileContent({ params }: { params: Params }) {
             <dd>{r.value}</dd>
           </div>
         ))}
+        {profile.website ? (
+          <div>
+            <dt>{t("profile.detail.website")}</dt>
+            <dd dir="ltr">
+              {/* The address was cleaned when it was saved (https only); nofollow because anybody can type it. */}
+              <a href={profile.website} target="_blank" rel="noopener noreferrer nofollow ugc">{profile.website.replace(/^https:\/\//, "")}</a>
+            </dd>
+          </div>
+        ) : null}
+        {profile.socialLinks.map((link) => (
+          <div key={link.kind}>
+            <dt>{t(`profile.site.${link.kind}` as MessageKey)}</dt>
+            <dd dir="ltr">
+              <a href={link.url} target="_blank" rel="noopener noreferrer nofollow ugc">{link.url.replace(/^https:\/\/(www\.)?/, "")}</a>
+            </dd>
+          </div>
+        ))}
       </dl>
+      {video && profile.profileVideo ? (
+        <>
+          <h3 className="pf-subtitle">{t("profile.detail.video")}</h3>
+          <SocialYouTube
+            id={video.id}
+            start={video.start}
+            href={profile.profileVideo}
+            text={{ play: t("social.video.play"), title: t("social.video.title"), open: t("social.video.open") }}
+          />
+        </>
+      ) : null}
+      {qualifications ? (
+        <>
+          <h3 className="pf-subtitle">{t("profile.detail.qualifications")}</h3>
+          <p className="pf-bio pf-qualifications">{qualifications}</p>
+        </>
+      ) : null}
     </section>
   );
 
@@ -155,8 +200,16 @@ async function ProfileContent({ params }: { params: Params }) {
           <div className="pf-main">
             <div className="pf-nameRow">
               <div className="pf-who">
-                <h1 className="pf-name">{name}</h1>
+                <h1 className="pf-name">
+                  {name}
+                  {profile.verified ? (
+                    <span className="pf-vbadge" role="img" aria-label={t("profile.verified.label")} title={t("profile.verified.label")}>
+                      <Icon name="check" size={18} />
+                    </span>
+                  ) : null}
+                </h1>
                 <p className="pf-handle" dir="ltr">@{profile.username}</p>
+                {profession ? <p className="pf-profession">{profession}</p> : null}
               </div>
               <div className="pf-btns">
                 {isOwn ? (

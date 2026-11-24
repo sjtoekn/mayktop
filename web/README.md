@@ -1,36 +1,32 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Falvenco
 
-## Getting Started
+A community website for professionals: ask questions, get answers from people who know the subject, and share work.
+Built with Next.js, Prisma 7 + SQLite (PostgreSQL planned), Better Auth.
 
-First, run the development server:
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Needs a `.env` file (database address, auth secret, email settings). It is never committed.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Useful commands
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Command | What it does |
+|---|---|
+| `npm run build` / `npm run lint` | check the project before every release |
+| `npm run db:seed` | fill a local database with sample data |
+| `npm run staff`, `review`, `mods`, `appeals` | admin tools from the terminal |
+| `npm run news:collect` | collect news articles |
+| `npm run check:i18n` | check that every language file has all texts |
+| `npm run test:ads`, `test:<name>` | run the tests in `scripts/` |
 
-## Learn More
+## Folders
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `src/app` pages and routes: `(site)` public site, `admin` panel, `api` endpoints
+- `src/components` page parts, `src/lib` the rules and database code, `src/config` all adjustable numbers
+- `src/i18n` languages (en, zh, hi, es, fr, ar)
+- `prisma` database design and migrations, `scripts` admin tools and tests
+- `storage/` uploaded files (never committed)

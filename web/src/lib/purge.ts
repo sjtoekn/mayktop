@@ -8,7 +8,7 @@
 //   3. SWEEP: safety records whose keep-until date has passed are deleted (unless a legal hold is set).
 //
 // What erasing an account means (the row stays as an anonymous shell, so replies, votes and the audit log keep working):
-//   - gone: email, name, bio, picture, timezone, password and every login method, all login sessions, e-mail/reset
+//   - gone: email, name, bio, the creator payout details (PayPal e-mail / bank details, country), profession, qualifications, website, social links, verified badge, picture, timezone, password and every login method, all login sessions, e-mail/reset
 //     codes, community memberships, the title and text of every post and comment, the text and picture link of every
 //     social post and quote repost, follows and notifications (src/lib/purge-social.ts), the text of appeals the person wrote,
 //     the contact e-mail of ads the person booked;
@@ -367,6 +367,14 @@ async function eraseAccount(userId: string, now: Date, secret: string, by?: Eras
         }
       }
 
+      // ---- creator program (TODO 12, S6): the payout details (PayPal e-mail / bank details), the country and the staff note are
+      // the person's own data and are erased. The profile row (join date, terms version) and every ledger row stay: they hold
+      // no personal data, only amounts, and the account is a shell now (settlement treats an erased account as VOID).
+      await tx.creatorProfile.updateMany({
+        where: { userId: user.id },
+        data: { payoutCountry: null, payoutMethod: null, payoutDetails: null, payoutDetailsChangedAt: null, earningsHoldNote: null },
+      });
+
       // ---- the account itself becomes an anonymous shell. The check and the change are ONE statement.
       const changed = await tx.user.updateMany({
         where: by ? { id: user.id, status: user.status } : { id: user.id, status: user.status, eraseAt: { lte: now } },
@@ -377,6 +385,13 @@ async function eraseAccount(userId: string, now: Date, secret: string, by?: Eras
           email: erasedEmail(user.id),
           displayName: null,
           bio: null,
+          profession: null,
+          qualifications: null,
+          website: null,
+          profileVideo: null,
+          socialLinks: null,
+          verifiedAt: null,
+          verifiedMethod: null,
           image: null,
           timezone: null,
           language: "en",

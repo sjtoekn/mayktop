@@ -11,6 +11,7 @@ import { placeLimits } from "@/config/site";
 import { limitsFor } from "@/lib/account-limits";
 import { parsePlaceInput, type PlaceField } from "@/lib/place-input";
 import { prisma } from "@/lib/prisma";
+import { mayWriteText } from "@/lib/reputation";
 import { getSessionUser } from "@/lib/session";
 import { checkRules, type RateRule } from "@/lib/social-limits";
 
@@ -19,7 +20,7 @@ const LONGEST_WINDOW_MS = Math.max(...createRules.map((rule) => rule.windowMs));
 
 export type CreatePlaceResult =
   | { ok: true; id: number }
-  | { ok: false; reason: "login" | "error" | "tooMany" | "exists" | PlaceField; waitMinutes?: number; existingId?: number };
+  | { ok: false; reason: "login" | "link" | "error" | "tooMany" | "exists" | PlaceField; waitMinutes?: number; existingId?: number };
 
 export async function createPlace(form: FormData): Promise<CreatePlaceResult> {
   if (!(form instanceof FormData)) return { ok: false, reason: "error" };
@@ -30,6 +31,9 @@ export async function createPlace(form: FormData): Promise<CreatePlaceResult> {
 
   const owner = await getSessionUser();
   if (!owner) return { ok: false, reason: "login" };
+  // The website of a place is a web link, and so is any address typed into the name or description: all of it needs the "link"
+  // privilege (reputationConfig.privileges.link); staff may always. A place without any link is not affected.
+  if (!(await mayWriteText(owner.id, value.name, value.description ?? "", value.website ?? ""))) return { ok: false, reason: "link" };
 
   try {
     const outcome = await prisma.$transaction(async (tx) => {

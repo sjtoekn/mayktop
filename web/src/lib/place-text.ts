@@ -56,6 +56,7 @@ export const placeTexts = {
   errField: "One of the fields is too long or has characters that are not allowed.",
   errCoords: "Latitude and longitude must both be filled in, as numbers (latitude -90 to 90, longitude -180 to 180).",
   errWebsite: "That website address does not look right.",
+  errLink: "A web link needs {need} reputation points. Please remove the website and any address in the text.",
   errTooMany: "You have added many places in a short time. Please try again in {minutes} minute(s).",
   errExists: "This place is already in the list.",
   errExistsOpen: "Open the existing place",

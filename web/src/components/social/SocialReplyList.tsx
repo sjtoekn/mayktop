@@ -5,7 +5,7 @@ import SocialReplyHideButton from "@/components/social/SocialReplyHideButton";
 import SocialReplyLikeButton from "@/components/social/SocialReplyLikeButton";
 import SocialReportMore from "@/components/social/SocialReportMore";
 import { socialReportMoreProps } from "@/components/social/socialReportMoreProps";
-import { socialReplyConfig } from "@/config/site";
+import { reputationConfig, socialReplyConfig } from "@/config/site";
 import { t } from "@/i18n";
 import type { SocialReplyItem } from "@/lib/social-replies-query";
 import type { ReplyPolicy } from "@/lib/social-reply-control-rules";
@@ -134,6 +134,7 @@ export default function SocialReplyList({
             tooMany: t("social.reply.toomany", { minutes: "{minutes}" }),
             duplicate: t("social.reply.duplicate"),
             invalid: t("social.reply.invalid", { max: socialReplyConfig.maxBody }),
+            link: t("submit.error.link", { need: reputationConfig.privileges.link }),
             restricted: t("social.reply.restricted"),
             error: t("social.reply.error"),
           }}

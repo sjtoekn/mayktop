@@ -6,6 +6,7 @@ import "./header-phone.css";
 import "./content.css";
 import { siteConfig } from "@/config/site";
 import { getDirection, getLocale, t } from "@/i18n";
+import { getSiteUrl, isSiteIndexable } from "@/lib/site-url";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -14,8 +15,20 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(getSiteUrl()), // makes every relative address in page headers a full one
   title: siteConfig.name,
   description: t("site.description"),
+  applicationName: siteConfig.name,
+  openGraph: {
+    type: "website",
+    siteName: siteConfig.name,
+    title: siteConfig.name,
+    description: t("site.description"),
+    images: [{ url: "/brand/falvenco-logo.png", width: 219, height: 224, alt: siteConfig.name }],
+  },
+  twitter: { card: "summary", images: ["/brand/falvenco-logo.png"] },
+  // Until SITE_URL is a real https address, search engines are told to stay away (see src/lib/site-url.ts).
+  ...(isSiteIndexable() ? {} : { robots: { index: false, follow: false } }),
 };
 
 // The root layout is only <html> + <body>. The public page frame (header, sidebar, right column)

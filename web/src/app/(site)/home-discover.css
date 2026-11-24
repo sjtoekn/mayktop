@@ -1,0 +1,127 @@
+/* HOME "discovery" page: hero, composer tools, "Discover today" cards. Tokens only, so light and dark both work.
+   Links inside .ch-root get `color: inherit` (shell.css), so link colours below are written as `.ch-root .x`. */
+
+/* ---- Hero ---- */
+.hh-hero { position: relative; overflow: hidden; display: flex; align-items: center; min-height: 270px; padding: 36px 40px 52px; border-radius: var(--radius-xl); color: #fff; box-shadow: var(--shadow-md); background-color: #14307f; background-size: cover; background-position: center; }
+.hh-slide1 { background-image: url(/home/hero-1.jpg), linear-gradient(90deg, rgba(8,14,56,.62) 0%, rgba(8,14,56,.15) 55%, rgba(8,14,56,0) 100%), url(/home/hero-scene.svg), radial-gradient(circle at 80% 12%, rgba(255,183,77,.45) 0, rgba(255,183,77,0) 40%), linear-gradient(160deg, #0d2260 0%, #3a2fa3 50%, #c24f93 115%); }
+.hh-slide2 { background-image: url(/home/hero-2.jpg), linear-gradient(90deg, rgba(4,34,56,.62) 0%, rgba(4,34,56,.15) 55%, rgba(4,34,56,0) 100%), url(/home/hero-scene.svg), radial-gradient(circle at 80% 12%, rgba(190,255,150,.4) 0, rgba(190,255,150,0) 40%), linear-gradient(160deg, #04485f 0%, #0a7fa8 50%, #5a54d8 115%); }
+.hh-slide3 { background-image: url(/home/hero-3.jpg), linear-gradient(90deg, rgba(56,8,48,.62) 0%, rgba(56,8,48,.15) 55%, rgba(56,8,48,0) 100%), url(/home/hero-scene.svg), radial-gradient(circle at 80% 12%, rgba(255,226,102,.5) 0, rgba(255,226,102,0) 40%), linear-gradient(160deg, #5b1450 0%, #d6406f 52%, #ff9a3c 115%); }
+.hh-slide1, .hh-slide2, .hh-slide3 { background-size: cover, auto, cover, auto, auto; background-position: center, center, center bottom, center, center; background-repeat: no-repeat; }
+.hh-hero::before, .hh-hero::after { display: none; }
+.hh-hero { container-type: inline-size; min-height: 300px; padding: 30px 48px 50px; }
+.hh-eyebrow { display: inline-flex; align-items: center; gap: 7px; margin-bottom: 10px; padding: 5px 13px; border-radius: 999px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.28); backdrop-filter: blur(6px); font-size: 12px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+.hh-hl { color: #ffd34d; }
+.hh-text h1 { font-size: clamp(30px, 4.4vw, 64px); font-size: clamp(28px, 4.2cqw, 48px); text-shadow: 0 2px 18px rgba(0,0,0,.25); }
+.hh-tiles { position: absolute; inset-inline-end: 48px; top: 50%; transform: translateY(-50%); z-index: 1; display: grid; grid-template-columns: repeat(3, 112px); gap: 12px; }
+.ch-root .hh-tile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; height: 100px; border-radius: 20px; color: #fff; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.3); backdrop-filter: blur(10px); box-shadow: 0 8px 24px rgba(0,0,0,.18); transition: transform .15s, background .15s; }
+.ch-root .hh-tile:hover { transform: translateY(-3px); background: rgba(255,255,255,.24); }
+.ch-root .hh-tile:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.hh-tileIcon { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: #fff; box-shadow: 0 4px 12px rgba(0,0,0,.25); }
+.hh-tileLabel { font-size: 14px; font-weight: 700; }
+.hh-t-community .hh-tileIcon { background: linear-gradient(135deg, #2f6bff, #6aa0ff); }
+.hh-t-social .hh-tileIcon { background: linear-gradient(135deg, #8b5cf6, #c084fc); }
+.hh-t-news .hh-tileIcon { background: linear-gradient(135deg, #f59e0b, #fcd34d); }
+.hh-t-shorts .hh-tileIcon { background: linear-gradient(135deg, #ec4899, #fb7185); }
+.hh-t-photos .hh-tileIcon { background: linear-gradient(135deg, #f97316, #fbbf24); }
+.hh-t-places .hh-tileIcon { background: linear-gradient(135deg, #0f9d8a, #34d399); }
+@container (max-width: 1050px) { .hh-tiles { grid-template-columns: repeat(3, 88px); gap: 10px; inset-inline-end: 32px; } .ch-root .hh-tile { height: 90px; border-radius: 18px; } .hh-tileIcon { width: 42px; height: 42px; border-radius: 13px; } .hh-tileLabel { font-size: 13px; } .hh-hero .hh-text { max-width: calc(100% - 330px); } }
+@container (max-width: 620px) { .hh-tiles { display: none; } .hh-hero .hh-text { max-width: 100%; } }
+.hd-headLeft { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.hd-headIcon { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; color: #fff; background: linear-gradient(135deg, #6a3df0, #ec4899); box-shadow: 0 4px 12px rgba(106,61,240,.35); }
+.hh-text { position: relative; z-index: 1; max-width: 640px; }
+.hh-text h1 { margin: 0; font-size: clamp(28px, 4.2vw, 46px); line-height: 1.08; font-weight: 800; letter-spacing: -1px; text-wrap: balance; }
+.hh-text p { margin: 10px 0 0; font-size: 16px; line-height: 1.4; max-width: 46ch; }
+.hh-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.ch-root .hh-btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 20px; border-radius: 999px; font-weight: 700; font-size: 15px; color: #fff; box-shadow: 0 4px 14px rgba(0,0,0,.25); transition: transform .15s, filter .15s; }
+.ch-root .hh-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
+.ch-root .hh-btnPrimary { background: #ffffff; color: #1f3fb8; }
+.ch-root .hh-btnAccent { background: #ff7a2f; }
+.ch-root .hh-btnPrimary:hover { filter: none; background: #fff6e0; }
+.ch-root .hh-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+.hh-dots { position: absolute; inset-inline-start: 40px; bottom: 16px; z-index: 1; display: flex; gap: 8px; }
+.hh-dot { width: 10px; height: 10px; padding: 0; border: 0; border-radius: 999px; background: rgba(255,255,255,.55); cursor: pointer; transition: width .2s, background .2s; }
+.hh-dot.is-on { width: 24px; background: #fff; }
+.hh-dot:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+
+/* ---- Composer: small shortcuts for photo / short / place (the base look is in home.css) ---- */
+.hc-tools { display: flex; align-items: center; gap: 2px; flex: none; }
+.ch-root .hc-tool { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; color: var(--muted); }
+.ch-root .hc-tool:hover { background: var(--surface2); color: var(--brand); }
+
+/* ---- Discover today ---- */
+.hd { display: flex; flex-direction: column; gap: 14px; }
+.hd-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hd-head h2 { margin: 0; font-size: 26px; line-height: 1.2; font-weight: 800; letter-spacing: -.4px; }
+.ch-root .hd-all { display: inline-flex; align-items: center; gap: 6px; color: var(--brand); font-weight: 700; font-size: 16px; }
+.ch-root .hd-all:hover { text-decoration: underline; }
+.hd-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: thin; }
+.hd-chip { display: inline-flex; align-items: center; gap: 7px; flex: none; height: 40px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer; transition: background .15s, color .15s; }
+.hd-chip:hover { background: var(--surface2); }
+.hd-chip.is-on, .hd-chip.is-on:hover { background: var(--brand); border-color: var(--brand); color: var(--onbrand); }
+.hd-chip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+/* masonry by CSS columns: 1 / 2 / 3 / 4 columns depending on the width of this block (container query below) */
+.hd { container-type: inline-size; }
+.hd-cols { list-style: none; margin: 0; padding: 0; column-count: 3; column-gap: 14px; }
+.hd-cols > li { break-inside: avoid; margin: 0 0 14px; }
+@container (max-width: 700px) { .hd-cols { column-count: 2; } }
+@container (max-width: 440px) { .hd-cols { column-count: 1; } }
+@container (min-width: 1000px) { .hd-cols { column-count: 4; } }
+@container (min-width: 1500px) { .hd-cols { column-count: 5; } }
+.hd-card { --hd-accent: var(--brand); position: relative; display: block; padding: 0; overflow: hidden; transition: box-shadow .15s, transform .15s; }
+.hd-card::before { content: ""; position: absolute; inset: 0 0 auto 0; height: 4px; background: var(--hd-accent); }
+.hd-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.ch-root .hd-link { display: flex; flex-direction: column; gap: 9px; width: 100%; min-width: 0; padding: 18px 14px 14px; color: var(--ink); }
+.ch-root .hd-link:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; border-radius: var(--radius-xl); }
+.hd-meta { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: 13px; color: var(--muted); }
+.hd-badge { display: grid; place-items: center; flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--brandsoft); color: var(--brand); }
+.hd-source { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); font-weight: 700; }
+.hd-time { flex: none; margin-inline-start: auto; }
+.hd-title { margin: 0; font-size: 17px; line-height: 1.3; font-weight: 800; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.hd-excerpt { margin: 0; font-size: 14px; line-height: 1.4; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.hd-media { position: relative; margin-top: 4px; overflow: hidden; border-radius: 14px; aspect-ratio: 16 / 10; display: grid; place-items: center; background: linear-gradient(135deg, var(--brandsoft), var(--surface2)); color: var(--brand); }
+.hd-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
+.hd-media-shorts { aspect-ratio: 4 / 5; background: #0f1b3d; color: #fff; }
+.hd-media-places { background: linear-gradient(135deg, var(--successsoft), var(--brandsoft)); }
+.hd-flag { position: absolute; top: 8px; inset-inline-start: 8px; display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; background: rgba(15,27,61,.72); color: #fff; font-size: 12px; font-weight: 700; }
+.hd-duration { position: absolute; top: 8px; inset-inline-end: 8px; padding: 3px 8px; border-radius: 8px; background: rgba(15,27,61,.72); color: #fff; font-size: 12px; font-weight: 700; }
+.hd-stats { display: flex; gap: 16px; margin-top: 2px; color: var(--muted); font-size: 14px; }
+.hd-stats span { display: inline-flex; align-items: center; gap: 6px; }
+.hd-empty { padding: 28px 20px; text-align: center; color: var(--muted); }
+.ch-root .hd-empty a { color: var(--brand); font-weight: 700; }
+
+/* ---- Colourful look: every part of the site has its own colour (Community blue, Social violet, News amber,
+   Shorts pink, Photos orange, Places teal). color-mix() blends with the card surface, so light and dark both work. ---- */
+.hd-card-community { --hd-accent: #2f6bff; --hd-accent2: #6aa0ff; }
+.hd-card-social    { --hd-accent: #8b5cf6; --hd-accent2: #c084fc; }
+.hd-card-news      { --hd-accent: #f59e0b; --hd-accent2: #fcd34d; }
+.hd-card-shorts    { --hd-accent: #ec4899; --hd-accent2: #fb7185; }
+.hd-card-photos    { --hd-accent: #f97316; --hd-accent2: #fbbf24; }
+.hd-card-places    { --hd-accent: #0f9d8a; --hd-accent2: #34d399; }
+.hd .hd-card {
+  border-color: color-mix(in srgb, var(--hd-accent) 28%, var(--line));
+  background: linear-gradient(180deg, color-mix(in srgb, var(--hd-accent) 11%, var(--surface)) 0%, var(--surface) 62%);
+}
+.hd-card::before { height: 6px; background: linear-gradient(90deg, var(--hd-accent), var(--hd-accent2)); }
+.hd .hd-card:hover { box-shadow: 0 10px 26px color-mix(in srgb, var(--hd-accent) 28%, transparent); }
+.hd-badge { background: linear-gradient(135deg, var(--hd-accent), var(--hd-accent2)); color: #fff; box-shadow: 0 2px 6px color-mix(in srgb, var(--hd-accent) 40%, transparent); }
+.hd-source { color: color-mix(in srgb, var(--hd-accent) 60%, var(--ink)); }
+.hd-stats span:first-child { color: color-mix(in srgb, var(--hd-accent) 75%, var(--muted)); }
+.hd-media { background: linear-gradient(135deg, color-mix(in srgb, var(--hd-accent) 22%, var(--surface)), color-mix(in srgb, var(--hd-accent2) 22%, var(--surface2))); color: var(--hd-accent); }
+.hd-media-places { background: linear-gradient(135deg, color-mix(in srgb, var(--hd-accent) 24%, var(--surface)), color-mix(in srgb, var(--hd-accent2) 20%, var(--surface2))); }
+.hd-media-shorts { background: linear-gradient(135deg, #3b1d6e, #8a1f5c); color: #fff; }
+.hd-flag { background: linear-gradient(90deg, #ec4899, #fb7185); }
+.hd-head h2 { background: linear-gradient(90deg, var(--brand), #8b5cf6 55%, #ec4899); -webkit-background-clip: text; background-clip: text; color: transparent; width: fit-content; }
+.ch-root .hd-all { padding: 7px 14px; border-radius: 999px; background: var(--brandsoft); }
+.ch-root .hd-all:hover { text-decoration: none; background: var(--brand); color: var(--onbrand); }
+
+@media (max-width: 800px) {
+  .hh-hero { min-height: 230px; padding: 26px 22px 46px; }
+  .hh-eyebrow { font-size: 11px; }
+  .hh-dots { inset-inline-start: 22px; }
+  .hh-text p { font-size: 15px; }
+  .hd-head h2 { font-size: 22px; }
+}
+@media (max-width: 520px) {
+  .hc-tools { display: none; }
+  .ch-root .hh-btn { height: 42px; padding: 0 18px; font-size: 15px; }
+}

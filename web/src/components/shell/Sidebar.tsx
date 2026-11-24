@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import Icon from "./Icon";
 import NotificationBadge from "./NotificationBadge";
 
-export type NavItem = { icon: string; label: string; href: string; badge?: number; disabled?: boolean };
+export type NavItem = { icon: string; label: string; href: string; badge?: number; disabled?: boolean; cta?: boolean };
 export type CommunityChip = { slug: string; label: string; icon: string };
 
 export default function Sidebar({
@@ -66,7 +66,7 @@ export default function Sidebar({
       <hr className="ch-hr" />
       <nav aria-label={infoLabel}>
         {more.map((n) => (
-          <Link key={n.label} href={n.href} className="ch-more">
+          <Link key={n.label} href={n.href} className={`ch-more${n.cta ? " ch-moreCta" : ""}`}>
             <Icon name={n.icon} size={18} />
             <span>{n.label}</span>
           </Link>

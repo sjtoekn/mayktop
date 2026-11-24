@@ -37,7 +37,7 @@ export async function setNewsSourceEnabled(formData: FormData): Promise<void> {
 export async function collectNewsAction(): Promise<void> {
   await requireAdmin();
   const result = await collectNewsNow();
-  console.info("Manual Mayktop News collection:", result);
+  console.info("Manual Falvenco News collection:", result);
   revalidatePath("/admin/news");
   revalidatePath("/news");
 }
