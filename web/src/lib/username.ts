@@ -7,7 +7,7 @@ export const USERNAME_PATTERN = /^[a-z0-9_]{3,20}$/;
 /** Names that could be mistaken for staff or that the site itself uses. */
 export const RESERVED_USERNAMES = new Set([
   "admin", "administrator", "moderator", "mod", "mods", "support", "staff", "system",
-  "mayktop", "root", "help", "official", "deleted", "anonymous",
+  "falvenco", "mayktop", "maykpolis", "root", "help", "official", "deleted", "anonymous",
 ]);
 
 export function normalizeUsername(value: string): string {

@@ -15,7 +15,7 @@ const good = {
   community: "",
   title: "Fresh coffee delivered",
   body: "Small-batch beans, roasted this week and sent to your door.",
-  url: "https://example.com/coffee?ref=mayktop",
+  url: "https://example.com/coffee?ref=falvenco",
   email: "shop@example.com",
   start: "",
   agree: true,

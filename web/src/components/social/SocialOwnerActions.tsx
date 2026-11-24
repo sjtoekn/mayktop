@@ -19,6 +19,7 @@ export type SocialOwnerText = {
   saving: string;
   error: string;
   invalid: string;
+  link: string; // edit: a web link needs reputation (reputationConfig.privileges.link)
   tooMany: string; // edit; contains {minutes}
   login: string; // edit
   loginLink: string;
@@ -36,7 +37,7 @@ export type SocialOwnerText = {
 
 const MAX = 5000;
 
-type Failure = { kind: "error" | "login" | "invalid" | "tooMany" | "window" | "limit"; action: "edit" | "delete" };
+type Failure = { kind: "error" | "login" | "invalid" | "link" | "tooMany" | "window" | "limit"; action: "edit" | "delete" };
 
 /**
  * "Edit post" and "Delete" under a Social post. Shown ONLY to the person who wrote it (the server checks again on
@@ -105,7 +106,7 @@ export default function SocialOwnerActions({
         }
         setFailed({
           action: "edit",
-          kind: result.login ? "login" : result.tooMany ? "tooMany" : result.invalid ? "invalid" : "error",
+          kind: result.login ? "login" : result.tooMany ? "tooMany" : result.invalid ? "invalid" : result.link ? "link" : "error",
         });
         return;
       }
@@ -140,6 +141,7 @@ export default function SocialOwnerActions({
     }
     if (f.kind === "tooMany") return (del ? text.deleteTooMany : text.tooMany).replace("{minutes}", String(waitMinutes));
     if (f.kind === "invalid") return text.invalid;
+    if (f.kind === "link") return text.link;
     if (f.kind === "window") return text.windowClosed;
     if (f.kind === "limit") return text.limitReached;
     return del ? text.deleteError : text.error;

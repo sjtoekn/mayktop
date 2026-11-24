@@ -283,7 +283,7 @@
 /* Shorts gallery: four cards per row on desktop; the dedicated player remains /shorts/[id]. */
 .shorts-gallery { display: grid; gap: 18px; }
 .shorts-gallery-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.shorts-gallery-head h1 { margin: 0; font-size: 1.5rem; font-weight: 800; }
+.shorts-gallery-head h2 { margin: 0; font-size: 1.5rem; font-weight: 800; }
 .shorts-gallery-head p { margin: 4px 0 0; color: var(--muted); }
 .shorts-gallery-grid {
   display: grid;

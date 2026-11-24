@@ -9,6 +9,7 @@
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
+import { mayWriteText } from "@/lib/reputation";
 import { socialLimits } from "@/config/site";
 import { takeActionDb } from "@/lib/rate-limit-db";
 import { applySocialEdit } from "@/lib/social-edit";
@@ -23,13 +24,15 @@ const deleteRules = [{ max: socialLimits.deletes.max, windowMs: socialLimits.del
 
 export type EditSocialPostResult =
   | { ok: true }
-  | { error: true; login?: true; invalid?: true; tooMany?: true; waitMinutes?: number; windowClosed?: true; limitReached?: true };
+  | { error: true; login?: true; invalid?: true; link?: true; tooMany?: true; waitMinutes?: number; windowClosed?: true; limitReached?: true };
 
 export async function editSocialPost(input: { id: number; body: string }): Promise<EditSocialPostResult> {
   if (typeof input?.id !== "number") return { error: true };
 
   const user = await getSessionUser();
   if (!user) return { error: true, login: true };
+  // Editing must not be a way round the link rule (same rule as new posts); staff may always.
+  if (typeof input.body === "string" && !(await mayWriteText(user.id, input.body))) return { error: true, link: true };
 
   const rate = await takeActionDb(`social-edit:${user.id}`, editRules);
   if (!rate.ok) {

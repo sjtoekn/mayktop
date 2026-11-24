@@ -1,0 +1,42 @@
+--- a/src/app/content.css
++++ b/src/app/content.css
+@@ -466,3 +466,39 @@
+ .pc-comment-accepted > .pc-comment-body { box-shadow: -3px 0 0 var(--success, #137333); padding-inline-start: 10px; }
+ .bn-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+ .bn-amount { width: 110px; }
++
++/* ---- Community post card polish (feed cards) ----
++   Only looks: no markup changes, no size changes (the fixed 270px height, the avatar and the indent rules above stay as they are).
++   - the community name is a small chip, the title gets a brand colour on hover
++   - the WHOLE card opens the post (the title link is stretched over the card; vote / comment / share / save and the community chip stay above it)
++   - a soft lift on hover (only on devices that can hover, and not when the person asked for less motion) */
++.pc-post.pc-cp { position: relative; border: 1px solid var(--line); }
++.pc-cp > .pc-avatar { box-shadow: 0 0 0 3px var(--surface), 0 0 0 4px var(--line); }
++
++.pc-cp > .pc-body > .pc-meta { display: flex; flex-wrap: wrap; align-items: center; column-gap: 6px; row-gap: 2px; font-size: 15px; }
++.pc-cp > .pc-body > .pc-meta > a:first-child { background: var(--brandsoft); color: var(--brand); font-size: 14px; font-weight: 700; padding: 3px 12px; border-radius: 999px; text-decoration: none; transition: background .15s ease, color .15s ease; }
++.pc-cp > .pc-body > .pc-meta > a:first-child:hover { background: var(--brand); color: var(--onbrand); text-decoration: none; }
++
++.pc-cp > .pc-body > .pc-title { letter-spacing: -0.015em; }
++.pc-cp > .pc-body > .pc-title a { color: inherit; transition: color .15s ease; }
++.pc-cp > .pc-body > .pc-title a:hover { color: var(--brand); text-decoration: none; }
++.pc-cp .pc-kind { font-size: 12px; letter-spacing: .04em; text-transform: uppercase; padding: 3px 10px; }
++.pc-cp > .pc-body > .pc-text { font-size: 17px; }
++
++.pc-cp .pc-pill { font-size: 16px; padding: 9px 16px; transition: background .15s ease, color .15s ease; }
++.pc-cp .pc-pill:hover { color: var(--brand); }
++
++.pc-cp > .pc-thumb { position: relative; overflow: hidden; border-radius: 20px; text-shadow: 0 6px 14px rgba(0, 0, 0, .25); transition: transform .25s ease; }
++.pc-cp > .pc-thumb::before { content: ""; position: absolute; inset: 0; background: radial-gradient(120% 90% at 18% 8%, rgba(255, 255, 255, .38), transparent 58%); pointer-events: none; }
++
++/* the whole feed card is one big link to the post */
++.pc-post.pc-fixed { cursor: pointer; border-color: var(--line-strong); border-color: color-mix(in srgb, var(--line) 70%, var(--line-strong)); }
++.pc-fixed > .pc-body > .pc-title a::after { content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; }
++.pc-fixed .pc-actions, .pc-fixed .pc-meta > a { position: relative; z-index: 1; }
++.pc-post.pc-fixed:has(.pc-title a:focus-visible) { outline: 2px solid var(--brand); outline-offset: 2px; }
++
++@media (hover: hover) and (prefers-reduced-motion: no-preference) {
++  .pc-post.pc-fixed { transition: box-shadow .2s ease, border-color .2s ease, transform .2s ease; }
++  .pc-post.pc-fixed:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: var(--brand); border-color: color-mix(in srgb, var(--brand) 40%, var(--line)); }
++  .pc-post.pc-fixed:hover > .pc-thumb { transform: scale(1.03); }
++}

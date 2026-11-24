@@ -8,7 +8,7 @@ import SocialBookmarkButton from "@/components/social/SocialBookmarkButton";
 import SocialPinButton from "@/components/social/SocialPinButton";
 import SocialRepostButton from "@/components/social/SocialRepostButton";
 import SocialReportButton from "@/components/social/SocialReportButton";
-import { socialEdit, socialReportConfig, staffConfig } from "@/config/site";
+import { reputationConfig, socialEdit, socialReportConfig, staffConfig } from "@/config/site";
 import type { MessageKey } from "@/i18n/messages/en";
 import SocialOwnerActions from "@/components/social/SocialOwnerActions";
 import SocialShareButton from "@/components/social/SocialShareButton";
@@ -224,6 +224,7 @@ export default function SocialPostCard({
             saving: t("social.edit.saving"),
             error: t("social.edit.error"),
             invalid: t("social.edit.invalid"),
+            link: t("submit.error.link", { need: reputationConfig.privileges.link }),
             tooMany: t("social.edit.toomany"),
             login: t("social.edit.login"),
             loginLink: t("topbar.login"),

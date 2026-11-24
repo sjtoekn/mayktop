@@ -14,6 +14,7 @@ export type SocialReplyFormText = {
   tooMany: string; // contains {minutes}
   duplicate: string; // the same reply was already sent recently (SOCIAL_TODO C2)
   invalid: string;
+  link: string; // a web link needs reputation (reputationConfig.privileges.link)
   restricted: string; // the author of the post limited who can reply (SOCIAL_TODO B9)
   error: string;
 };
@@ -42,6 +43,7 @@ export default function SocialReplyForm({ postId, max, text }: { postId: number;
             : result.tooMany ? fill(text.tooMany, { minutes: result.waitMinutes ?? 1 })
             : result.duplicate ? text.duplicate
             : result.invalid ? text.invalid
+            : result.link ? text.link
             : result.restricted ? text.restricted
             : text.error,
         );

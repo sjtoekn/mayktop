@@ -2,13 +2,13 @@
 
 // The buttons on a person's page (admin Part 2). The ACTOR is always the logged-in admin (requireAdmin),
 // never a value sent by the form. All fairness rules live in staff.ts and are checked again there.
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireAdmin, requireSuperAdmin } from "@/lib/admin";
-import { liftSuspension, makeAdmin, proposeBan, removeAdmin, suspendUser, type StaffResult } from "@/lib/staff";
+import { liftSuspension, makeAdmin, proposeBan, removeAdmin, suspendUser, unverifyUser, verifyUser, type StaffResult } from "@/lib/staff";
 import { editUser, eraseNow, type AdminEditError } from "@/lib/admin-edit";
 
 export type PersonActionInput = {
-  kind: "edit" | "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan" | "erase";
+  kind: "edit" | "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan" | "erase" | "verify" | "unverify";
   username: string;
   rule?: string;
   days?: number;
@@ -80,12 +80,21 @@ export async function personAction(input: PersonActionInput): Promise<PersonActi
       result = await makeAdmin({ actor: me.username, target });
     } else if (input.kind === "removeAdmin") {
       result = await removeAdmin({ actor: me.username, target, reason });
+    } else if (input.kind === "verify") {
+      result = await verifyUser({ actor: me.username, target });
+    } else if (input.kind === "unverify") {
+      result = await unverifyUser({ actor: me.username, target, reason });
     } else {
       return { error: "other" };
     }
     if ("error" in result) return { error: result.error };
     revalidatePath("/admin/people");
     revalidatePath("/admin");
+    // The badge shows on the public profile and on cached Social pages.
+    if (input.kind === "verify" || input.kind === "unverify") {
+      revalidatePath(`/u/${target}`);
+      updateTag("social-posts");
+    }
     return { ok: true };
   } catch (error) {
     console.error("personAction failed:", error);

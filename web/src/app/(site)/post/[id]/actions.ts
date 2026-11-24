@@ -7,12 +7,13 @@
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
+import { mayWriteText } from "@/lib/reputation";
 import { ContentStatus } from "../../../../../generated/prisma/client";
 
 const MAX_BODY = 5_000;
 const MAX_ID = 2_147_483_647; // the largest whole number the database column holds
 
-export type CreateCommentResult = { ok: true } | { error: true; login?: true }; // login: true = not logged in
+export type CreateCommentResult = { ok: true } | { error: true; login?: true; reason?: "link" }; // login: true = not logged in; reason "link": a link needs more reputation (SITE_PLAN B5)
 
 function isId(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= MAX_ID;
@@ -32,6 +33,8 @@ export async function createComment(input: {
 
   const author = await getSessionUser();
   if (!author) return { error: true, login: true };
+  // A web link in an answer or reply needs some reputation (reputationConfig.privileges.link); staff may always.
+  if (!(await mayWriteText(author.id, body))) return { error: true, reason: "link" };
 
   try {
     const [post, parent] = await Promise.all([

@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import { addNewsSource, collectNewsAction, setNewsSourceEnabled } from "./actions";
 
-export const metadata = { title: "News sources | Mayktop Admin", robots: { index: false, follow: false } };
+export const metadata = { title: "News sources | Falvenco Admin", robots: { index: false, follow: false } };
 
 export default async function AdminNewsPage() {
   await requireAdmin();

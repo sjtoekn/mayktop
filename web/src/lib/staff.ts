@@ -24,6 +24,7 @@ import {
   Role,
   SuspensionKind,
   UserStatus,
+  VerifyMethod,
 } from "../../generated/prisma/client";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -412,6 +413,82 @@ export async function makeFirstSuperAdmin(username: string): Promise<"ok" | "not
     return "ok";
   } catch (error) {
     if (error instanceof Refused) return "exists";
+    throw error;
+  }
+}
+
+/**
+ * An admin gives a person the "verified" badge on their profile (SITE_PLAN C7). Rules: an active admin acts; nobody on
+ * themselves; only an ACTIVE ordinary person; already verified = "state". No written reason is needed (it is a good thing),
+ * but it is audited (USER_VERIFIED) and the check and the change happen in ONE transaction. The person is not emailed.
+ */
+export async function verifyUser(input: { actor: string; target: string }): Promise<StaffResult> {
+  const actor = await findActor(input.actor);
+  if (!actor) return { error: "actor" };
+  const target = await findTarget(input.target);
+  if (!target) return { error: "notfound" };
+  if (target.id === actor.id) return { error: "self" };
+  if (target.role !== Role.USER || target.status !== UserStatus.ACTIVE) return { error: "target" };
+  try {
+    const auditId = await prisma.$transaction(async (tx) => {
+      const changed = await tx.user.updateMany({
+        where: { id: target.id, status: UserStatus.ACTIVE, verifiedAt: null },
+        data: { verifiedAt: new Date(), verifiedMethod: VerifyMethod.ADMIN },
+      });
+      if (changed.count !== 1) throw new Refused("state");
+      const row = await tx.auditLog.create({
+        data: {
+          actorId: actor.id,
+          actorRole: actor.role,
+          action: AuditAction.USER_VERIFIED,
+          targetType: AuditTarget.USER,
+          targetId: target.id,
+          reason: "Verified by " + input.actor.trim().toLowerCase(),
+        },
+        select: { id: true },
+      });
+      return row.id;
+    });
+    return { ok: true, auditId };
+  } catch (error) {
+    if (error instanceof Refused) return { error: error.code };
+    throw error;
+  }
+}
+
+/** An admin takes the "verified" badge away. A written reason is required (the person loses something). Audited (USER_UNVERIFIED). */
+export async function unverifyUser(input: Input): Promise<StaffResult> {
+  const reason = cleanReason(input.reason);
+  if (!reason) return { error: "reason" };
+  const actor = await findActor(input.actor);
+  if (!actor) return { error: "actor" };
+  const target = await findTarget(input.target);
+  if (!target) return { error: "notfound" };
+  if (target.id === actor.id) return { error: "self" };
+  if (target.role !== Role.USER || target.status === UserStatus.DELETED) return { error: "target" };
+  try {
+    const auditId = await prisma.$transaction(async (tx) => {
+      const changed = await tx.user.updateMany({
+        where: { id: target.id, verifiedAt: { not: null } },
+        data: { verifiedAt: null, verifiedMethod: null },
+      });
+      if (changed.count !== 1) throw new Refused("state");
+      const row = await tx.auditLog.create({
+        data: {
+          actorId: actor.id,
+          actorRole: actor.role,
+          action: AuditAction.USER_UNVERIFIED,
+          targetType: AuditTarget.USER,
+          targetId: target.id,
+          reason,
+        },
+        select: { id: true },
+      });
+      return row.id;
+    });
+    return { ok: true, auditId };
+  } catch (error) {
+    if (error instanceof Refused) return { error: error.code };
     throw error;
   }
 }

@@ -27,7 +27,7 @@ export default async function AdminCommunityRequestsPage() {
         pending.map((r) => (
           <section key={r.id} className="card ad-item">
             <h3 className="pc-title">{r.name} <span className="pc-meta">c/{r.slug}</span></h3>
-            <p className="pc-meta">{a.by} <Link href={`/u/${r.requester}`}>{r.requester}</Link> · {dateText(r.createdAt)}</p>
+            <p className="pc-meta">{a.by} <Link href={`/u/${r.requester}`}>{r.requester}</Link> · {dateText(r.createdAt)} · {crText.fieldCategory}: {crText.categories[r.category] ?? r.category}</p>
             <p className="pc-text">{r.description}</p>
             <ol>
               {r.rules.map((rule, i) => (

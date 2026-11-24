@@ -28,14 +28,16 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { loadHiddenAuthors } from "@/lib/social-block-view";
 import { isSocialAuthorShown } from "@/lib/social-visibility";
-import type { PhotoCategory } from "@/config/site";
+import { siteConfig, type PhotoCategory } from "@/config/site";
+import { getPhotoSeo } from "@/lib/seo-meta";
+import { noIndexMetadata, pageMetadata } from "@/lib/seo-text";
 import { ContentStatus, Role } from "../../../../../generated/prisma/client";
 import "../photos.css";
 
 // One photo (PHOTO_TODO 6). Anybody, also a visitor, may open a photo that may be shown (VISIBLE, not deleted, owner shown:
 // the same rule as /api/photos/media). A hidden photo opens only for its owner and for admins (with a notice); everybody
 // else, and any number that is invalid, missing or deleted, gets "not found". A person who blocked you, or whom you
-// blocked, is "not found" too (like Social). The page title is the same plain words for every photo.
+// blocked, is "not found" too (like Social). The page title is the photo's own title (SEO stage 2), or the same plain words when it has none.
 // Likes (PHOTO_TODO 7): the button is shown only for a photo that may be shown; a visitor sees it and gets the log-in message.
 // Download (PHOTO_TODO 6d): the same stored file the page shows (our own media route, same address), saved as photo-<id>.<ext>.
 // Views (PHOTO_TODO 6c): a bare running total (Photo.viewCount), counted by POST /api/photos/view only for a logged-in person who
@@ -44,9 +46,22 @@ import "../photos.css";
 // photographer and Previous / Next. "More from the photographer" is a second card. All of this only for a photo that is shown.
 // Layout (like the 3001 demo): left = picture card + "More from"; right = Details (with Download), photographer, Previous / Next.
 // Not yet here: comments (8), links of the category / tags / photographer (9, 10, 11), edit / delete (12).
-export const metadata: Metadata = {
-  title: t("photo.detail.pageTitle"),
-};
+// The page header for search engines and share cards (SEO stage 2). Only a photo that anybody may see gets a title, a
+// description and a share picture; any other photo is kept out of search engines. (The page itself still decides who may open it.)
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const id = parsePhotoId((await params).id);
+  const photo = id === null ? null : await getPhotoSeo(id);
+  if (id === null || !photo) return { title: t("photo.detail.pageTitle"), ...noIndexMetadata };
+  const title = photo.title || t("photo.list.photoAlt");
+  return pageMetadata({
+    path: `/photos/${id}`,
+    title,
+    siteName: siteConfig.name,
+    description: photo.caption || title,
+    type: "article",
+    image: { url: photoFileUrl(photo.file), alt: title },
+  });
+}
 
 // The placeholder id only lets Next.js prepare the page shell (menu, sidebar) at build time, like /social/[id]; no photo is
 // read for it.

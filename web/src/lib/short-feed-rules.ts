@@ -1,6 +1,6 @@
 // Pure rules of the Shorts feed (SHORTS_TODO 21-27). No database, no disk, no imports: tested alone (npm run test:short-feed).
 //
-// FAIR ORDER (MaykTop principle, SHORTS_TODO 27): the feed is NEWEST FIRST and never sorted by likes or views, so a person
+// FAIR ORDER (Falvenco principle, SHORTS_TODO 27): the feed is NEWEST FIRST and never sorted by likes or views, so a person
 // with many followers does not sit on top for ever. Inside one page, `spreadCreators` only moves things around so the same
 // creator does not play twice in a row when somebody else is waiting; it never drops or adds an item.
 

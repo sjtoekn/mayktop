@@ -18,6 +18,7 @@ import { makePhotoFiles, type PhotoImageError } from "@/lib/photo-image";
 import { deletePhotoFiles, savePhotoFiles } from "@/lib/photo-storage";
 import { takeActionDb } from "@/lib/rate-limit-db";
 import { limitsFor } from "@/lib/account-limits";
+import { mayWriteText } from "@/lib/reputation";
 import { checkRules, type RateRule } from "@/lib/social-limits";
 
 const uploadRules: RateRule[] = photoLimits.uploads.map((rule) => ({ max: rule.max, windowMs: rule.windowMinutes * 60_000 }));
@@ -28,7 +29,7 @@ export type UploadPhotoResult =
   | { ok: true; id: number; file: string }
   | {
       ok: false;
-      reason: "error" | "login" | "title" | "invalid" | "category" | "tags" | "noImage" | "tooMany" | "imageType" | "imageSize" | "imagePixels";
+      reason: "error" | "login" | "link" | "title" | "invalid" | "category" | "tags" | "noImage" | "tooMany" | "imageType" | "imageSize" | "imagePixels";
       waitMinutes?: number; // with tooMany: about how long to wait
     };
 
@@ -55,6 +56,8 @@ export async function uploadPhoto(form: FormData): Promise<UploadPhotoResult> {
 
   const owner = await getSessionUser();
   if (!owner) return { ok: false, reason: "login" };
+  // A web link in the title or caption needs the "link" privilege (reputationConfig.privileges.link); staff may always.
+  if (!(await mayWriteText(owner.id, title.title, caption.caption ?? ""))) return { ok: false, reason: "link" };
 
   const turn = await takeActionDb(`photo-image:${owner.id}`, checkRulesForImages);
   if (!turn.ok) return { ok: false, reason: "tooMany", waitMinutes: Math.max(1, Math.ceil(turn.retryAfterMs / 60_000)) };

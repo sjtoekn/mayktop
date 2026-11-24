@@ -1,8 +1,8 @@
 // The site name. To rename, change it here only.
 // The name is shown in two colours in the logo: nameStart (normal) + nameAccent (brand colour).
 // Site description and all other visible text live in src/i18n/messages/.
-const nameStart = "Mayk";
-const nameAccent = "Top";
+const nameStart = "Falven";
+const nameAccent = "co";
 
 export const siteConfig = {
   name: nameStart + nameAccent,
@@ -90,6 +90,34 @@ export const adsConfig = {
   ] as const,
 };
 
+// Creator earnings (CREATOR_EARNINGS_PLAN.md, TODO 12). Creators share the ad money that was shown next to their content.
+// Paid by IMPRESSIONS only (never clicks): nothing about the visitor is collected. Money is counted in micro-USD (1 USD = 1_000_000).
+// Decisions D1-D7 were approved on 2026-11-24. Change the numbers here only.
+export const creatorsConfig = {
+  currency: "USD", // same as adsConfig.currency
+  sharePercent: 50, // D1: this part of an ad's price goes into the "creator pool" of that ad
+  // D2: how ONE question page's impression is divided (the three numbers add up to 100).
+  split: {
+    askerPercent: 30, // whoever asked the question
+    acceptedPercent: 50, // the writer of the accepted answer (no accepted answer: this part goes to the top-voted answers)
+    othersPercent: 20, // the top-voted other answers (no other answers: this part goes to the asker)
+  },
+  otherAnswersMax: 3, // at most this many "other" answers share the others part
+  holdDays: 30, // D3: earnings wait this long (to catch bad traffic) before they can be paid
+  minPayoutMicroUsd: 10_000_000, // D3: USD 10
+  payoutCountries: ["LK", "IN"] as readonly string[], // payouts only to these (ISO codes) for now; other countries keep their earnings
+  maxImpressionsPerContentPerDay: 5000, // counting stops above this for ONE ad on ONE page on one day (anti-abuse, S3)
+  maxImpressionsPerContentPerMinute: 120, // the same, per page per minute (in-memory, like adsConfig.counting; a shared limiter is TODO 50)
+  // S6: joining and payout settings
+  termsVersion: "2026-11", // saved with the person's agreement; change it when the program terms change
+  payoutMethods: { LK: ["PAYPAL", "BANK_LK"], IN: ["PAYPAL"] } as Readonly<Record<string, readonly string[]>>, // how each payout country can be paid
+  detailsChangeHoldDays: 7, // after the country / method / payment details change, no payout for this long (a stolen login cannot cash out at once)
+  settingsRateLimit: [
+    { max: 10, windowSeconds: 60 * 60 },
+    { max: 30, windowSeconds: 24 * 60 * 60 },
+  ], // joining / saving payout settings (counted in the database)
+};
+
 // Account lifecycle (TODO 36). PROVISIONAL numbers, to be confirmed by a lawyer (PROJECT.md 8c).
 export const accountConfig = {
   deletionGraceDays: 7, // days a self-deleted account waits (and can be recovered by logging in) before erasure
@@ -104,6 +132,19 @@ export const accountConfig = {
 export const profileConfig = {
   displayNameMax: 50,
   bioMax: 300,
+  // Professional profile (SITE_PLAN C7). socialSites: which sites a social link may point to; a link must be on one of
+  // that kind's hosts (or a sub-domain of it), so a "LinkedIn" box cannot hold some other address.
+  professionMax: 80,
+  qualificationsMax: 500,
+  websiteMax: 200,
+  socialSites: {
+    linkedin: ["linkedin.com"],
+    github: ["github.com"],
+    x: ["x.com", "twitter.com"],
+    youtube: ["youtube.com", "youtu.be"],
+    facebook: ["facebook.com"],
+    instagram: ["instagram.com"],
+  } as Record<string, string[]>,
   profileEdit: [{ max: 10, windowSeconds: 60 * 60 }],
   passwordChange: [{ max: 5, windowSeconds: 15 * 60 }],
   emailChange: [{ max: 3, windowSeconds: 60 * 60 }],
@@ -259,6 +300,65 @@ export const photoCategories = [
   "other",
 ] as const;
 export type PhotoCategory = (typeof photoCategories)[number];
+
+// The topic of a community (SITE_PLAN A2). The stored keys are in Community.category; the visible names are `community.category.<key>`
+// in src/i18n/messages/. To add or remove one later: change this list, the 6 language files and the English names in
+// src/lib/community-request-text.ts (a stored key that is no longer here is simply shown as "other").
+export const communityCategories = [
+  "technology",
+  "education",
+  "business",
+  "law",
+  "health",
+  "lifestyle",
+  "news",
+  "other",
+] as const;
+export type CommunityCategory = (typeof communityCategories)[number];
+
+// The kinds of a post (SITE_PLAN A3). The stored keys are in Post.kind; the visible names are `post.kind.<key>` in
+// src/i18n/messages/. An older post (or a key that is no longer here) is shown as a "question". To add one later: change this
+// list, the 6 language files and checkPostInput in src/lib/post-input-rules.ts.
+export const postKinds = ["question", "article", "video"] as const;
+export type PostKind = (typeof postKinds)[number];
+
+// Reputation and bounties (SITE_PLAN B5, B6). PROVISIONAL numbers: change them here, nothing else needs to change.
+// Reputation is NOT stored: it is worked out from the votes, the accepted answers and the bounties (src/lib/reputation-rules.ts),
+// so a vote that is taken back or an answer that is erased changes it at once and nothing can get out of step.
+export const reputationConfig = {
+  points: {
+    answerUp: 10, // an up-vote on an answer (a top-level comment on a question)
+    answerDown: -2,
+    postUp: 5, // an up-vote on a question, article or video
+    postDown: -2,
+    accepted: 15, // the asker marked the answer as the accepted one
+  },
+  // What a person may do from this much reputation on. Moderators and admins may always do it. A new person starts with 0.
+  privileges: {
+    link: 50, // put a web link in a post, an answer or a reply
+    video: 100, // post a video
+    bounty: 75, // offer a bounty
+  },
+} as const;
+export type Privilege = keyof typeof reputationConfig.privileges;
+
+// A bounty is paid in reputation POINTS (not money) by the person who asked. The points are held while the bounty is open and go to the
+// writer of the accepted answer. If no answer is accepted before it ends, the points are simply free again (nothing to settle).
+export const bountyConfig = {
+  min: 25,
+  max: 200,
+  days: 14, // how long a bounty stays open
+} as const;
+
+// Limits per kind. PROVISIONAL. The title and body maxima are the same for every kind (they are the old limits of the form).
+export const postLimits = {
+  titleMax: 120,
+  bodyMax: 10_000,
+  articleBodyMin: 200, // a guide / article needs real text, not one line
+  videoUrlMax: 300,
+  // A video is a LINK to a video on one of these sites (shown inside the post). Nothing is uploaded or stored here.
+  videoHosts: ["youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be", "vimeo.com", "www.vimeo.com"],
+} as const;
 
 // How many photos one person may upload (PHOTO_TODO 4). PROVISIONAL. Counted from the person's earlier photos in the
 // database (deleted ones count too), and stricter while the account is new (limitsFor, newAccountLimits).

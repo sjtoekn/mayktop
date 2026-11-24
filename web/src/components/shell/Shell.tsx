@@ -1,39 +1,48 @@
 // THE one page frame for the whole site: header + left sidebar + right column.
 // Every page is rendered inside <main>. Mounted once in app/layout.tsx.
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { siteConfig } from "@/config/site";
 import { communityIcon } from "@/data/sample";
 import { getCommunities } from "@/lib/queries";
 import { currentUsername } from "@/data/profiles";
-import { formatCompact, formatNumber, t } from "@/i18n";
-import { trendingTopics } from "@/data/sample";
+import { t } from "@/i18n";
 import AdSlot from "@/components/AdSlot";
 import Icon from "./Icon";
 import ThemeToggle from "./ThemeToggle";
 import Sidebar, { type NavItem } from "./Sidebar";
 import MobileNav from "./MobileNav";
 import UserMenu from "./UserMenu";
+import BestOf from "./BestOf";
+import SectionTabs from "./SectionTabs";
+import HomeFlag from "./HomeFlag";
 
 export default async function Shell({ children }: { children: ReactNode }) {
   const communities = await getCommunities();
+  // The main sections (Community, Social, News, Shorts, Photos, Places, Explore) are in the tab row under the header
+  // (SectionTabs). The sidebar keeps only the personal links; Popular and Top (Community rankings) moved to "more".
   const nav: NavItem[] = [
-    { icon: "home", label: t("nav.home"), href: "/" },
-    { icon: "comment", label: t("nav.social"), href: "/social" },
-    { icon: "newspaper", label: "News", href: "/news" },
-    { icon: "flame", label: t("nav.popular"), href: "/popular" },
-    { icon: "compass", label: t("nav.explore"), href: "/explore" },
-    { icon: "trophy", label: t("nav.top"), href: "/top" },
     { icon: "bookmark", label: t("nav.saved"), href: "/saved" },
     { icon: "bell", label: t("nav.notifications"), href: "/notifications" },
     { icon: "user", label: t("nav.profile"), href: `/u/${currentUsername}` },
   ];
+  // Home and Explore are only in the tab row on a wide screen (one place for the main navigation). The phone bottom bar
+  // has no tab row of its own, so it gets them from this list.
+  const mobileNav: NavItem[] = [
+    { icon: "home", label: t("nav.home"), href: "/" },
+    { icon: "compass", label: t("nav.explore"), href: "/explore" },
+    ...nav,
+  ];
   const more: NavItem[] = [
+    { icon: "users", label: "Create community", href: "/communities/new", cta: true }, // TODO: move this label into the i18n files (see community-request-text.ts)
+    { icon: "megaphone", label: t("nav.advertise"), href: "/advertise" },
+    { icon: "flame", label: t("nav.popular"), href: "/popular" },
+    { icon: "trophy", label: t("nav.top"), href: "/top" },
     { icon: "shield", label: t("nav.modlog"), href: "/modlog" },
     { icon: "scale", label: t("nav.fairness"), href: "/fairness" },
-    { icon: "users", label: "Create community", href: "/communities/new" }, // TODO: move this label into the i18n files (see community-request-text.ts)
-    { icon: "megaphone", label: t("nav.advertise"), href: "/advertise" },
   ];
+  // "Communities to explore" (right column): the three biggest communities by members.
+  const toExplore = [...communities].sort((a, b) => b.members - a.members).slice(0, 3);
 
   return (
     <div className="ch-root">
@@ -41,13 +50,12 @@ export default async function Shell({ children }: { children: ReactNode }) {
       {/* The header banner ad: the very top of the page, as wide as the header and the three columns (same max-width). */}
       <AdSlot variant="header" />
 
+      <div className="ch-top">
       <header className="ch-header">
         <Link href="/" className="card ch-logoBox">
           <span className="ch-logoIcon" aria-hidden="true">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor">
-              <circle cx="8.5" cy="9" r="2.4" /><circle cx="15.5" cy="9" r="2.4" />
-              <path d="M4.5 16.5c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6zM11.5 16.5c0-2.2 1.8-3.6 4-3.6s4 1.4 4 3.6z" />
-            </svg>
+            {/* eslint-disable-next-line @next/next/no-img-element -- the small brand mark (public/brand), shown at 54x48 */}
+            <img src="/brand/falvenco-mark.png" width={54} height={48} alt="" decoding="async" />
           </span>
           <span className="ch-logoText" aria-label={siteConfig.name}>
             {siteConfig.nameStart}<b>{siteConfig.nameAccent}</b>
@@ -72,7 +80,11 @@ export default async function Shell({ children }: { children: ReactNode }) {
         </div>
       </header>
 
+      <SectionTabs label="Sections" />
+      </div>
+
       <div className="ch-layout">
+        <HomeFlag />
         <Sidebar
           nav={nav}
           more={more}
@@ -87,29 +99,29 @@ export default async function Shell({ children }: { children: ReactNode }) {
         <main id="main" tabIndex={-1} className="ch-feed">{children}</main>
 
         <aside className="ch-right">
-          <section className="card ch-trending">
-            <h3><span className="ch-fire">🔥</span> {t("home.trending")}</h3>
-            {trendingTopics.map((tr) => (
-              <div key={tr.rank} className="ch-trendItem">
-                <b className="ch-rank">{formatNumber(tr.rank)}</b>
-                <div>
-                  <strong>{tr.title}</strong>
-                  <small>{t("home.views", { n: formatCompact(tr.views) })}</small>
-                </div>
-                <div className="ch-thumb" style={{ background: tr.gradient }}>{tr.emoji}</div>
-              </div>
-            ))}
-          </section>
+          <Suspense fallback={<section className="card ch-bestof" aria-busy="true" />}>
+            <BestOf />
+          </Suspense>
 
-          <section className="card ch-join">
-            <h3><Icon name="users" size={26} /> {t("home.join.title")}</h3>
-            <p>{t("home.join.sub")}</p>
-            <button className="ch-joinBtn">{t("home.join.button")} <Icon name="chevron" size={20} /></button>
-          </section>
+          {toExplore.length > 0 ? (
+            <section className="card ce" aria-labelledby="ce-title">
+              <div className="ce-head">
+                <h3 id="ce-title"><Icon name="users" size={20} /> Communities to explore</h3>
+                <Link href="/explore" className="ce-all">See all →</Link>
+              </div>
+              {toExplore.map((c) => (
+                <div key={c.slug} className="ce-row">
+                  <span className="ce-ico" aria-hidden="true"><Icon name={communityIcon[c.slug] ?? "users"} size={22} /></span>
+                  <span className="ce-name"><strong>{c.name}</strong><small>{c.members.toLocaleString("en")} {c.members === 1 ? "member" : "members"}</small></span>
+                  <Link href={`/c/${c.slug}`} className="ce-view">View</Link>
+                </div>
+              ))}
+            </section>
+          ) : null}
 
           <AdSlot variant="sidebar" />
 
-          <section className="card">
+          <section className="card ch-promise">
             <h3 className="type-heading mb-2">{t("promise.title")}</h3>
             <ul className="type-small space-y-2">
               <li>{t("promise.1")}</li>
@@ -121,7 +133,7 @@ export default async function Shell({ children }: { children: ReactNode }) {
       </div>
 
       <MobileNav
-        nav={nav}
+        nav={mobileNav}
         more={more}
         communities={communities.map((c) => ({ slug: c.slug, label: c.name, icon: communityIcon[c.slug] ?? "users" }))}
         communitiesTitle={t("nav.communities")}

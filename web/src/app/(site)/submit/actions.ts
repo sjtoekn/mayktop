@@ -8,34 +8,30 @@ import { redirect } from "next/navigation";
 import { updateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
+import { checkPostInput } from "@/lib/post-input-rules";
+import { mayDo, mayWriteText } from "@/lib/reputation";
 
-const MAX_TITLE = 120; // same limit as the form field
-const MAX_BODY = 10_000;
-
-export type CreatePostResult = { error: true; login?: true } | undefined; // login: true = not logged in
+export type CreatePostResult = { error: true; login?: true; reason?: "link" | "video" } | undefined; // login: true = not logged in; reason: not enough reputation for a link / a video (SITE_PLAN B5)
 
 /** Saves the post, then sends the person to it. Returns { error: true } when nothing was saved. */
 export async function createPost(input: {
   slug: string;
+  kind: string; // question | article | video (SITE_PLAN A3)
   title: string;
   body: string;
+  videoUrl?: string; // only for a video
 }): Promise<CreatePostResult> {
-  // The browser is not trusted: check everything again here.
-  if (
-    typeof input?.slug !== "string" ||
-    typeof input.title !== "string" ||
-    typeof input.body !== "string"
-  ) {
-    return { error: true };
-  }
-  const title = input.title.trim();
-  const body = input.body.trim();
-  if (title.length === 0 || title.length > MAX_TITLE || body.length > MAX_BODY) {
-    return { error: true };
-  }
+  // The browser is not trusted: check everything again here (the rules per kind are in lib/post-input-rules.ts).
+  if (typeof input?.slug !== "string") return { error: true };
+  const checked = checkPostInput(input);
+  if (!checked.ok) return { error: true };
+  const { kind, title, body, videoUrl } = checked.value;
 
   const author = await getSessionUser();
   if (!author) return { error: true, login: true };
+  // Reputation unlocks a video post and web links (reputationConfig.privileges); staff may always.
+  if (kind === "video" && !(await mayDo(author.id, "video"))) return { error: true, reason: "video" };
+  if (!(await mayWriteText(author.id, title, body))) return { error: true, reason: "link" };
 
   let postId: number;
   try {
@@ -49,7 +45,7 @@ export async function createPost(input: {
     // post in a community are members of it) are saved together or not at all.
     const [post] = await prisma.$transaction([
       prisma.post.create({
-        data: { communityId: community.id, authorId: author.id, title, body },
+        data: { communityId: community.id, authorId: author.id, kind, title, body, videoUrl },
         select: { id: true },
       }),
       prisma.membership.upsert({

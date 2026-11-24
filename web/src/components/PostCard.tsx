@@ -5,6 +5,7 @@ import Icon from "@/components/shell/Icon";
 import VoteButtons from "@/components/VoteButtons";
 import OwnerActions from "@/components/OwnerActions";
 import { ownerText } from "@/lib/manage-text";
+import { parseVideoUrl } from "@/lib/post-input-rules";
 import { formatNumber, getLocale, t } from "@/i18n";
 
 export default function PostCard({
@@ -16,6 +17,25 @@ export default function PostCard({
 }) {
   const tone = ((post.author.charCodeAt(0) || 0) % 5) + 1;
   const art = communityArt[post.community] ?? defaultArt;
+  // A video post: the address is checked again here and the player is rebuilt from the video id (never the typed address).
+  const video = post.kind === "video" && post.videoUrl ? parseVideoUrl(post.videoUrl) : null;
+  const kindBadge = <span className="pc-kind">{t(`post.kind.${post.kind}`)}</span>;
+  // "Answered" and the bounty (SITE_PLAN B4, B6). The end date is written from the stored time, so the card never reads the clock.
+  const bountyEnds = post.bounty
+    ? new Intl.DateTimeFormat(getLocale(), { dateStyle: "medium", timeZone: "UTC" }).format(new Date(post.bounty.endsAtMs))
+    : "";
+  const statusBadges = (
+    <>
+      {post.answered ? <span className="pc-answered">✓ {t("post.answered")}</span> : null}
+      {post.bounty ? (
+        <span className="pc-bounty">
+          {post.bounty.paid
+            ? t("bounty.badge.paid", { amount: formatNumber(post.bounty.amount) })
+            : t("bounty.badge", { amount: formatNumber(post.bounty.amount), date: bountyEnds })}
+        </span>
+      ) : null}
+    </>
+  );
   return (
     <article className={`card pc-post pc-cp${!full && !post.hidden && !post.deleted ? " pc-fixed" : ""}`}>
       <div className={`pc-avatar pc-a${tone}`} aria-hidden="true">
@@ -58,12 +78,32 @@ export default function PostCard({
           </div>
         ) : full ? (
           <>
-            <h1 className="pc-title pc-title-lg">{post.title}</h1>
-            <p className="pc-text pc-text-full">{post.body}</p>
+            <h1 className="pc-title pc-title-lg">{kindBadge}{statusBadges}{post.title}</h1>
+            {video ? (
+              <div className="pc-video">
+                <iframe
+                  src={video.embedUrl}
+                  title={post.title}
+                  loading="lazy"
+                  allow="fullscreen; picture-in-picture"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  sandbox="allow-scripts allow-same-origin allow-presentation"
+                />
+              </div>
+            ) : null}
+            {video ? (
+              <p className="pc-text">
+                <a href={video.watchUrl} target="_blank" rel="noopener noreferrer nofollow ugc">{t("post.video.open")}</a>
+              </p>
+            ) : null}
+            {post.body.trim() ? <p className="pc-text pc-text-full">{post.body}</p> : null}
           </>
         ) : (
           <>
             <h2 className="pc-title">
+              {kindBadge}
+              {statusBadges}
               <Link href={`/post/${post.id}`}>{post.title}</Link>
             </h2>
             {post.body.trim() ? <p className="pc-text">{post.body}</p> : null}

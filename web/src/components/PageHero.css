@@ -30,3 +30,7 @@
 @media (max-width: 800px) {
   .ch-banner, .ph-hero { height: 168px; padding: 16px 20px; }
 }
+
+/* Photos: fresh mint to soft sunshine. Shorts: pink to warm peach. */
+.ph-photos { --ph-top: #b9e6d3; --ph-mid: #d8f0e6; --ph-low: #fff3c4; --ph-hill: rgba(24, 120, 100, .45); --ph-glow: #fffbe0; --ph-glow2: #ffe27a; --ph-accent: #12997a; }
+.ph-shorts { --ph-top: #ffc8d6; --ph-mid: #ffd9c2; --ph-low: #ffe9a8; --ph-hill: rgba(200, 70, 100, .45); --ph-glow: #fff5e6; --ph-glow2: #ffc2a0; --ph-accent: #e0245e; }

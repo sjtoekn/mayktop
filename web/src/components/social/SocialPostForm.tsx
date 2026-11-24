@@ -18,6 +18,7 @@ export type SocialPostFormText = {
   saving: string;
   error: string;
   invalid: string;
+  link: string; // a web link needs reputation (reputationConfig.privileges.link)
   tooMany: string; // contains {minutes}
   duplicate: string; // the same text was already posted recently (SOCIAL_TODO C2)
   login: string;
@@ -50,7 +51,7 @@ export type SocialPostFormText = {
   replyMentioned: string;
 };
 
-type Failure = false | "error" | "login" | "invalid" | "tooMany" | "duplicate" | "imageType" | "imageSize" | "imagePixels";
+type Failure = false | "error" | "login" | "invalid" | "link" | "tooMany" | "duplicate" | "imageType" | "imageSize" | "imagePixels";
 
 export default function SocialPostForm({
   text,
@@ -156,7 +157,9 @@ export default function SocialPostForm({
                     ? "imageType"
                     : result.invalid
                       ? "invalid"
-                      : "error",
+                      : result.link
+                        ? "link"
+                        : "error",
         );
       }
     });
@@ -327,7 +330,9 @@ export default function SocialPostForm({
                       ? text.imagePixels
                       : failed === "invalid"
                         ? text.invalid
-                        : text.error}
+                        : failed === "link"
+                          ? text.link
+                          : text.error}
           </div>
         )}
 

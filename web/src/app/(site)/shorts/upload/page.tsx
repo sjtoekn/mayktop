@@ -8,6 +8,7 @@ import {
   SHORT_TITLE_MAX,
 } from "@/config/short-config";
 import { shortText } from "@/config/short-text";
+import { reputationConfig } from "@/config/site";
 import { t } from "@/i18n";
 
 export const metadata: Metadata = {
@@ -37,6 +38,7 @@ export default function ShortUploadPage() {
         tooShortError: fill(shortText.tooShortError, limits),
         tooLongError: fill(shortText.tooLongError, limits),
         titleHelp: fill(shortText.titleHelp, { max: SHORT_TITLE_MAX }),
+        linkError: fill(shortText.linkError, { need: reputationConfig.privileges.link }),
         login: t("auth.required"),
         loginLink: t("topbar.login"),
       }}

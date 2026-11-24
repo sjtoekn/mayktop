@@ -75,6 +75,7 @@ export type PersonDetail = {
   username: string;
   displayName: string | null;
   bio: string | null;
+  verified: boolean; // has the "verified" badge (SITE_PLAN C7)
   email: string;
   role: Role;
   isSuperAdmin: boolean;
@@ -94,7 +95,7 @@ export async function getPerson(username: string): Promise<PersonDetail | null> 
   const user = await prisma.user.findUnique({
     where: { username: username.trim().toLowerCase() },
     select: {
-      id: true, username: true, displayName: true, bio: true, email: true, role: true, isSuperAdmin: true, status: true, suspensionKind: true,
+      id: true, username: true, displayName: true, bio: true, verifiedAt: true, email: true, role: true, isSuperAdmin: true, status: true, suspensionKind: true,
       suspendedUntil: true, suspensionNote: true, eraseAt: true, createdAt: true,
     },
   });
@@ -114,6 +115,7 @@ export async function getPerson(username: string): Promise<PersonDetail | null> 
     username: user.username,
     displayName: user.displayName,
     bio: user.bio,
+    verified: user.verifiedAt !== null,
     email: user.email,
     role: user.role,
     isSuperAdmin: user.isSuperAdmin,
@@ -142,7 +144,7 @@ export function proposalDaysLeft(createdAt: Date): number {
   return Math.max(0, Math.ceil(staffConfig.banProposalDays - spent));
 }
 
-export type PersonAction = "edit" | "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan" | "erase";
+export type PersonAction = "edit" | "suspend" | "lift" | "makeAdmin" | "removeAdmin" | "proposeBan" | "erase" | "verify" | "unverify";
 
 /**
  * Which buttons to show. The rules themselves are enforced again in staff.ts / admin-edit.ts when the button is used.
@@ -150,7 +152,7 @@ export type PersonAction = "edit" | "suspend" | "lift" | "makeAdmin" | "removeAd
  * "Edit" is for any admin, on a plain user who is not erased (never on staff, never on yourself).
  */
 export function actionsFor(
-  person: Pick<PersonDetail, "role" | "status" | "banned" | "isSuperAdmin">,
+  person: Pick<PersonDetail, "role" | "status" | "banned" | "isSuperAdmin" | "verified">,
   isSelf: boolean,
   viewerIsSuper: boolean,
 ): PersonAction[] {
@@ -161,10 +163,12 @@ export function actionsFor(
   const out: PersonAction[] = ["edit"];
   if (person.status === UserStatus.ACTIVE) {
     out.push("suspend", "proposeBan");
+    out.push(person.verified ? "unverify" : "verify");
     if (viewerIsSuper) out.push("makeAdmin");
   } else if (person.status === UserStatus.SUSPENDED) {
     // A ban can be proposed for an active person, one waiting for deletion, or one under a TEMPORARY suspension.
     out.push("lift");
+    if (person.verified) out.push("unverify");
     if (!person.banned) out.push("proposeBan");
   } else if (person.status === UserStatus.DELETION_PENDING) {
     out.push("proposeBan");

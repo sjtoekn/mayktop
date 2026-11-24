@@ -24,7 +24,10 @@ import { socialPostTag } from "@/lib/social-cache-tags";
 import { connection } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getLocale, t } from "@/i18n";
-import { adsConfig, rankingConfig, socialLimits } from "@/config/site";
+import { adsConfig, rankingConfig, socialLimits, type PostKind } from "@/config/site";
+import { postKindOf } from "@/lib/post-input-rules";
+import { parseSocialLinks, type SocialLink } from "@/lib/profile-rules";
+import { isBountyActive } from "@/lib/reputation-rules";
 import { nowMs } from "@/lib/now";
 import { rankTrendingTags, type TrendingTag } from "@/lib/social-discover-rules";
 import { rankPopularDetailed, type RankItem } from "@/lib/ranking";
@@ -41,6 +44,7 @@ export type CommunitySummary = {
   slug: string;
   name: string;
   description: string;
+  category: string; // a key of communityCategories (src/config/site.ts)
   members: number; // real number of memberships
   rules: { title: string; text: string }[]; // only the active rules, in order
 };
@@ -68,6 +72,7 @@ export async function getCommunities(): Promise<CommunitySummary[]> {
     slug: c.slug,
     name: c.name,
     description: c.description,
+    category: c.category,
     members: c._count.memberships,
     rules: c.rules,
   }));
@@ -94,11 +99,15 @@ export type PostSummary = {
   time: string; // "12 minutes ago" in the active language
   title: string; // empty while the post is hidden
   body: string; // empty while the post is hidden
+  kind: PostKind; // question | article | video (SITE_PLAN A3); an older post is a question
+  videoUrl?: string; // only a video post that anybody may see
   votes: number; // up minus down
   comments: number;
   hidden?: HiddenInfo;
   deleted?: true; // the author erased it: text blank, author hidden (only the post page shows this)
   edited?: true; // the author changed the text after posting
+  answered?: true; // a question whose asker accepted an answer (SITE_PLAN B4)
+  bounty?: { amount: number; endsAtMs: number; paid: boolean }; // a running or paid-out bounty (SITE_PLAN B6); one that ran out is not shown
   newVoice?: true; // Popular only: this post holds a reserved "new voice" place (TODO 37); the card shows a label
 };
 
@@ -111,6 +120,7 @@ export type CommentNode = {
   hidden?: HiddenInfo;
   deleted?: true; // the author erased it: text blank, author hidden (only the post page shows this)
   edited?: true; // the author changed the text after posting
+  accepted?: true; // the asker accepted this answer (SITE_PLAN B4)
   replies?: CommentNode[];
 };
 
@@ -137,6 +147,8 @@ const postSelect = {
   id: true,
   title: true,
   body: true,
+  kind: true,
+  videoUrl: true,
   status: true,
   statusNote: true,
   createdAt: true,
@@ -145,6 +157,9 @@ const postSelect = {
   community: { select: { slug: true } },
   author: { select: { username: true } },
   statusRule: { select: { position: true, title: true } },
+  bounty: { select: { amount: true, status: true, expiresAt: true } },
+  // At most one visible accepted answer: only its existence matters here.
+  comments: { where: { acceptedAt: { not: null }, status: ContentStatus.VISIBLE, deletedAt: null }, select: { id: true }, take: 1 },
   _count: { select: { comments: { where: { status: { not: ContentStatus.REMOVED } } } } },
 } satisfies Prisma.PostSelect;
 
@@ -159,6 +174,7 @@ const commentSelect = {
   createdAt: true,
   editedAt: true,
   deletedAt: true,
+  acceptedAt: true,
   author: { select: { username: true } },
   statusRule: { select: { position: true, title: true } },
 } satisfies Prisma.CommentSelect;
@@ -203,8 +219,14 @@ function toPost(row: PostRow, vote: VoteInfo | undefined): PostSummary {
     time: timeAgo(row.createdAt),
     title: blank ? "" : row.title,
     body: blank ? "" : row.body,
+    kind: postKindOf(row.kind),
+    ...(!blank && row.videoUrl ? { videoUrl: row.videoUrl } : {}),
     votes: vote?.votes ?? 0,
     comments: row._count.comments,
+    ...(!blank && row.kind === "question" && row.comments.length > 0 ? { answered: true as const } : {}),
+    ...(!blank && row.bounty && (row.bounty.status === "AWARDED" || isBountyActive(row.bounty))
+      ? { bounty: { amount: row.bounty.amount, endsAtMs: row.bounty.expiresAt.getTime(), paid: row.bounty.status === "AWARDED" } }
+      : {}),
     ...(deleted ? { deleted: true as const } : {}),
     ...(row.editedAt !== null && !blank ? { edited: true as const } : {}),
     ...(hidden ? { hidden: { rule: ruleLabel(row.statusRule), note: row.statusNote ?? "", ...(removed ? { removed: true as const } : {}) } } : {}),
@@ -222,6 +244,7 @@ function toComment(row: CommentRow, vote: VoteInfo | undefined): CommentNode {
     time: timeAgo(row.createdAt),
     text: blank ? "" : row.body,
     votes: vote?.votes ?? 0,
+    ...(row.acceptedAt !== null && !blank ? { accepted: true as const } : {}),
     ...(deleted ? { deleted: true as const } : {}),
     ...(row.editedAt !== null && !blank ? { edited: true as const } : {}),
     ...(hidden ? { hidden: { rule: ruleLabel(row.statusRule), note: row.statusNote ?? "", ...(removed ? { removed: true as const } : {}) } } : {}),
@@ -786,6 +809,8 @@ export async function getComments(postId: number): Promise<CommentNode[]> {
     if (parent) (parent.replies ??= []).push(node);
     else roots.push(node);
   }
+  // The accepted answer comes first (the others keep their order: Array.sort is stable).
+  roots.sort((a, b) => Number(!!b.accepted) - Number(!!a.accepted));
   return roots;
 }
 
@@ -1018,6 +1043,12 @@ export type SocialProfile = {
   username: string;
   displayName: string | null;
   bio: string | null;
+  profession: string | null;
+  qualifications: string | null;
+  website: string | null;
+  profileVideo: string | null; // a YouTube address (cleanProfileVideo); read it with parseYouTube before use
+  socialLinks: SocialLink[];
+  verified: boolean; // the "verified" badge (SITE_PLAN C7)
   joinedIso: string;
   posts: number;
   followers: number;
@@ -1028,7 +1059,7 @@ export type SocialProfile = {
 export async function getSocialProfile(username: string): Promise<SocialProfile | null> {
   const user = await prisma.user.findFirst({
     where: { AND: [{ username }, socialAuthorShown] },
-    select: { id: true, username: true, displayName: true, bio: true, createdAt: true },
+    select: { id: true, username: true, displayName: true, bio: true, profession: true, qualifications: true, website: true, profileVideo: true, socialLinks: true, verifiedAt: true, createdAt: true },
   });
   if (!user) return null;
   const [posts, followers, following] = await Promise.all([
@@ -1041,6 +1072,12 @@ export async function getSocialProfile(username: string): Promise<SocialProfile 
     username: user.username,
     displayName: user.displayName,
     bio: user.bio,
+    profession: user.profession,
+    qualifications: user.qualifications,
+    website: user.website,
+    profileVideo: user.profileVideo,
+    socialLinks: parseSocialLinks(user.socialLinks),
+    verified: user.verifiedAt !== null,
     joinedIso: user.createdAt.toISOString(),
     posts,
     followers,

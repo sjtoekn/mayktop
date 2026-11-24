@@ -5,12 +5,23 @@ import AdSlot, { isFeedAdPosition } from "@/components/AdSlot";
 import Icon from "@/components/shell/Icon";
 import JoinButton from "@/components/JoinButton";
 import { t, tn } from "@/i18n";
+import type { Metadata } from "next";
+import { siteConfig } from "@/config/site";
 import { getCommunities, getCommunity, getPostsByCommunity } from "@/lib/queries";
+import { noIndexMetadata, pageMetadata } from "@/lib/seo-text";
 
 // Tell Next.js which communities exist so each page can be prepared in advance.
 export async function generateStaticParams() {
   const communities = await getCommunities();
   return communities.map((c) => ({ slug: c.slug }));
+}
+
+// The page header for search engines and share cards (SEO stage 2): the community's name and description.
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
+  const { slug } = await params;
+  const community = await getCommunity(slug);
+  if (!community) return noIndexMetadata;
+  return pageMetadata({ path: `/c/${encodeURIComponent(community.slug)}`, title: community.name, siteName: siteConfig.name, description: community.description });
 }
 
 export default async function CommunityPage({

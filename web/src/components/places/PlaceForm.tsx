@@ -6,7 +6,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import LoginNotice from "@/components/LoginNotice";
-import { placeFields } from "@/config/site";
+import { placeFields, reputationConfig } from "@/config/site";
 import { useLoggedOut } from "@/lib/use-logged-out";
 import { createPlace, type CreatePlaceResult } from "@/app/(site)/places/actions";
 import { placeTexts, placeTypeNames } from "@/lib/place-text";
@@ -85,6 +85,8 @@ export default function PlaceForm() {
         return placeTexts.errTooMany.replace("{minutes}", String(waitMinutes));
       case "exists":
         return placeTexts.errExists;
+      case "link":
+        return placeTexts.errLink.replace("{need}", String(reputationConfig.privileges.link));
       default:
         return placeTexts.errGeneral;
     }

@@ -9,6 +9,7 @@ import { auth } from "@/lib/auth";
 import { loadAccount } from "@/lib/account";
 import { prisma } from "@/lib/prisma";
 import { getSocialExport } from "@/lib/export-social";
+import { getCreatorSettings } from "@/lib/creator-profile";
 import { UserStatus } from "../../../../../generated/prisma/client";
 
 export async function GET(request: Request) {
@@ -31,6 +32,12 @@ export async function GET(request: Request) {
             email: true,
             displayName: true,
             bio: true,
+            profession: true,
+            qualifications: true,
+            website: true,
+            profileVideo: true,
+            socialLinks: true,
+            verifiedAt: true,
             role: true,
             status: true,
             language: true,
@@ -137,7 +144,7 @@ export async function GET(request: Request) {
     const now = new Date();
     const data = {
       about:
-        "Your data from MaykTop. Times are in UTC. It holds what you wrote and did. It does not hold your password, your login sessions or other people's data.",
+        "Your data from Falvenco. Times are in UTC. It holds what you wrote and did. It does not hold your password, your login sessions or other people's data.",
       exportedAt: now,
       account: user,
       communities: memberships.map((m) => ({
@@ -164,13 +171,14 @@ export async function GET(request: Request) {
         hasVideo: videoUrl !== null,
       })),
       social,
+      creator: await creatorExport(id),
     };
 
     const day = now.toISOString().slice(0, 10);
     return new Response(JSON.stringify(data, null, 2), {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
-        "Content-Disposition": `attachment; filename="mayktop-data-${account.username}-${day}.json"`,
+        "Content-Disposition": `attachment; filename="falvenco-data-${account.username}-${day}.json"`,
         "Cache-Control": "no-store",
       },
     });
@@ -178,4 +186,23 @@ export async function GET(request: Request) {
     console.error("data export failed:", error);
     return Response.json({ error: "failed" }, { status: 500 });
   }
+}
+
+/** The creator program part (TODO 12, S6): the settings (payout details only masked, never in full) and every earning row. */
+async function creatorExport(userId: string) {
+  const settings = await getCreatorSettings(userId);
+  if (!settings) return null;
+  const entries = await prisma.earningEntry.findMany({
+    where: { userId },
+    orderBy: { id: "asc" },
+    select: { id: true, kind: true, status: true, amountMicroUsd: true, adId: true, contentType: true, contentId: true, periodStart: true, periodEnd: true, createdAt: true, payoutId: true },
+  });
+  return {
+    joinedAt: settings.joinedAt,
+    termsVersion: settings.termsVersion,
+    payoutCountry: settings.country,
+    payoutMethod: settings.method,
+    payoutDetails: settings.masked ?? (settings.hasDetails ? "saved (hidden)" : null),
+    earnings: entries,
+  };
 }

@@ -97,7 +97,7 @@ async function fetchOgImage(articleUrl: string): Promise<string | null> {
   let current = safeHttpUrl(articleUrl);
   for (let hop = 0; current && hop < 4; hop += 1) {
     const response = await fetch(current, {
-      headers: { "user-agent": "MayktopNewsBot/1.0 (+news feed reader)", accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5" },
+      headers: { "user-agent": "FalvencoNewsBot/1.0 (+news feed reader)", accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5" },
       signal: AbortSignal.timeout(6_000),
       redirect: "manual",
       cache: "no-store",
@@ -208,7 +208,7 @@ export async function collectNewsNow(): Promise<NewsCollectionResult> {
       const feedUrl = safeHttpUrl(source.feedUrl);
       if (!feedUrl) throw new Error("Feed URL must be a public HTTP(S) address.");
       const response = await fetch(feedUrl, {
-        headers: { "user-agent": "MayktopNewsBot/1.0 (+news feed reader)", accept: "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.5" },
+        headers: { "user-agent": "FalvencoNewsBot/1.0 (+news feed reader)", accept: "application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.5" },
         signal: AbortSignal.timeout(8_000),
         redirect: "error",
         cache: "no-store",

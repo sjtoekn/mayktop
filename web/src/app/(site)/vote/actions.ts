@@ -42,9 +42,10 @@ export async function castVote(input: {
       // Only a visible post can be voted on (a post hidden for review cannot).
       const post = await prisma.post.findUnique({
         where: { id },
-        select: { id: true, status: true, deletedAt: true },
+        select: { id: true, status: true, deletedAt: true, authorId: true },
       });
       if (!post || post.status !== ContentStatus.VISIBLE || post.deletedAt) return { error: true };
+      if (post.authorId === user.id) return { error: true }; // nobody votes on their own post: it would earn reputation (SITE_PLAN B5)
 
       const key = { userId_postId: { userId: user.id, postId: post.id } };
       const existing = await prisma.postVote.findUnique({ where: key, select: { value: true } });
@@ -69,7 +70,7 @@ export async function castVote(input: {
     // A comment can be voted on while it and its post are visible.
     const comment = await prisma.comment.findUnique({
       where: { id },
-      select: { id: true, status: true, deletedAt: true, post: { select: { status: true, deletedAt: true } } },
+      select: { id: true, status: true, deletedAt: true, authorId: true, post: { select: { status: true, deletedAt: true } } },
     });
     if (
       !comment ||
@@ -80,6 +81,7 @@ export async function castVote(input: {
     ) {
       return { error: true };
     }
+    if (comment.authorId === user.id) return { error: true }; // nobody votes on their own comment (SITE_PLAN B5)
 
     const key = { userId_commentId: { userId: user.id, commentId: comment.id } };
     const existing = await prisma.commentVote.findUnique({ where: key, select: { value: true } });

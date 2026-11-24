@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PhotoUploadForm from "@/components/photos/PhotoUploadForm";
-import { photoCategories, photoMedia, photoText, type PhotoCategory } from "@/config/site";
+import { photoCategories, photoMedia, photoText, reputationConfig, type PhotoCategory } from "@/config/site";
 import { t } from "@/i18n";
 
 export const metadata: Metadata = {
@@ -56,6 +56,7 @@ export default function PhotoUploadPage() {
         error: t("photo.upload.error"),
         titleRequired: t("photo.upload.titleRequired"),
         invalid: t("photo.upload.invalid"),
+        linkError: t("submit.error.link", { need: reputationConfig.privileges.link }),
         tagsInvalid: t("photo.upload.tagsInvalid", { tagMax: 50, max: photoText.maxTags }),
         tooMany: t("photo.upload.tooMany"),
         done: t("photo.upload.done"),

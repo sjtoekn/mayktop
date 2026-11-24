@@ -2,7 +2,6 @@ import { nowMs } from "@/lib/now";
 import type { Metadata } from "next";
 import Link from "next/link";
 import PageHero from "@/components/PageHero";
-import FeedTypeTabs from "@/components/feed/FeedTypeTabs";
 import { connection } from "next/server";
 import Icon from "@/components/shell/Icon";
 import SocialFeedList from "@/components/social/SocialFeedList";
@@ -61,8 +60,6 @@ export default async function SocialFollowingPage({ searchParams }: { searchPara
   return (
     <>
       <PageHero variant="social" parts={[t("social.hero.a"), t("social.hero.b"), t("social.hero.c")]} sub={t("social.hero.sub")} />
-
-      <FeedTypeTabs active="social" />
 
       <header className="card pg-head sf-feedHead">
         <SocialFeedTabs active="following" />

@@ -11,6 +11,7 @@ import { updateTag } from "next/cache";
 import { socialPostTag } from "@/lib/social-cache-tags";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
+import { mayWriteText } from "@/lib/reputation";
 import { socialDuplicate, socialReplyConfig, socialReplyControl } from "@/config/site";
 import { checkRules, type RateRule } from "@/lib/social-limits";
 import { takeActionDb } from "@/lib/rate-limit-db";
@@ -24,7 +25,7 @@ const LONGEST_WINDOW_MS = Math.max(...replyRules.map((rule) => rule.windowMs), s
 
 export type CreateSocialReplyResult =
   | { ok: true }
-  | { error: true; login?: true; invalid?: true; restricted?: true; tooMany?: true; waitMinutes?: number; duplicate?: true };
+  | { error: true; login?: true; invalid?: true; link?: true; restricted?: true; tooMany?: true; waitMinutes?: number; duplicate?: true };
 
 export async function createSocialReply(input: { postId: number; body: string }): Promise<CreateSocialReplyResult> {
   if (typeof input !== "object" || input === null) return { error: true };
@@ -35,6 +36,8 @@ export async function createSocialReply(input: { postId: number; body: string })
 
   const author = await getSessionUser();
   if (!author) return { error: true, login: true };
+  // A web link needs some reputation (same rule as the forum); staff may always.
+  if (!(await mayWriteText(author.id, cleaned.body))) return { error: true, link: true };
 
   try {
     const outcome = await prisma.$transaction(async (tx) => {

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Fragment, Suspense } from "react";
 import { connection } from "next/server";
+import PageHero from "@/components/PageHero";
 import PhotoAdTile from "@/components/photos/PhotoAdTile";
 import { adsConfig } from "@/config/site";
 import { t } from "@/i18n";
@@ -45,9 +46,11 @@ async function PhotosContent({ searchParams }: { searchParams: Search }) {
 
   return (
     <>
+      <PageHero variant="photos" parts={[t("photos.hero.a"), t("photos.hero.b"), t("photos.hero.c")]} sub={t("photos.hero.sub")} />
+
       <header className="card pg-head ph-head">
         <div>
-          <h1 className="sf-h1">{tag ? t("photo.tag.heading", { tag }) : t("photo.list.title")}</h1>
+          <h2 className="sf-h1">{tag ? t("photo.tag.heading", { tag }) : t("photo.list.title")}</h2>
           <p className="pc-text">{t("photo.list.sub")}</p>
         </div>
         <div className="ph-headActions">

@@ -3,14 +3,15 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { Suspense } from "react";
 import { SHORTS_ROUTE } from "@/config/short-config";
-import FeedTypeTabs from "@/components/feed/FeedTypeTabs";
+import PageHero from "@/components/PageHero";
+import { t } from "@/i18n";
 import { SHORT_FEED_PAGE_SIZE } from "@/config/short-feed-config";
 import { getShortsFeed } from "@/lib/short-queries";
 import "./shorts.css";
 
 export const metadata: Metadata = {
-  title: "Shorts | MaykTop",
-  description: "Discover short videos on MaykTop.",
+  title: "Shorts | Falvenco",
+  description: "Discover short videos on Falvenco.",
 };
 
 type Search = Promise<{ before?: string }>;
@@ -30,12 +31,13 @@ async function ShortsGallery({ searchParams }: { searchParams: Search }) {
 
   return (
     <>
-      <FeedTypeTabs active="shorts" />
+      <PageHero variant="shorts" parts={[t("shorts.hero.a"), t("shorts.hero.b"), t("shorts.hero.c")]} sub={t("shorts.hero.sub")} />
+
       <section className="shorts-gallery">
       <header className="card shorts-gallery-head">
         <div>
-          <h1>Shorts</h1>
-          <p>Discover and watch short videos from the MaykTop community.</p>
+          <h2>Shorts</h2>
+          <p>Discover and watch short videos from the Falvenco community.</p>
         </div>
         <Link href={`${SHORTS_ROUTE}/upload`} className="btn btn-primary">Upload Short</Link>
       </header>
@@ -52,7 +54,7 @@ async function ShortsGallery({ searchParams }: { searchParams: Search }) {
             {page.items.map((short) => (
               <Link href={`${SHORTS_ROUTE}/${short.id}`} className="shorts-gallery-card" key={short.id}>
                 <div className="shorts-gallery-thumb">
-                  {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail is served by MaykTop's protected media route */}
+                  {/* eslint-disable-next-line @next/next/no-img-element -- thumbnail is served by Falvenco's protected media route */}
                   <img src={short.thumbUrl} alt={short.title || "Short video"} loading="lazy" />
                   <span className="shorts-gallery-play" aria-hidden="true">▶</span>
                   {short.durationMs ? (

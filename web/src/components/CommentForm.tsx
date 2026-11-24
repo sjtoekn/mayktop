@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import LoginNotice from "@/components/LoginNotice";
 import { useLoggedOut } from "@/lib/use-logged-out";
 import { createComment } from "@/app/(site)/post/[id]/actions";
+import { reputationConfig } from "@/config/site";
 
 // All visible text comes in as props (translated on the server with t()).
 export type CommentFormText = {
@@ -12,6 +13,7 @@ export type CommentFormText = {
   submit: string;
   saving: string;
   error: string;
+  errorLink: string; // contains {need}: a link needs some reputation (SITE_PLAN B5)
   cancel: string;
   login: string; // "Please log in to do this."
   loginLink: string; // "Log in"
@@ -32,7 +34,7 @@ export default function CommentForm({
   onCancel?: () => void; // when given, a Cancel button is shown
 }) {
   const [body, setBody] = useState("");
-  const [failed, setFailed] = useState<false | "error" | "login">(false);
+  const [failed, setFailed] = useState<false | "error" | "login" | "link">(false);
   const [pending, startTransition] = useTransition();
   const loggedOut = useLoggedOut(); // nobody logged in: the box is locked (the server refuses too)
 
@@ -43,7 +45,7 @@ export default function CommentForm({
     startTransition(async () => {
       const result = await createComment({ postId, parentId, body });
       if ("error" in result) {
-        setFailed(result.login ? "login" : "error");
+        setFailed(result.login ? "login" : result.reason === "link" ? "link" : "error");
       } else {
         setBody(""); // the page shows the new comment by itself
         onDone?.();
@@ -69,7 +71,7 @@ export default function CommentForm({
       />
       {(loggedOut || failed) && (
         <div className="notice notice-danger" role="alert">
-          {loggedOut || failed === "login" ? <LoginNotice text={{ message: text.login, link: text.loginLink }} /> : text.error}
+          {loggedOut || failed === "login" ? <LoginNotice text={{ message: text.login, link: text.loginLink }} /> : failed === "link" ? text.errorLink.replace("{need}", String(reputationConfig.privileges.link)) : text.error}
         </div>
       )}
       <div className="pc-actions">

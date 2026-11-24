@@ -36,7 +36,7 @@ function AboutPanel({ profile }: { profile: Profile }) {
     rows.push({
       label: t("profile.detail.website"),
       value: (
-        <a href={`https://${profile.website}`} target="_blank" rel="noopener noreferrer">
+        <a href={`https://${profile.website}`} target="_blank" rel="noopener noreferrer nofollow ugc">
           {profile.website}
         </a>
       ),
